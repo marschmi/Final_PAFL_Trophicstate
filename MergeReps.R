@@ -111,6 +111,7 @@ nrow(subset(data, lakenames == "Wintergreen")) # WINTERGREEN has all replicates!
 # row.names(subset(data, lakenames == "Sixteen"))  # We are missing  "SIXE1","SIXH2"
 
 missing <- c("BASE23um", "BSTE2", "GULH1", "LEEE1", "LONE13um","LONE23um", "LONH23um", "SIXE1","SIXH2")
+noreps <- c("BASE13um", "BSTE1", "GULH2", "LEEE2", "LONH13um", "SIXE2","SIXH1")
 
 # Histogram of SCALED sample read counts
 ggplot(data.frame(sum=sample_sums(good_samples)),aes(sum, fill = s)) + ylab("Number of Sequences per Sample") +
@@ -142,6 +143,8 @@ paste(c("The mean sample read count is",means))
 maxs<-max(sample_sums(good_merged))
 paste(c("The max sample read count is",maxs))
 
+
+### COMBINING AFTER MCMURDIE HOLMES SCALING 
 otus <- data.frame(otu_table(merged_samps))
 missing_dups <- c("BASE3um", "BSTE", "GULH", "LEEE", "LONE3um","LONE3um", "LONH3um", "SIXE","SIXH")
 otus$names <- row.names(otus)
@@ -158,6 +161,34 @@ colnames(sums) <- c("Totals")
 ggplot(sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="gold") + ggtitle("Averaged Merged Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
 
+
+### COMBINING BEFORE MCMURDIE HOLMES SCALING WITH OUR RAW READS
+# rawotus <- data.frame(t(otu_table(bact_samples)))
+# rawotus$names <- row.names(rawotus)
+# raw_nodups <- rawotus[rawotus$names %in% noreps, ] # collect only the samples that DO NOT have duplicates
+# raw_dups_only <- rawotus[!rawotus$names %in% noreps, ] # collect samples that DO have duplicates
+# raw_dups_only$names = NULL
+# raw_nodups$names = NULL
+# rowSums(raw_dups_only); range(raw_dups_only)
+# ### Need to come back to this.
+# raw_dups_half <- round(raw_dups_only/2)
+# raw_norm_all <- rbind(raw_dups_half, raw_nodups)
+# raw_sums <- data.frame(rowSums(raw_norm_all))
+# colnames(raw_sums) <- c("Totals")
+# 
+# ggplot(raw_sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
+#   geom_histogram(colour="black",fill="orangered") + ggtitle("Averaged Raw Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
+
+
+# CLUSTERING ANALYSIS
+#norm_bray <- vegdist(norm_all, method = "bray")  # calculates the Bray-Curtis Distances
+#norm_soren <- vegdist(norm_all, method = "bray", binary = TRUE)
+### Clustering based on 
+#jpeg(filename="clustering_bray+soren.jpeg", width= 45, height=32, units= "cm", pointsize= 14, res=500)
+#par(mfrow = c(2,1))
+#plot(hclust(norm_bray), main = "Bray-Curtis Distance")
+#plot(hclust(norm_soren), main = "Sorensen Distance")
+#dev.off()
 
 
 
