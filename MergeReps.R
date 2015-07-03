@@ -131,7 +131,7 @@ paste(c("The max sample read count is",maxs))
 merged_samps <- merge_samples(good_samples, "dups", fun = "mean") 
 merged_samps <- prune_taxa(taxa_sums(merged_samps) > 0, good_merged)
 
-ggplot(data.frame(sum=sample_sums(good_merged)),aes(sum, fill = s)) + ylab("Number of Sequences per Sample") +
+ggplot(data.frame(sum=sample_sums(good_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="red") + ggtitle("Merged Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
 
 # mean, max and min of sample read counts
@@ -146,10 +146,17 @@ otus <- data.frame(otu_table(merged_samps))
 missing_dups <- c("BASE3um", "BSTE", "GULH", "LEEE", "LONE3um","LONE3um", "LONH3um", "SIXE","SIXH")
 otus$names <- row.names(otus)
 nodups <- otus[otus$names %in% missing_dups, ] # collect only the samples that DO NOT have duplicates
-
 dups_only <- otus[!otus$names %in% missing_dups, ] # collect samples that DO have duplicates
 dups_only$names = NULL
+nodups$names = NULL
+rowSums(dups_only)
+dups_half <- round(dups_only/2)
+norm_all <- rbind(dups_half, nodups)
+sums <- data.frame(rowSums(norm_all))
+colnames(sums) <- c("Totals")
 
+ggplot(sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="gold") + ggtitle("Averaged Merged Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
 
 
 
