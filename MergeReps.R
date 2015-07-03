@@ -1,5 +1,5 @@
 #Load libraries
-library(phyloseq)
+library(phyloseq)  #must load the devtools version
 library(ggplot2)
 library(ape)
 library(vegan)
@@ -98,37 +98,26 @@ maxs<-max(sample_sums(good_samples))
 paste(c("The max sample read count is",maxs))
 
 
+## Not all samples have a duplicate:  Let's see which samples do/don't
+data <- sample_data(good_samples)
+individual <- row.names(data)
+replicate <- data$dups
+
 ### Time to merge the replicate samples!!!  
 ##  In our metadata there's a column called dups (aka duplicates) that we can use to merge our samples
 merged_samps <- merge_samples(good_samples, "dups") 
 merged_samps <- prune_taxa(taxa_sums(merged_samps) > 0, good_merged)
 
-## The merge_samples function gets rid of the categorical information in our metadata file.  
-## Let's bring it back with makeCategories_dups function sourced from the Functions_PAFL.R file.
-sample_data(merged_samps)$names <- factor(sample_names(merged_samps))
-dups <- data.frame(sample_data(merged_samps))
-good_dups <- makeCategories_dups(dups)
+ggplot(data.frame(sum=sample_sums(good_merged)),aes(sum, fill = s)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="red") + ggtitle("Merged Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
 
-## There is a bug when I add the following code to the makeCategories_dups, so I will do it here:
-good_dups$ProdLevel <- good_dups$trophicstate
-good_dups$ProdLevel <- as.character(good_dups$ProdLevel)
-good_dups$ProdLevel[good_dups$ProdLevel == "Eutrophic"] <- "Productive"
-good_dups$ProdLevel[good_dups$ProdLevel == "Mesotrophic"] <- "Productive"
-good_dups$ProdLevel[good_dups$ProdLevel == "Oligotrophic"] <- "Unproductive"
-good_dups$ProdLevel[good_dups$ProdLevel == "Mixed"] <- "Mixed"
-good_dups$ProdLevel <- as.factor(good_dups$ProdLevel)
-good_dups$ProdLevel <-factor(good_dups$ProdLevel,levels=c("Productive","Unproductive","Mixed"))
-good_dups$dups = NULL
-row.names(good_dups) <- as.character(good_dups$names)
-
-## Now, let's make good_dups our sample data for our phyloseq object
-merge_otutable <- otu_table(merged_samps)
-merge_taxtable <- tax_table(merged_samps)
-good_merged <- merge_phyloseq(merge_otutable, merge_taxtable)
-#write.table(good_dups, file = "~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata", col.names = TRUE,row.names = TRUE, sep = "\t")
-dup_metadata <- import_qiime_sample_data("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata")
-good_merged <-  merge_phyloseq(good_merged, dup_metadata)
-  
+# mean, max and min of sample read counts
+mins<-min(sample_sums(good_merged))
+paste(c("The minimum sample read count is",mins))
+means<-mean(sample_sums(good_merged))
+paste(c("The mean sample read count is",means))
+maxs<-max(sample_sums(good_merged))
+paste(c("The max sample read count is",maxs))
 
 
 
