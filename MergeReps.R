@@ -1,5 +1,7 @@
 #Load libraries
-library(phyloseq)  #must load the devtools version
+#library(phyloseq)  #must load the devtools version
+library("devtools")
+install_github("phyloseq", "joey711")
 library(ggplot2)
 library(ape)
 library(vegan)
@@ -85,6 +87,30 @@ paste(c("The max sample read count is",maxs))
 ### Now let's scale our read counts
 good_samples <- scale_reads(physeq = bact_samples, n = min(sample_sums(bact_samples)))
 
+
+## Not all samples have a duplicate:  Let's see which samples do/don't
+data <- data.frame(sample_data(good_samples))
+nrow(subset(data, lakenames == "Baker")) # BAKER has all replicates!
+nrow(subset(data, lakenames == "Bristol")) # BRISTOL has all replicates!
+nrow(subset(data, lakenames == "Payne")) # PAYNE has all replicates!
+nrow(subset(data, lakenames == "Sherman")) # SHERMAN has all replicates!
+nrow(subset(data, lakenames == "Wintergreen")) # WINTERGREEN has all replicates!
+
+# MISSING REPLICATES
+nrow(subset(data, lakenames == "Baseline")) # MISSING A REPLICATE
+row.names(subset(data, lakenames == "Baseline"))  # We are missing "BASE23um"
+nrow(subset(data, lakenames == "Bassett")) 
+row.names(subset(data, lakenames == "Bassett"))  # We are missing "BSTE2"
+nrow(subset(data, lakenames == "Gull"))
+row.names(subset(data, lakenames == "Gull"))  # We are missing "GULH1"
+nrow(subset(data, lakenames == "Lee"))
+row.names(subset(data, lakenames == "Lee"))  # We are missing "LEEE1"
+nrow(subset(data, lakenames == "LittleLong")) #MISSING 3 samples!!!
+row.names(subset(data, lakenames == "LittleLong"))  # We are missing "LEEE1"
+
+nrow(subset(data, lakenames == "Sixteen"))
+missing <- c("BASE23um", "BSTE2", "GULH1", "LEEE1")
+
 # Histogram of SCALED sample read counts
 ggplot(data.frame(sum=sample_sums(good_samples)),aes(sum, fill = s)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="mediumorchid3") + ggtitle("McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
@@ -98,14 +124,10 @@ maxs<-max(sample_sums(good_samples))
 paste(c("The max sample read count is",maxs))
 
 
-## Not all samples have a duplicate:  Let's see which samples do/don't
-data <- sample_data(good_samples)
-individual <- row.names(data)
-replicate <- data$dups
 
 ### Time to merge the replicate samples!!!  
 ##  In our metadata there's a column called dups (aka duplicates) that we can use to merge our samples
-merged_samps <- merge_samples(good_samples, "dups") 
+merged_samps <- merge_samples(good_samples, "dups", fun = "mean") 
 merged_samps <- prune_taxa(taxa_sums(merged_samps) > 0, good_merged)
 
 ggplot(data.frame(sum=sample_sums(good_merged)),aes(sum, fill = s)) + ylab("Number of Sequences per Sample") +
@@ -118,7 +140,6 @@ means<-mean(sample_sums(good_merged))
 paste(c("The mean sample read count is",means))
 maxs<-max(sample_sums(good_merged))
 paste(c("The max sample read count is",maxs))
-
 
 
 
