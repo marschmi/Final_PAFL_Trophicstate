@@ -142,20 +142,17 @@ paste(c("The mean sample read count is",means))
 maxs<-max(sample_sums(good_merged))
 paste(c("The max sample read count is",maxs))
 
+otus <- data.frame(otu_table(merged_samps))
 missing_dups <- c("BASE3um", "BSTE", "GULH", "LEEE", "LONE3um","LONE3um", "LONH3um", "SIXE","SIXH")
+otus$names <- row.names(otus)
+nodups <- otus[otus$names %in% missing_dups, ] # collect only the samples that DO NOT have duplicates
+
+dups_only <- otus[!otus$names %in% missing_dups, ] # collect samples that DO have duplicates
+dups_only$names = NULL
 
 
 
 
-
-
-
-
-
-dups_metadata <- sample_data(good_merged)
-dups_metadata$names <- row.names(dups_metadata)
-dups_metadata$dups <- row.names(dups_metadata)
-good_metadata <-makeCategories_dups(dups_metadata)
 
 
 
