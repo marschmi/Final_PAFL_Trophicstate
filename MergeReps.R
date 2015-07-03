@@ -55,15 +55,12 @@ names3 <- gsub("LONG", "LON", names2)
 sample_names(mothurdata) <- names3
 
 
-# Import metadata file and merge with mothurdata object
-mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
-map <- import_qiime_sample_data(mapfile)
-merge <- merge_phyloseq(mothurdata,map)
-
-###### Analysis ##########
 # lets look at only samples (removing blanks and mock and samples that didn't amplify)
 pruned <- prune_taxa(taxa_sums(merge) > 0, merge)
 bact_samples <-subset_taxa(pruned, Kingdom == "Bacteria")
+#nrow(otu_table(pruned)) - nrow(otu_table(bact_samples))  ## Check how many rows were not bacteria
+bact_samples2 <-subset_taxa(bact_samples, Class != "Chloroplast")
+#nrow(otu_table(bact_samples)) - nrow(otu_table(bact_samples2))  # Check how many rows were chloroplasts
 
 #Summary of my good_samples object
 bact_samples
@@ -97,6 +94,15 @@ maxs<-max(sample_sums(good_samples))
 paste(c("The max sample read count is",maxs))
 
 
+### Before we add the metadata, lets merge the replicate samples
+
+
+
+
+# Import metadata file and merge with mothurdata object
+mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
+map <- import_qiime_sample_data(mapfile)
+merge <- merge_phyloseq(mothurdata,map)
 
 
 

@@ -106,6 +106,14 @@ makeCategories <- function(dataframe){
                                      ifelse(lakenames %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
                                             ifelse(lakenames %in% c("Sherman"), "Mixed",
                                                    ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+  dataframe$ProdLevel <- dataframe$trophicstate
+  dataframe$ProdLevel <- as.character(dataframe$ProdLevel)
+  dataframe$ProdLevel[dataframe$ProdLevel == "Eutrophic"] <- "Productive"
+  dataframe$ProdLevel[dataframe$ProdLevel == "Mesotrophic"] <- "Productive"
+  dataframe$ProdLevel[dataframe$ProdLevel == "Oligotrophic"] <- "Unproductive"
+  dataframe$ProdLevel[dataframe$ProdLevel == "Mixed"] <- "Mixed"
+  dataframe$ProdLevel <- as.factor(dataframe$ProdLevel)
+  dataframe$ProdLevel <-factor(dataframe$ProdLevel,levels=c("Productive","Unproductive","Mixed"))
 }
 #################################################################################### 2
 #################################################################################### 2
@@ -146,8 +154,9 @@ makeCategories_dups <- function(dataframe){ # IMPORTANT!!!  dataframe MUST have 
   dataframe <- data.table(dataframe)
   library(data.table)
   dataframe[, trophicstate := ifelse(lakenames %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
-                                     ifelse(lakenames %in% c("Bassett", "Bristol", "Payne", "Sherman"), "Mesotrophic",
-                                            ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA)))]
+                                     ifelse(lakenames %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                            ifelse(lakenames %in% c("Sherman"), "Mixed",
+                                                   ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
 }
 #################################################################################### 3
 #################################################################################### 3
