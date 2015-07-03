@@ -97,19 +97,20 @@ nrow(subset(data, lakenames == "Sherman")) # SHERMAN has all replicates!
 nrow(subset(data, lakenames == "Wintergreen")) # WINTERGREEN has all replicates!
 
 # MISSING REPLICATES
-nrow(subset(data, lakenames == "Baseline")) # MISSING A REPLICATE
-row.names(subset(data, lakenames == "Baseline"))  # We are missing "BASE23um"
-nrow(subset(data, lakenames == "Bassett")) 
-row.names(subset(data, lakenames == "Bassett"))  # We are missing "BSTE2"
-nrow(subset(data, lakenames == "Gull"))
-row.names(subset(data, lakenames == "Gull"))  # We are missing "GULH1"
-nrow(subset(data, lakenames == "Lee"))
-row.names(subset(data, lakenames == "Lee"))  # We are missing "LEEE1"
-nrow(subset(data, lakenames == "LittleLong")) #MISSING 3 samples!!!
-row.names(subset(data, lakenames == "LittleLong"))  # We are missing "LEEE1"
+# nrow(subset(data, lakenames == "Baseline")) # MISSING A REPLICATE
+# row.names(subset(data, lakenames == "Baseline"))  # We are missing "BASE23um"
+# nrow(subset(data, lakenames == "Bassett")) 
+# row.names(subset(data, lakenames == "Bassett"))  # We are missing "BSTE2"
+# nrow(subset(data, lakenames == "Gull"))
+# row.names(subset(data, lakenames == "Gull"))  # We are missing "GULH1"
+# nrow(subset(data, lakenames == "Lee"))
+# row.names(subset(data, lakenames == "Lee"))  # We are missing "LEEE1"
+# nrow(subset(data, lakenames == "LittleLong")) #MISSING 3 samples!!!
+# row.names(subset(data, lakenames == "LittleLong"))  # We are missing  "LONE13um","LONE23um", "LONH23um"
+# nrow(subset(data, lakenames == "Sixteen")) # Missing 2 samples!!
+# row.names(subset(data, lakenames == "Sixteen"))  # We are missing  "SIXE1","SIXH2"
 
-nrow(subset(data, lakenames == "Sixteen"))
-missing <- c("BASE23um", "BSTE2", "GULH1", "LEEE1")
+missing <- c("BASE23um", "BSTE2", "GULH1", "LEEE1", "LONE13um","LONE23um", "LONH23um", "SIXE1","SIXH2")
 
 # Histogram of SCALED sample read counts
 ggplot(data.frame(sum=sample_sums(good_samples)),aes(sum, fill = s)) + ylab("Number of Sequences per Sample") +
