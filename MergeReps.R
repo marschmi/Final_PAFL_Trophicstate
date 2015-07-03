@@ -54,6 +54,10 @@ names2 <- gsub("GULL", "GUL", samplenames)
 names3 <- gsub("LONG", "LON", names2)
 sample_names(mothurdata) <- names3
 
+# Import metadata file and merge with mothurdata object
+mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
+map <- import_qiime_sample_data(mapfile)
+merge <- merge_phyloseq(mothurdata,map)
 
 # lets look at only samples (removing blanks and mock and samples that didn't amplify)
 pruned <- prune_taxa(taxa_sums(merge) > 0, merge)
@@ -94,15 +98,56 @@ maxs<-max(sample_sums(good_samples))
 paste(c("The max sample read count is",maxs))
 
 
-### Before we add the metadata, lets merge the replicate samples
+### Time to merge the replicate samples!!!  
+##  In our metadata there's a column called dups (aka duplicates) that we can use to merge our samples
+merged_samps <- merge_samples(good_samples, "dups") 
+merged_samps <- prune_taxa(taxa_sums(merged_samps) > 0, good_merged)
+
+## The merge_samples function gets rid of the categorical information in our metadata file.  
+## Let's bring it back with makeCategories_dups function sourced from the Functions_PAFL.R file.
+sample_data(merged_samps)$names <- factor(sample_names(merged_samps))
+dups <- data.frame(sample_data(merged_samps))
+good_dups <- makeCategories_dups(dups)
+
+## There is a bug when I add the following code to the makeCategories_dups, so I will do it here:
+good_dups$ProdLevel <- good_dups$trophicstate
+good_dups$ProdLevel <- as.character(good_dups$ProdLevel)
+good_dups$ProdLevel[good_dups$ProdLevel == "Eutrophic"] <- "Productive"
+good_dups$ProdLevel[good_dups$ProdLevel == "Mesotrophic"] <- "Productive"
+good_dups$ProdLevel[good_dups$ProdLevel == "Oligotrophic"] <- "Unproductive"
+good_dups$ProdLevel[good_dups$ProdLevel == "Mixed"] <- "Mixed"
+good_dups$ProdLevel <- as.factor(good_dups$ProdLevel)
+good_dups$ProdLevel <-factor(good_dups$ProdLevel,levels=c("Productive","Unproductive","Mixed"))
+good_dups$dups = NULL
+row.names(good_dups) <- as.character(good_dups$names)
+
+## Now, let's make good_dups our sample data for our phyloseq object
+merge_otutable <- otu_table(merged_samps)
+merge_taxtable <- tax_table(merged_samps)
+good_merged <- merge_phyloseq(merge_otutable, merge_taxtable)
+#write.table(good_dups, file = "~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata", col.names = TRUE,row.names = TRUE, sep = "\t")
+dup_metadata <- import_qiime_sample_data("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata")
+good_merged <-  merge_phyloseq(good_merged, dup_metadata)
+  
 
 
 
 
-# Import metadata file and merge with mothurdata object
-mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
-map <- import_qiime_sample_data(mapfile)
-merge <- merge_phyloseq(mothurdata,map)
+
+
+
+
+
+
+
+dups_metadata <- sample_data(good_merged)
+dups_metadata$names <- row.names(dups_metadata)
+dups_metadata$dups <- row.names(dups_metadata)
+good_metadata <-makeCategories_dups(dups_metadata)
+
+
+
+
 
 
 
