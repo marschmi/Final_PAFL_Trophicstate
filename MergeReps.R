@@ -15,7 +15,7 @@ library(dplyr)
 
 
 ### Set the Working Directory
-setwd("~/PAFL_TrophicState/OTU_Feb18")
+setwd("~/Final_PAFL_Trophicstate")
 
 
 ### Source written functions in the file Functions.PAFL.R
@@ -39,16 +39,14 @@ set_ggtheme <- theme_set(theme_bw() +
 
 ### Data import
 #sharedfile = "mothur.normalized.shared"
-sharedfile = "stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.shared"
-taxfile = "stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
+sharedfile = "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.shared"
+taxfile = "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
 mothurdata = import_mothur(mothur_shared_file = sharedfile ,mothur_constaxonomy_file = taxfile )
 
 
 # We need to change the taxonomy names
 tax_table(mothurdata)<-cbind(tax_table(mothurdata),row.names(tax_table(mothurdata)))
 colnames(tax_table(mothurdata)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
-#View(otu_table(mothurdata))
-
 
 #We need to change some of the filenames to match our metadata
 samplenames <- sample_names(mothurdata)
@@ -58,15 +56,9 @@ sample_names(mothurdata) <- names3
 
 
 # Import metadata file and merge with mothurdata object
-#metadata <- read.csv(file = "environmental.csv")
-#for(i in 1:length(metadata$limnion)){
-#  metadata$quadrant[i]<-paste(as.character(metadata$filter[i]),as.character(metadata$limnion[i]))}
-#write.table(metadata, "metadata", sep = "\t")
-mapfile = "metadata"
-map = import_qiime_sample_data(mapfile)
-merge = merge_phyloseq(mothurdata,map)
-#View(data.frame(sample_data(merge)))
-
+mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
+map <- import_qiime_sample_data(mapfile)
+merge <- merge_phyloseq(mothurdata,map)
 
 ###### Analysis ##########
 # lets look at only samples (removing blanks and mock and samples that didn't amplify)
