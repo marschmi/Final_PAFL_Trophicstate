@@ -142,6 +142,7 @@ paste(c("The mean sample read count is",means))
 maxs<-max(sample_sums(good_merged))
 paste(c("The max sample read count is",maxs))
 
+missing_dups <- c("BASE3um", "BSTE", "GULH", "LEEE", "LONE3um","LONE3um", "LONH3um", "SIXE","SIXH")
 
 
 
