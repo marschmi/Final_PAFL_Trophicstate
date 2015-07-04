@@ -166,6 +166,11 @@ ggplot(sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
   ggtitle(expression(atop("Averaged Merged Duplicates:\n  McMurdie & Holme's Scaled Reads", atop("Range = 508"), ""))) 
  
 
+
+
+
+
+
 ################################################################
 ### COMBINING BEFORE MCMURDIE HOLMES SCALING WITH OUR RAW READS
 noscale_merge <- merge_samples(bact_samples, "dups", fun = "mean") 
@@ -189,11 +194,15 @@ paste(c("The max sample read count is",maxs))
 ### Now let's scale our read counts from our MERGED RAW data
 scaled_merged <- scale_reads(physeq = noscale_merge, n = min(sample_sums(noscale_merge)))
 
-##  Sample read counts with merging samples WITHOUT SCALING!!!! 
+##  Sample read counts with merging samples WITH SCALING!!!! 
 # Histogram of RAW sample read counts
+jpeg(filename="raw_merged_scaled.jpeg", width= 20, height=15, units= "cm", pointsize= 14, res=500)
 ggplot(data.frame(sum=sample_sums(scaled_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="magenta")  + xlab("Total Sequences") + 
+  geom_histogram(colour="black",fill="magenta", binwidth = 18)  + xlab("Total Sequences") + 
+  scale_x_continuous(seq(14600, 15200, by =100), labels = seq(14600, 15100, by =100)) +
   ggtitle(expression(atop("Raw Merged then Scaled Reads", atop("Range = 397"), ""))) 
+dev.off()
+
 
 # mean, max and min of sample read counts
 mins<-min(sample_sums(scaled_merged))
@@ -205,6 +214,17 @@ paste(c("The max sample read count is",maxs))
 
 range_scaledmerged <- max(sample_sums(scaled_merged)) - min(sample_sums(scaled_merged))
 paste(c("The range of sample read counts when merged (summed) and then scaled is",range_scaledmerged))
+
+
+
+
+
+####  So now we have 2 types of merging:
+### 1. Where we scaled our read counts, summed our reads between replicates, take the average + rounded, and then re-scale.
+
+
+### 2. Where we merged our samples (doubled the reads with samples that had replicates) and then scaled the read counts.
+scaled_merged
 
 
 # CLUSTERING ANALYSIS
