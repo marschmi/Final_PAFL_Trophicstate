@@ -131,7 +131,8 @@ good_merged <- merge_samples(good_samples, "dups", fun = "mean") #
 good_merged <- prune_taxa(taxa_sums(good_merged) > 0, good_merged)
 
 ggplot(data.frame(sum=sample_sums(good_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="red") + ggtitle("Merged Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
+  geom_histogram(colour="black",fill="red") + ggtitle("Merged Duplicates: \n McMurdie & Holme's Scaled Reads") + 
+  xlab("Total Sequences")
 ## As we can see, the fun = "mean" DOESN'T WORK.  Instead, merge_samples is only summing the sample counts!
 
 # mean, max and min of sample read counts
@@ -157,21 +158,25 @@ norm_all <- rbind(dups_half, nodups)
 sums <- data.frame(rowSums(norm_all))
 colnames(sums) <- c("Totals")
 
-ggplot(sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="gold") + ggtitle("Averaged Merged Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
-
 sums_range <- max(sums) -min(sums)
 paste(c("The range of sample read counts when scaled, merged (summed), averaged and then scaled is",sums_range))
+
+ggplot(sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="gold") + xlab("Total Sequences") +
+  ggtitle(expression(atop("Averaged Merged Duplicates:\n  McMurdie & Holme's Scaled Reads", atop("Range = 508"), ""))) 
+ 
 
 ################################################################
 ### COMBINING BEFORE MCMURDIE HOLMES SCALING WITH OUR RAW READS
 noscale_merge <- merge_samples(bact_samples, "dups", fun = "mean") 
 noscale_merge <- prune_taxa(taxa_sums(noscale_merge) > 0, noscale_merge)
+range_nonscale <- max(sample_sums(noscale_merge)) - min(sample_sums(noscale_merge))
 
 ##  Sample read counts with merging samples WITHOUT SCALING!!!! 
 # Histogram of RAW sample read counts
 ggplot(data.frame(sum=sample_sums(noscale_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="violetred")  + xlab("Total Sequences") + ggtitle("Merged Raw Reads!")
+  geom_histogram(colour="black",fill="violetred")  + xlab("Total Sequences") + 
+  ggtitle(expression(atop("Merged Raw Reads", atop("Range = 54,691"), ""))) 
 
 # mean, max and min of sample read counts
 mins<-min(sample_sums(noscale_merge))
@@ -187,7 +192,8 @@ scaled_merged <- scale_reads(physeq = noscale_merge, n = min(sample_sums(noscale
 ##  Sample read counts with merging samples WITHOUT SCALING!!!! 
 # Histogram of RAW sample read counts
 ggplot(data.frame(sum=sample_sums(scaled_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="magenta")  + xlab("Total Sequences") + ggtitle("Raw Merged then Scaled Reads!")
+  geom_histogram(colour="black",fill="magenta")  + xlab("Total Sequences") + 
+  ggtitle(expression(atop("Raw Merged then Scaled Reads", atop("Range = 397"), ""))) 
 
 # mean, max and min of sample read counts
 mins<-min(sample_sums(scaled_merged))
