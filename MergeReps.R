@@ -226,23 +226,23 @@ manual_merged
 
 # CLUSTERING ANALYSIS
 manual_otu <- otu_table(manual_merged) 
-norm_manual_bc <- vegdist(manual_otu, method = "bray")  # calculates the Bray-Curtis Distances
+norm_manual_bc <- vegdist(t(manual_otu), method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
 
 ### 2. "Scaled":First merged replicate samples by summing between replicate samples and then scaled (McMurdie & Holmes) the read counts to 14,937.
 ## 8,896 OTUs
-data_dup <- sample_data(data_dup)
-sc_tax <- otu_table(scaled_merged) 
-sc_tax <- tax_table(scaled_merged)
-merged_final <- merge_phyloseq(sc_tax, sc_otu, data_dup)
-scaled_otu <- otu_table(merged_final) 
-norm_scaled_bc <- vegdist(scaled_otu, method = "bray")  # calculates the Bray-Curtis Distances
+data_dup <- sample_data(data_dup) 
+sc_tax <- otu_table(scaled_merged)  
+sc_tax <- tax_table(scaled_merged) 
+merged_final <- merge_phyloseq(sc_tax, sc_otu, data_dup) 
+scaled_otu <- otu_table(merged_final)  
+norm_scaled_bc <- vegdist(scaled_otu, method = "bray", binary = FALSE)   # calculates the Bray-Curtis Distances
 
-merged_final
+merged_final 
 ### Comparing the two methods with a clustering analysis 
 #jpeg(filename="clustering_merged_Comparison.jpeg", width= 45, height=32, units= "cm", pointsize= 14, res=500)
-par(mfrow = c(2,1))
-plot(hclust(norm_manual_bc), main = "Bray-Curtis Distance: Manual")
-plot(hclust(norm_scaled_bc), main = "Bray-Curtis Distance: Scaled")
+par(mfrow = c(2,1)) 
+plot(hclust(norm_manual_bc), main = "Bray-Curtis Distance: Manual") 
+plot(hclust(norm_scaled_bc), main = "Bray-Curtis Distance: Scaled") 
 #dev.off()
 
 
@@ -357,8 +357,8 @@ nmds_soren_manual <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape 
         legend.title = element_text(size=12, face="bold"),
         legend.text = element_text(size = 12),
         ###LEGEND TOP RIGHT CORNER
-        legend.position = "right");  nmds_soren_manual
-
+        legend.position = "right");  nmds_soren_manual 
+ 
 
 #jpeg(filename="NMDS_BOTH_Merge_Methods.jpeg", width= 50, height=30, units= "cm", pointsize= 14, res=500)
 multiplot(nmds_quad_manual, nmds_soren_manual, nmds_quad_scaled, nmds_soren_scaled, cols = 2)
