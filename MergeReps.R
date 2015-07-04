@@ -220,7 +220,7 @@ paste(c("The range of sample read counts when merged (summed) and then scaled is
 
 
 ####  So now we have 2 types of merging:
-### 1. "Manual": Where we scaled our read counts, summed our reads between replicates, take the average + rounded.
+### 1. "Manual": First scaled (McMurdie & Holmes) the read counts to 10,752, summed the reads between replicates, took the average + rounded.
 ## 4,596 OTUs
 manual_merged
 
@@ -228,7 +228,7 @@ manual_merged
 manual_otu <- otu_table(manual_merged) 
 norm_manual_bc <- vegdist(manual_otu, method = "bray")  # calculates the Bray-Curtis Distances
 
-### 2. "Scaled": Where we merged summed our replicate samples and then scaled (McMurdie & Holmes) the read counts.
+### 2. "Scaled":First merged replicate samples by summing between replicate samples and then scaled (McMurdie & Holmes) the read counts to 14,937.
 ## 8,896 OTUs
 data_dup <- sample_data(data_dup)
 sc_tax <- otu_table(scaled_merged) 
