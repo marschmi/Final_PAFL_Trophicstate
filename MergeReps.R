@@ -157,7 +157,10 @@ ggplot(sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
   ggtitle(expression(atop("Averaged Merged Duplicates:\n  McMurdie & Holme's Scaled Reads", atop("Range = 508"), ""))) 
  
 
-data_dup <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata", header = TRUE, sep = "\t")
+data_dup <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup) <- data_dup$names
+data_dup$quadrant <- factor(data_dup$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+
 data_dup <- sample_data(data_dup)
 tnorm_all <- t(norm_all)
 otu_manual <- otu_table(tnorm_all, taxa_are_rows = TRUE)
@@ -193,12 +196,12 @@ scaled_merged <- scale_reads(physeq = noscale_merge, n = min(sample_sums(noscale
 
 ##  Sample read counts with merging samples WITH SCALING!!!! 
 # Histogram of RAW sample read counts
-jpeg(filename="raw_merged_scaled.jpeg", width= 20, height=15, units= "cm", pointsize= 14, res=500)
+#jpeg(filename="raw_merged_scaled.jpeg", width= 20, height=15, units= "cm", pointsize= 14, res=500)
 ggplot(data.frame(sum=sample_sums(scaled_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="magenta", binwidth = 18)  + xlab("Total Sequences") + 
   scale_x_continuous(seq(14600, 15200, by =100), labels = seq(14600, 15100, by =100)) +
   ggtitle(expression(atop("Raw Merged then Scaled Reads", atop("Range = 397"), ""))) 
-dev.off()
+#dev.off()
 
 
 # mean, max and min of sample read counts
@@ -240,16 +243,114 @@ plot(hclust(norm_manual_bc), main = "Bray-Curtis Distance: Manual")
 plot(hclust(norm_scaled_bc), main = "Bray-Curtis Distance: Scaled")
 #dev.off()
 
+
+
+
 nowin_manual <- subset_samples(manual_merged, names != "WINH" & names != "WINH3um")
-ordu <- ordinate(nowin_manual, "NMDS", "bray")
-plot_ordination(nowin_manual, ordu, shape = "trophicstate", color = "quadrant") + geom_point(size = 6) + ggtitle("Manual Merged")
+ordu_bray <- ordinate(nowin_manual, "NMDS", "bray", binary = FALSE)
+nmds_manual <- plot_ordination(nowin_manual, ordu_bray, shape = "trophicstate", color = "quadrant") + geom_point(size = 6) + ggtitle("Manual Merged") +
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3",  "darkgreen", "mediumblue","orchid1", "green",  "deepskyblue")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic"), 
+                     values = c(15, 19, 17)) 
+
+pcoa_bray <- ordinate(nowin_manual, "PCoA", "bray", binary = FALSE)
+pcoa_manual <-   plot_ordination(nowin_manual, pcoa_bray, shape = "trophicstate", color = "quadrant") +geom_point(size = 6) + ggtitle("Manual Merged") +
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3",  "darkgreen", "mediumblue","orchid1", "green",  "deepskyblue")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic"), 
+                     values = c(15, 19, 17))
 
 nowin_scaled <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
-ordu2 <- ordinate(nowin_scaled, "NMDS", "bray")
-plot_ordination(nowin_scaled, ordu2, shape = "trophicstate", color = "quadrant") + geom_point(size = 6) + ggtitle("Scaled Merged")
+ordu2 <- ordinate(nowin_scaled, "NMDS", "bray", binary = FALSE)
+nmds_scaled <- plot_ordination(nowin_scaled, ordu2, shape = "trophicstate", color = "quadrant") + geom_point(size = 6) + ggtitle("Scaled Merged") +
+scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                   labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                   values = c("purple3",  "darkgreen", "mediumblue","orchid1", "green",  "deepskyblue")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic"), 
+                     values = c(15, 19, 17)) 
+
+pcoa_bray_manual <- ordinate(nowin_scaled, "PCoA", "bray", binary = FALSE)
+pcoa_scaled <-   plot_ordination(nowin_scaled, pcoa_bray_manual, shape = "trophicstate", color = "quadrant") +geom_point(size = 6) + ggtitle("Scaled Merged") +
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3",  "darkgreen", "mediumblue","orchid1", "green",  "deepskyblue")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic"), 
+                     values = c(15, 19, 17))
+
+
+multiplot(nmds_manual, pcoa_manual, nmds_scaled, pcoa_scaled, cols = 2)
 
 
 
+
+
+
+
+normOTU <- otu_table(nowin_scaled)
+dnormOTU <- data.frame(normOTU)
+#weighted
+nmds_bray <- metaMDS(dnormOTU, distance="bray")
+nmds_bray <- data.frame(nmds_bray$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
+
+nmds_bray$names<-row.names(nmds_bray) #new names column
+nmds_bray <- makeCategories_dups(nmds_bray) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
+
+#nmds_bray$quadrant <- as.character(nmds_bray$quadrant)
+nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+
+
+nmds_quad <- ggplot(nmds_bray, aes(MDS1, MDS2, color = quadrant, shape = trophicstate)) +
+  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() + 
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+                     values = c(15, 19, 18, 17)) +
+  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "right");  nmds_quad 
+
+
+#weighted
+nmds_soren <- metaMDS(dnormOTU, distance="bray", binary = TRUE)
+nmds_soren <- data.frame(nmds_soren$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
+
+nmds_soren$names<-row.names(nmds_soren) #new names column
+nmds_soren <- makeCategories_dups(nmds_soren) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
+
+#nmds_soren$quadrant <- as.character(nmds_soren$quadrant)
+nmds_soren$quadrant <- factor(nmds_soren$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+
+
+nmds_soren <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = trophicstate)) +
+  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() + 
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+                     values = c(15, 19, 18, 17)) +
+  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "right");  nmds_soren
+
+multiplot(nmds_quad, nmds_soren, cols = 2)
 
 
 
