@@ -41,13 +41,13 @@ set_ggtheme <- theme_set(theme_bw() +
 
 ### Data import
 #sharedfile = "mothur.normalized.shared"
-sharedfile = "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.shared"
-taxfile = "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
-mothurdata = import_mothur(mothur_shared_file = sharedfile ,mothur_constaxonomy_file = taxfile )
+sharedfile <- "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.shared"
+taxfile <- "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
+mothurdata <- import_mothur(mothur_shared_file = sharedfile ,mothur_constaxonomy_file = taxfile )
 
 
 # We need to change the taxonomy names
-tax_table(mothurdata)<-cbind(tax_table(mothurdata),row.names(tax_table(mothurdata)))
+tax_table(mothurdata) <- cbind(tax_table(mothurdata),row.names(tax_table(mothurdata)))
 colnames(tax_table(mothurdata)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
 
 #We need to change some of the filenames to match our metadata
@@ -84,17 +84,16 @@ paste(c("The mean sample read count is",means))
 maxs<-max(sample_sums(bact_samples))
 paste(c("The max sample read count is",maxs))
 
-### Now let's scale our read counts
+### We will scale our read counts, combine (sum) our reads, take the average, and then re-scale.
 good_samples <- scale_reads(physeq = bact_samples, n = min(sample_sums(bact_samples)))
 
-
 ## Not all samples have a duplicate:  Let's see which samples do/don't
-data <- data.frame(sample_data(good_samples))
-nrow(subset(data, lakenames == "Baker")) # BAKER has all replicates!
-nrow(subset(data, lakenames == "Bristol")) # BRISTOL has all replicates!
-nrow(subset(data, lakenames == "Payne")) # PAYNE has all replicates!
-nrow(subset(data, lakenames == "Sherman")) # SHERMAN has all replicates!
-nrow(subset(data, lakenames == "Wintergreen")) # WINTERGREEN has all replicates!
+#data <- data.frame(sample_data(good_samples))
+#nrow(subset(data, lakenames == "Baker")) # BAKER has all replicates!
+#nrow(subset(data, lakenames == "Bristol")) # BRISTOL has all replicates!
+#nrow(subset(data, lakenames == "Payne")) # PAYNE has all replicates!
+#nrow(subset(data, lakenames == "Sherman")) # SHERMAN has all replicates!
+#nrow(subset(data, lakenames == "Wintergreen")) # WINTERGREEN has all replicates!
 
 # MISSING REPLICATES
 # nrow(subset(data, lakenames == "Baseline")) # MISSING A REPLICATE
@@ -126,14 +125,14 @@ maxs<-max(sample_sums(good_samples))
 paste(c("The max sample read count is",maxs))
 
 
-
-### Time to merge the replicate samples!!!  
+### Time to merge the replicate samples
 ##  In our metadata there's a column called dups (aka duplicates) that we can use to merge our samples
-merged_samps <- merge_samples(good_samples, "dups", fun = "mean") 
-merged_samps <- prune_taxa(taxa_sums(merged_samps) > 0, good_merged)
+good_merged <- merge_samples(good_samples, "dups", fun = "mean") #  
+good_merged <- prune_taxa(taxa_sums(good_merged) > 0, good_merged)
 
 ggplot(data.frame(sum=sample_sums(good_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="red") + ggtitle("Merged Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
+## As we can see, the fun = "mean" DOESN'T WORK.  Instead, merge_samples is only summing the sample counts!
 
 # mean, max and min of sample read counts
 mins<-min(sample_sums(good_merged))
@@ -144,7 +143,7 @@ maxs<-max(sample_sums(good_merged))
 paste(c("The max sample read count is",maxs))
 
 
-### COMBINING AFTER MCMURDIE HOLMES SCALING 
+### AVERAGING AND SCALING THE READ COUNTS 
 otus <- data.frame(otu_table(merged_samps))
 missing_dups <- c("BASE3um", "BSTE", "GULH", "LEEE", "LONE3um","LONE3um", "LONH3um", "SIXE","SIXH")
 otus$names <- row.names(otus)
@@ -153,7 +152,7 @@ dups_only <- otus[!otus$names %in% missing_dups, ] # collect samples that DO hav
 dups_only$names = NULL
 nodups$names = NULL
 rowSums(dups_only)
-dups_half <- round(dups_only/2)
+dups_half <- round(dups_only/2)  #Here we're taking the average.
 norm_all <- rbind(dups_half, nodups)
 sums <- data.frame(rowSums(norm_all))
 colnames(sums) <- c("Totals")
@@ -161,23 +160,45 @@ colnames(sums) <- c("Totals")
 ggplot(sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="gold") + ggtitle("Averaged Merged Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
 
+sums_range <- max(sums) -min(sums)
+paste(c("The range of sample read counts when scaled, merged (summed), averaged and then scaled is",sums_range))
 
+################################################################
 ### COMBINING BEFORE MCMURDIE HOLMES SCALING WITH OUR RAW READS
-# rawotus <- data.frame(t(otu_table(bact_samples)))
-# rawotus$names <- row.names(rawotus)
-# raw_nodups <- rawotus[rawotus$names %in% noreps, ] # collect only the samples that DO NOT have duplicates
-# raw_dups_only <- rawotus[!rawotus$names %in% noreps, ] # collect samples that DO have duplicates
-# raw_dups_only$names = NULL
-# raw_nodups$names = NULL
-# rowSums(raw_dups_only); range(raw_dups_only)
-# ### Need to come back to this.
-# raw_dups_half <- round(raw_dups_only/2)
-# raw_norm_all <- rbind(raw_dups_half, raw_nodups)
-# raw_sums <- data.frame(rowSums(raw_norm_all))
-# colnames(raw_sums) <- c("Totals")
-# 
-# ggplot(raw_sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
-#   geom_histogram(colour="black",fill="orangered") + ggtitle("Averaged Raw Duplicates:  McMurdie & Holme's Scaled Reads") + xlab("Total Sequences")
+noscale_merge <- merge_samples(bact_samples, "dups", fun = "mean") 
+noscale_merge <- prune_taxa(taxa_sums(noscale_merge) > 0, noscale_merge)
+
+##  Sample read counts with merging samples WITHOUT SCALING!!!! 
+# Histogram of RAW sample read counts
+ggplot(data.frame(sum=sample_sums(noscale_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="violetred")  + xlab("Total Sequences") + ggtitle("Merged Raw Reads!")
+
+# mean, max and min of sample read counts
+mins<-min(sample_sums(noscale_merge))
+paste(c("The minimum sample read count is",mins))
+means<-mean(sample_sums(noscale_merge))
+paste(c("The mean sample read count is",means))
+maxs<-max(sample_sums(noscale_merge))
+paste(c("The max sample read count is",maxs))
+
+### Now let's scale our read counts from our MERGED RAW data
+scaled_merged <- scale_reads(physeq = noscale_merge, n = min(sample_sums(noscale_merge)))
+
+##  Sample read counts with merging samples WITHOUT SCALING!!!! 
+# Histogram of RAW sample read counts
+ggplot(data.frame(sum=sample_sums(scaled_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="magenta")  + xlab("Total Sequences") + ggtitle("Raw Merged then Scaled Reads!")
+
+# mean, max and min of sample read counts
+mins<-min(sample_sums(scaled_merged))
+paste(c("The minimum sample read count is",mins))
+means<-mean(sample_sums(scaled_merged))
+paste(c("The mean sample read count is",means))
+maxs<-max(sample_sums(scaled_merged))
+paste(c("The max sample read count is",maxs))
+
+range_scaledmerged <- max(sample_sums(scaled_merged)) - min(sample_sums(scaled_merged))
+paste(c("The range of sample read counts when merged (summed) and then scaled is",range_scaledmerged))
 
 
 # CLUSTERING ANALYSIS
