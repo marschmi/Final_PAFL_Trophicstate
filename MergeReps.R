@@ -5,15 +5,6 @@ install_github("phyloseq", "joey711")
 library(ggplot2)
 library(ape)
 library(vegan)
-library(plyr)
-library(scales)
-library(grid)
-library(reshape2)
-library(data.table)
-library(sciplot)
-library("DESeq2")
-library(tidyr)
-library(dplyr)
 
 
 ### Set the Working Directory
@@ -166,8 +157,14 @@ ggplot(sums, aes(Totals)) + ylab("Number of Sequences per Sample") +
   ggtitle(expression(atop("Averaged Merged Duplicates:\n  McMurdie & Holme's Scaled Reads", atop("Range = 508"), ""))) 
  
 
+data_dup <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata", header = TRUE, sep = "\t")
+data_dup <- sample_data(data_dup)
+tnorm_all <- t(norm_all)
+otu_manual <- otu_table(tnorm_all, taxa_are_rows = TRUE)
+taxo <- tax_table(good_merged)
 
-
+manual_merged <- merge_phyloseq(taxo, otu_manual, data_dup)
+manual_merged <- prune_taxa(taxa_sums(manual_merged) > 0, manual_merged)
 
 
 
@@ -221,23 +218,35 @@ paste(c("The range of sample read counts when merged (summed) and then scaled is
 
 ####  So now we have 2 types of merging:
 ### 1. Where we scaled our read counts, summed our reads between replicates, take the average + rounded, and then re-scale.
+manual_merged
 
+# CLUSTERING ANALYSIS
+manual_otu <- otu_table(manual_merged) 
+norm_manual_bc <- vegdist(manual_otu, method = "bray")  # calculates the Bray-Curtis Distances
 
 ### 2. Where we merged our samples (doubled the reads with samples that had replicates) and then scaled the read counts.
 scaled_merged
+data_dup <- sample_data(data_dup)
+sc_tax <- otu_table(scaled_merged) 
+sc_tax <- tax_table(scaled_merged)
+merged_final <- merge_phyloseq(sc_tax, sc_otu, data_dup)
+scaled_otu <- otu_table(merged_final) 
+norm_scaled_bc <- vegdist(scaled_otu, method = "bray")  # calculates the Bray-Curtis Distances
 
-
-# CLUSTERING ANALYSIS
-#norm_bray <- vegdist(norm_all, method = "bray")  # calculates the Bray-Curtis Distances
-#norm_soren <- vegdist(norm_all, method = "bray", binary = TRUE)
-### Clustering based on 
-#jpeg(filename="clustering_bray+soren.jpeg", width= 45, height=32, units= "cm", pointsize= 14, res=500)
-#par(mfrow = c(2,1))
-#plot(hclust(norm_bray), main = "Bray-Curtis Distance")
-#plot(hclust(norm_soren), main = "Sorensen Distance")
+### Comparing the two methods with a clustering analysis 
+#jpeg(filename="clustering_merged_Comparison.jpeg", width= 45, height=32, units= "cm", pointsize= 14, res=500)
+par(mfrow = c(2,1))
+plot(hclust(norm_manual_bc), main = "Bray-Curtis Distance: Manual")
+plot(hclust(norm_scaled_bc), main = "Bray-Curtis Distance: Scaled")
 #dev.off()
 
+nowin_manual <- subset_samples(manual_merged, names != "WINH" & names != "WINH3um")
+ordu <- ordinate(nowin_manual, "NMDS", "bray")
+plot_ordination(nowin_manual, ordu, shape = "trophicstate", color = "quadrant") + geom_point(size = 6) + ggtitle("Manual Merged")
 
+nowin_scaled <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
+ordu2 <- ordinate(nowin_scaled, "NMDS", "bray")
+plot_ordination(nowin_scaled, ordu2, shape = "trophicstate", color = "quadrant") + geom_point(size = 6) + ggtitle("Scaled Merged")
 
 
 
