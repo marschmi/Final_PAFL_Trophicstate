@@ -444,11 +444,11 @@ for (i in 1:100) {
   evenness[,i] <- even
 }
 
+#write.table(richness, "~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100", row.names = TRUE)
+#write.table(evenness, "~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100", row.names = TRUE)
 
-#write.table(richness, "ObservedRichness100", row.names = TRUE)
-#write.table(evenness, "InvSimpson100", row.names = TRUE)
-richness <- read.table("ObservedRichness100", header = TRUE)
-evenness <- read.table("InvSimpson100", header = TRUE)
+richness <- read.table("~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100", header = TRUE)
+evenness <- read.table("~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100", header = TRUE)
 
 
 
