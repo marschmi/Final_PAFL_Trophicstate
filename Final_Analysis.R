@@ -149,9 +149,70 @@ merged_final
 nowin_scaled <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
 
 #########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
-normOTU <- otu_table(nowin_scaled)
+nowinOTU <- otu_table(nowin_scaled)
 #weighted
-nmds_bray <- metaMDS(normOTU, distance="bray")
+norm_bray <- vegdist(nowinOTU, method = "bray")  # calculates the Bray-Curtis Distances
+bray_pcoa <- pcoa(norm_bray)
+bray_pcoa2 <- bray_pcoa$vectors
+bray_pcoa3 <- data.frame(bray_pcoa2[, 1:3])
+bray_pcoa3$names <- row.names(bray_pcoa3)
+bray_pcoa4 <- makeCategories_dups(bray_pcoa3)
+bray_pcoa4$quadrant <- factor(bray_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+
+pcoa_BC <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape = trophicstate)) +
+  xlab("PCoA1 [23.1%]") + ylab("PCoA2 [17.9%]") + #ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+                     values = c(15, 19, 17)) +
+  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "right"); pcoa_BC
+
+##########  SORENSEN'S DISSIMILARITY
+norm_soren <- vegdist(nowinOTU, method = "bray", binary = TRUE)
+soren_pcoa <- pcoa(norm_soren)
+soren_pcoa2 <- soren_pcoa$vectors
+soren_pcoa3 <- data.frame(soren_pcoa2[, 1:3])
+soren_pcoa3$names <- row.names(soren_pcoa3)
+soren_pcoa4 <- makeCategories_dups(soren_pcoa3)
+soren_pcoa4$quadrant <- factor(soren_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+
+pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape = trophicstate)) +
+  xlab("PCoA1 [23.1%]") + ylab("PCoA2 [17.9%]") + #ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+                     values = c(15, 19, 17)) +
+  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "right"); pcoa_soren
+
+
+
+
+
+
+
+
+
+nmds_bray <- metaMDS(normOTU, distance="bray")  #, autotransform = FALSE
 nmds_bray <- data.frame(nmds_bray$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
 nmds_bray$names<-row.names(nmds_bray) #new names column
 nmds_bray <- makeCategories_dups(nmds_bray) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
