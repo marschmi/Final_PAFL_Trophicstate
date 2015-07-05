@@ -70,3 +70,89 @@ bact_samples2 <-subset_taxa(bact_samples, Class != "Chloroplast")
 
 #Summary of my good_samples object
 bact_samples
+
+
+## Raw Sample read counts
+# Histogram of RAW sample read counts
+ggplot(data.frame(sum=sample_sums(bact_samples)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="dodgerblue2", binwidth = 750)  + xlab("Total Sequences") + ggtitle("Raw Sample Read Counts")
+
+# mean, max and min of sample read counts
+mins<-min(sample_sums(bact_samples))
+paste(c("The minimum sample read count is",mins))
+means<-mean(sample_sums(bact_samples))
+paste(c("The mean sample read count is",means))
+maxs<-max(sample_sums(bact_samples))
+paste(c("The max sample read count is",maxs))
+
+
+################################################################
+### COMBINING BEFORE MCMURDIE HOLMES SCALING WITH OUR RAW READS
+noscale_merge <- merge_samples(bact_samples, "dups", fun = "mean") 
+noscale_merge <- prune_taxa(taxa_sums(noscale_merge) > 0, noscale_merge)
+range_nonscale <- max(sample_sums(noscale_merge)) - min(sample_sums(noscale_merge)); range_nonscale
+
+##  Sample read counts with merging samples WITHOUT SCALING!!!! 
+# Histogram of RAW sample read counts
+ggplot(data.frame(sum=sample_sums(noscale_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="violetred")  + xlab("Total Sequences") + 
+  ggtitle(expression(atop("Merged Raw Reads", atop("Range = 54,691"), ""))) 
+
+# mean, max and min of sample read counts
+mins<-min(sample_sums(noscale_merge))
+paste(c("The minimum sample read count is",mins))
+means<-mean(sample_sums(noscale_merge))
+paste(c("The mean sample read count is",means))
+maxs<-max(sample_sums(noscale_merge))
+paste(c("The max sample read count is",maxs))
+
+### Now let's scale our read counts from our MERGED RAW data
+scaled_merged <- scale_reads(physeq = noscale_merge, n = min(sample_sums(noscale_merge)))
+
+##  Sample read counts with merging samples WITH SCALING!!!! 
+# Histogram of RAW sample read counts
+#jpeg(filename="raw_merged_scaled.jpeg", width= 20, height=15, units= "cm", pointsize= 14, res=500)
+ggplot(data.frame(sum=sample_sums(scaled_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="magenta", binwidth = 15)  + xlab("Total Sequences") + 
+  scale_x_continuous(seq(14600, 15200, by =100), labels = seq(14600, 15100, by =100)) +
+  ggtitle(expression(atop("Raw Merged then Scaled Reads", atop("Range = 397"), ""))) 
+#dev.off()
+
+
+# mean, max and min of sample read counts
+mins<-min(sample_sums(scaled_merged))
+paste(c("The minimum sample read count is",mins))
+means<-mean(sample_sums(scaled_merged))
+paste(c("The mean sample read count is",means))
+maxs<-max(sample_sums(scaled_merged))
+paste(c("The max sample read count is",maxs))
+
+range_scaledmerged <- max(sample_sums(scaled_merged)) - min(sample_sums(scaled_merged))
+paste(c("The range of sample read counts when merged (summed) and then scaled is",range_scaledmerged))
+
+
+###  Time to create our phyloseq object with the merged and scaled sample reads.
+data_dup <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup) <- data_dup$names
+data_dup$quadrant <- factor(data_dup$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+data_dup <- sample_data(data_dup)  # Metadata in our phyloseq object
+sc_otu <- otu_table(scaled_merged)  # OTU table in our phyloseq object
+sc_tax <- tax_table(scaled_merged)  # Taxonomy Table in our phyloseq object
+merged_final <- merge_phyloseq(sc_tax, sc_otu, data_dup) 
+
+# Our phyloseq object!
+merged_final 
+
+
+
+
+
+
+
+
+
+
+
+scaled_otu <- otu_table(merged_final)  
+norm_scaled_bc <- vegdist(scaled_otu, method = "bray", binary = FALSE)   # calculates the Bray-Curtis Distances
+
