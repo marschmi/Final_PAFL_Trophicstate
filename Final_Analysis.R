@@ -1109,7 +1109,7 @@ topbot_phylum <- multiplot(phyprodPA_plot, phyprodFL_plot, phyunprodPA_plot, phy
 ###########################################################PROD VS OLIGO
 #1. Top PA = 17 samples
 phytopPA <- subset_samples(good_phylum_nosherwin, limnion == "Epilimnion" & filter == "Particle") ## DOES NOT WORK!!!!!!!!!!
-de_phytopPA <- deSEQ(phytopPA, ~ ProdLevel)
+de_phytopPA <- deSEQ(phytopPA, ~ ProdLevel)   ## DOES NOT WORK!!!!!!!!!!
 phytopPA_plot <- plot_phylum_deSEQ(de_phytopPA, "Productive vs Unproductive:  PA Surface (Phylum)")
 
 #2 BOTTOM PA = 17 samples
@@ -1119,7 +1119,7 @@ phybotPA_plot <- plot_phylum_deSEQ(de_phybotPA, "Productive vs Unproductive:  PA
 
 #3 TOP FL = 17 samples
 phytopFL <- subset_samples(good_phylum_nosherwin, limnion == "Epilimnion" & filter == "Free") 
-de_phytopFL <- deSEQ(phytopFL, ~ ProdLevel)
+de_phytopFL <- deSEQ(phytopFL, ~ ProdLevel)  ## DOES NOT WORK!!!!!!!!!!
 phytopFL_plot <- plot_phylum_deSEQ(de_phytopFL, "Productive vs Unproductive:  FL Surface (Phylum)")
 
 #4 Bottom FL = 16 samples
@@ -1127,8 +1127,7 @@ phybotFL <- subset_samples(good_phylum_nosherwin, limnion == "Hypolimnion" & fil
 de_phybotFL <- deSEQ(phybotFL, ~ ProdLevel)
 phybotFL_plot <- plot_phylum_deSEQ(de_phybotFL, "Productive vs Unproductive:  FL Bottom (Phylum)")
 
-prodoligo_phylum <- multiplot(phybotFL_plot, phytopFL_plot, phybotPA_plot, cols = 2)
-
+prodoligo_phylum <- multiplot(phybotFL_plot, phybotPA_plot, cols = 2)
 
 
 
@@ -1170,23 +1169,20 @@ topbot4$Habitat <- "Top vs. Bottom: FL Unproductive"
 troph2 <- subset(de_phybotPA, select = c(Phylum, log2FoldChange, padj))
 troph2$Habitat <- "Prod vs. Unprod: PA Bottom"
 # Free-Living TOP 
-troph3 <- subset(de_phytopFL, select = c(Phylum, log2FoldChange, padj))
-troph3$Habitat <- "Prod vs. Unprod: FL Top"
+#troph3 <- subset(de_phytopFL, select = c(Phylum, log2FoldChange, padj))   ## NO SIGNIFICANT CHANGES HERE!
+#troph3$Habitat <- "Prod vs. Unprod: FL Top"
 # Free-Living BOTTOM
 troph4 <- subset(de_phybotFL, select = c(Phylum, log2FoldChange, padj))
 troph4$Habitat <- "Prod vs. Unprod: FL Bottom"
-
-trophs <- rbind(troph2, troph3, troph4)
-newlog2foldchange <- as.numeric(trophs$log2FoldChange * -1)
+trophs <- rbind(troph2, troph4)
+newlog2foldchange <- as.numeric(trophs$log2FoldChange * -1)  ##  To make PRODUCTIVE changes POSITIVE 
 trophs$log2FoldChange <- newlog2foldchange
 
 df_ratio <-rbind(pafl_topprod, pafl_topUNprod, pafl_botprod, pafl_botUNprod,pafl_isothermal,
                  topbot1, topbot2, topbot3, topbot4,
                  trophs)
 
-min_log <- min(df_ratio$log2FoldChange)
-max_log <- max(df_ratio$log2FoldChange)
-paste(c("The range of the log2foldChange is",min_log, "to", max_log))
+paste(c("The range of the log2foldChange is",min(df_ratio$log2FoldChange), "to", max(df_ratio$log2FoldChange)))
 
 #Split of the habitat column to 2 columns named comparison and habitat
 split_cols <- colsplit(df_ratio$Habitat, ":", c("Comparison", "Habitat"))
@@ -1197,7 +1193,7 @@ mf_labeller <- function(var, value){
   value <- as.character(value)
   if (var=="Comparison") { 
     value[value=="PA vs. FL"] <- "Particle-Associated \n vs. Free-Living"
-    value[value=="Top vs. Bottom"]   <- "Bottom \n vs. Top"
+    value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. Epilimnion"
     value[value=="Prod vs. Unprod"]   <- "Productive  vs.\nUnproductive"
   }
   return(value)
@@ -1242,75 +1238,28 @@ ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) +
 
 
 
-phy_stats <- ddply(sub_phy_melt_totals, c("Phylum"), summarise, 
-                   N = length(PercentAbund),
-                   PercentPhy = mean(PercentAbund),
-                   sd   = sd(PercentAbund),
-                   se   = sd / sqrt(N))
-
-
-
-abund <- subset(phy_stats,PercentPhy > 0.001)
-#abund <- abund[1:38,]
-abund <- abund[with(abund, order(-PercentPhy)), ]
-
-
-
-
-abund$Phylum <- factor(abund$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria",
-                                               "Actinobacteria", "Planctomycetes", "Alphaproteobacteria",  "unclassified",
-                                               "Gammaproteobacteria", "Deltaproteobacteria", "Chloroflexi", "Lentisphaerae",
-                                               "Chlorobi","Firmicutes", "Armatimonadetes", "Acidobacteria", "Spirochaetae", 
-                                               "NPL-UPA2", "Candidate_division_OD1", 
-                                               "Deinococcus-Thermus", "Candidate_division_OP3", "TM6","Chlamydiae",
-                                               "Epsilonproteobacteria", "TA18",
-                                               "Fibrobacteres", "Candidate_division_SR1",
-                                               "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria",
-                                               "Candidate_division_WS3", "Tenericutes", "Elusimicrobia",
-                                               "WCHB1-60", "Deferribacteres", "Candidate_division_TM7", "Candidate_division_OP8",
-                                               "Thermotogae")) #, "unclassified"))
-abund$Phylum = with(abund, factor(Phylum, levels = rev(levels(Phylum))))
-
-#Relative abundance plot 
-abund_plot <- ggplot(abund, aes(y=PercentPhy , x=Phylum))  +
-  #geom_boxplot(fill = "magenta4", colour = "black") + 
-  geom_bar(stat="identity", position=position_dodge(),  fill = "magenta4", colour = "black") +
-  theme_bw() + ggtitle("Phyla Above 0.1% in All Samples") +
-  xlab("Phylum") + ylab("Mean Relative Abundance (%)") +
-  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25) + coord_flip() +
-  theme(axis.title.x = element_text(face="bold", size=16),
-        axis.text.x = element_text(angle=0, colour = "black", size=14),
-        axis.text.y = element_text(colour = "black", size=14),
-        axis.title.y = element_text(face="bold", size=16),
-        plot.title = element_text(face="bold", size = 20),
-        legend.title = element_text(size=12, face="bold"),
-        legend.text = element_text(size = 12),
-        legend.position="none"); abund_plot
-
-
-
-
 #################################################################################
 #################################################################################
 dfrat$Habitat <- as.character(dfrat$Habitat)
 dfrat$Habitat[dfrat$Habitat == " Mixed"] <- "Mixed"
-dfrat$Habitat[dfrat$Habitat == " Top Productive"] <- "Top Productive"
-dfrat$Habitat[dfrat$Habitat == " Top Unproductive"] <- "Top Unproductive"
-dfrat$Habitat[dfrat$Habitat == " Bottom Productive"] <- "Bottom Productive"
-dfrat$Habitat[dfrat$Habitat == " Bottom Unproductive"] <- "Bottom Unproductive"
-dfrat$Habitat[dfrat$Habitat == " PA Productive"] <- "Productive Particle"
-dfrat$Habitat[dfrat$Habitat == " PA Unproductive"] <- "Unproductive Particle"
-dfrat$Habitat[dfrat$Habitat == " FL Productive"] <- "Productive Free"
-dfrat$Habitat[dfrat$Habitat == " FL Unproductive"] <- "Unproductive Free"
-dfrat$Habitat[dfrat$Habitat == " PA Bottom"] <- "Bottom Particle"
-dfrat$Habitat[dfrat$Habitat == " FL Top"] <- "Top Free"
-dfrat$Habitat[dfrat$Habitat == " FL Bottom"] <- "Bottom Free"
-dfrat$Habitat[dfrat$Habitat == " PA Bottom"] <- "Particle Bottom"
+dfrat$Habitat[dfrat$Habitat == " Top Productive"] <- "Epilimnion Productive"
+dfrat$Habitat[dfrat$Habitat == " Top Unproductive"] <- "Epilimnion Unproductive"
+dfrat$Habitat[dfrat$Habitat == " Bottom Productive"] <- "Hypolimnion Productive"
+dfrat$Habitat[dfrat$Habitat == " Bottom Unproductive"] <- "Hypolimnion Unproductive"
+dfrat$Habitat[dfrat$Habitat == " PA Productive"] <- "Productive \nParticle-Associated"
+dfrat$Habitat[dfrat$Habitat == " PA Unproductive"] <- "Unproductive \nParticle-Associated"
+dfrat$Habitat[dfrat$Habitat == " FL Productive"] <- "Productive \nFree-Living"
+dfrat$Habitat[dfrat$Habitat == " FL Unproductive"] <- "Unproductive \nFree-Living"
+dfrat$Habitat[dfrat$Habitat == " PA Top"] <- "Particle-Associated \nEpilimnion"
+dfrat$Habitat[dfrat$Habitat == " FL Top"] <- "Free-Living \nEpilimnion"
+dfrat$Habitat[dfrat$Habitat == " FL Bottom"] <- "Free-Living \nHypolimnion"
+dfrat$Habitat[dfrat$Habitat == " PA Bottom"] <- "Particle-Associated \nHypolimnion"
 
-dfrat$Habitat <- factor(dfrat$Habitat,levels = c("Top Productive", "Bottom Productive", "Mixed", "Top Unproductive", "Bottom Unproductive",
-                                                 "Top Free", "Bottom Free", "Bottom Particle", 
-                                                 "Productive Free", "Productive Particle", "Unproductive Free", "Unproductive Particle"))
+dfrat$Habitat <- factor(dfrat$Habitat,levels = c("Epilimnion Productive", "Hypolimnion Productive", "Mixed", "Epilimnion Unproductive", "Hypolimnion Unproductive",
+                                                 "Particle-Associated \nHypolimnion", "Free-Living \nEpilimnion", "Free-Living \nHypolimnion", 
+                                                 "Productive \nParticle-Associated", "Productive \nFree-Living", "Unproductive \nParticle-Associated", "Unproductive \nFree-Living"))
 
+jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.4_heat_only.jpeg", width= 30, height=35, units= "cm", pointsize= 8, res=250)
 heat <- ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
   scale_fill_gradient2(name = "Odds\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 2, barheight = 14)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + 
@@ -1327,7 +1276,8 @@ heat <- ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChang
         axis.title.y = element_text(face="bold", size=16),
         plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
         strip.text.x = element_text(size=14, face = "bold", colour = "black"),
-        strip.background = element_blank())
+        strip.background = element_blank()); heat
+dev.off()
 
 #http://stackoverflow.com/questions/4559229/drawing-pyramid-plot-using-r-and-ggplot2
 
