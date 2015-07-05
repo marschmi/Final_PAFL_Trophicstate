@@ -877,8 +877,90 @@ prodbeta_plot <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = tr
 ####################################################  ALPH + BETA COMBINED DIVERSITY  ####################################################
 ####################################################  ALPH + BETA COMBINED DIVERSITY  ####################################################
 ####################################################  ALPH + BETA COMBINED DIVERSITY  ####################################################
+prod_even <- subset(prodalpha_stats, Test == "Simpson's Evenness")
+prod_richobs <-subset(prodalpha_stats, Test == "Observed Richness") 
+
+prod_invsimps <- ggplot(prod_even, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5) +
+  facet_grid(. ~ trophicstate, scales="free", space="free_x") + scale_y_continuous(breaks=seq(0, 0.10, 0.02), lim = c(0, 0.1)) +
+  geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
+  xlab("Habitat") + ylab("Simpson's Evenness") + theme_bw() + 
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("", "", "", "",
+                            "", "", "", "",
+                            "Particle", "Free")) +
+  theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank(),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        strip.background = element_blank(), 
+        plot.margin = unit(c(0.1, 0.2, -0.44, 0.225), "cm"), #top, right, bottom, left
+        strip.background = element_rect(colour="black"),
+        legend.position="none");prod_invsimps
+
+prod_obs <- ggplot(prod_richobs, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5) +
+  facet_grid(. ~trophicstate, scales="free", space="free_x") + 
+  geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
+  xlab("  ") + ylab("Observed Richness") + theme_bw() + scale_y_continuous(breaks=seq(400, 1200, 200), lim = c(300,1225)) +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("", "", "", "",
+                            "", "", "", "",
+                            "Particle-\nAssociated", "Free-\nLiving")) +
+  theme(axis.title.x = element_text(face="bold", size=16), axis.ticks.x = element_blank(), 
+        axis.text.x = element_text(angle=60, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        plot.margin = unit(c(-0.24, 0.2, -0.75, 0.1), "cm"), #top, right, bottom, left
+        strip.background = element_blank(), strip.text = element_blank(),
+        legend.position="none"); prod_obs
 
 
+prodbeta_plot2 <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+  #geom_text(label = "C", x = "Productive Epilimnion Particle", y = max(ddply_prodbeta$mean)) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"),
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
+  xlab("Habitat") + ylab("Bray Curtis Dissimilarity") + theme_bw() +  #scale_fill_brewer(palette="Paired") + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=60, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        axis.ticks.x = element_blank(),
+        strip.background = element_blank(), strip.text = element_blank(),
+        plot.margin = unit(c(-2.9, 3.95, 0.2, 0.5), "cm"),  #top, right, bottom, left   6.55
+        legend.position="none"); prodbeta_plot2  
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3.jpeg", width= 20, height=25, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(3,1,height=c(0.3,0.35, 0.35))))
+print(prod_invsimps, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(prod_obs, vp=viewport(layout.pos.row=2,layout.pos.col=1))
+print(prodbeta_plot2, vp=viewport(layout.pos.row=3,layout.pos.col=1))
+#dev.off()
 
 
 
