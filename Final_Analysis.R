@@ -476,14 +476,22 @@ alpha_stats$ProdLevel[alpha_stats$trophicstate == "Eutrophic"] <- "Productive"
 alpha_stats$ProdLevel[alpha_stats$trophicstate == "Mesotrophic"] <- "Productive"
 alpha_stats$ProdLevel[alpha_stats$trophicstate == "Oligotrophic"] <- "Unproductive"
 alpha_stats$ProdLevel[alpha_stats$lakenames == "Sherman"] <- "Mixed"
+alpha_stats$trophicstate[alpha_stats$lakenames == "Sherman"] <- "Mixed"
 
 
+####  Add all information together!
+for(i in 1:length(alpha_stats$limnion)){
+  alpha_stats$troph_lim[i]<-paste(as.character(alpha_stats$trophicstate[i]),
+                                  as.character(alpha_stats$limnion[i]),
+                                  as.character(alpha_stats$filter[i]))}
 
-
-
-
-
-
+### Observed Richness and InvSimpson for Troph_lim
+Meantroph_lim <- ddply(alpha_stats, ~Test+troph_lim, function(x){data.frame(Meantroph_lim = mean(x$mean))})
+alpha_stats <- join(alpha_stats,Meantroph_lim) 
+SEtroph_lim <- ddply(alpha_stats, ~Test+troph_lim, function(x){data.frame(SEtroph_lim = se(x$mean))})
+alpha_stats <- join(alpha_stats,SEtroph_lim)
+SDtroph_lim <- ddply(alpha_stats, ~Test+troph_lim, function(x){data.frame(SDtroph_lim = sd(x$mean))})
+alpha_stats <- join(alpha_stats,SDtroph_lim)
 
 
 
