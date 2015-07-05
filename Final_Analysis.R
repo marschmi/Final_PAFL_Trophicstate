@@ -456,7 +456,7 @@ rich_stats[,1] = apply(richness, 1, mean)
 #rich_stats[,2] = apply(richness, 1, sd)
 rich_stats = data.frame(row.names(richness), rich_stats)
 colnames(rich_stats) = c("samples","mean")
-rich_stats$Test <- "ObsRich"
+rich_stats$Test <- "Observed Richness"
 
 # Create a new matrix to hold the means and standard deviations of the evenness estimates
 even_stats = matrix(nrow = nrow(evenness), ncol = 1)
@@ -464,7 +464,7 @@ even_stats[,1] = apply(evenness, 1, mean)
 #even_stats[,2] = apply(evenness, 1, sd)
 even_stats = data.frame(row.names(evenness), even_stats)
 colnames(even_stats) = c("samples","mean")
-even_stats$Test <- "InvSimpson"
+even_stats$Test <- "Inverse Simpson"
 
 
 ###  Add SIMPSON'S EVENNESS!
@@ -473,7 +473,7 @@ simps_even <- data.frame(matrix(nrow = nrow(evenness), ncol = 3))
 colnames(simps_even) = c("samples","mean", "Test")
 simps_even$samples <- even_stats$samples
 simps_even$mean <-  even_stats$mean/rich_stats$mean
-simps_even$Test <- "SimpsEven"
+simps_even$Test <- "Simpson's Evenness"
 
 #Combine the rich.stats and the even.stats dataframes
 alpha_stats <- rbind(rich_stats, even_stats, simps_even)
@@ -511,8 +511,121 @@ alpha_stats <- join(alpha_stats,SEfilter_troph)
 SDfilter_troph <- ddply(alpha_stats, ~Test+filter+trophicstate, function(x){data.frame(SDfilter_troph = sd(x$mean))})
 alpha_stats <- join(alpha_stats,SDfilter_troph)
 
+## Make sure our factors are in the right order!
+alpha_stats$trophicstate <-factor(alpha_stats$trophicstate,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+alpha_stats$troph_lim <-factor(alpha_stats$troph_lim,levels=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                                              "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                                              "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                                              "Mixed Mixed Particle", "Mixed Mixed Free"))
 
 
-scaled_otu <- otu_table(merged_final)  
-norm_scaled_bc <- vegdist(scaled_otu, method = "bray", binary = FALSE)   # calculates the Bray-Curtis Distances
+alpha_filt <- ggplot(alpha_stats, aes(x = filter, y = Meanfilter_troph, color = filter)) + geom_point(size = 5, alpha = 0.7) +
+  facet_grid(Test ~trophicstate, scales="free", space="free_x") + ggtitle("Rarefied: SD") +
+  geom_errorbar(aes(ymin=Meanfilter_troph-SDfilter_troph, ymax=Meanfilter_troph+SDfilter_troph), width=.2, position=position_dodge(.9)) +
+  xlab("Habitat") + ylab("Within Sample Diversity") + theme_bw() + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(), strip.text = element_text(size=14, face="bold"),
+        legend.position="none"); alpha_filt
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3b_alpha_TROPH_SD.jpeg", width= 28, height=28, units= "cm", pointsize= 14, res=500)
+facet_alpha_stats <- ggplot(alpha_stats, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
+  facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
+  geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
+  ggtitle("Alpha Diversity: Standard Deviation") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                         "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                         "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink","orange","orange","orange","orange", 
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                            "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                            "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none"); facet_alpha_stats
+#dev.off()
+
+
+
+####   ALPHA DIVERSITY:  COMBINING EUTROPHIC AND MESOTROPHIC
+####   ALPHA DIVERSITY:  COMBINING EUTROPHIC AND MESOTROPHIC
+####   ALPHA DIVERSITY:  COMBINING EUTROPHIC AND MESOTROPHIC
+prodalpha_stats <- subset(alpha_stats, select= c(1:10))
+prodalpha_stats$trophicstate <- as.character(prodalpha_stats$trophicstate)
+prodalpha_stats$trophicstate[prodalpha_stats$trophicstate == "Mesotrophic"] <- "Eutrophic"
+prodalpha_stats$trophicstate[prodalpha_stats$trophicstate == "Eutrophic"] <- "Productive"
+prodalpha_stats$trophicstate[prodalpha_stats$trophicstate == "Oligotrophic"] <- "Unproductive"
+unique(prodalpha_stats$trophicstate)
+
+for(i in 1:length(prodalpha_stats$limnion)){
+  prodalpha_stats$troph_lim[i]<-paste(as.character(prodalpha_stats$trophicstate[i]),
+                                      as.character(prodalpha_stats$limnion[i]),
+                                      as.character(prodalpha_stats$filter[i]))}
+
+### Observed Richness and InvSimpson for Troph_lim
+Meantroph_lim <- ddply(prodalpha_stats, ~Test+troph_lim, function(x){data.frame(Meantroph_lim = mean(x$mean))})
+prodalpha_stats <- join(prodalpha_stats,Meantroph_lim) 
+SEtroph_lim <- ddply(prodalpha_stats, ~Test+troph_lim, function(x){data.frame(SEtroph_lim = se(x$mean))})
+prodalpha_stats <- join(prodalpha_stats,SEtroph_lim)
+SDtroph_lim <- ddply(prodalpha_stats, ~Test+troph_lim, function(x){data.frame(SDtroph_lim = sd(x$mean))})
+prodalpha_stats <- join(prodalpha_stats,SDtroph_lim)
+
+
+prodalpha_stats$trophicstate <-factor(prodalpha_stats$trophicstate,levels=c("Productive", "Unproductive", "Mixed"))
+prodalpha_stats$troph_lim <-factor(prodalpha_stats$troph_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3a_alpha_PROD_SD.jpeg", width= 25, height=28, units= "cm", pointsize= 14, res=500)
+facet_prod_stats <- ggplot(prodalpha_stats, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
+  facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
+  geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
+  ggtitle("Alpha Diversity: Standard Deviation") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none"); facet_prod_stats
+#dev.off()
+
+
+
+
 
