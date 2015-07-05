@@ -144,13 +144,147 @@ merged_final <- merge_phyloseq(sc_tax, sc_otu, data_dup)
 # Our phyloseq object!
 merged_final 
 
-###################################################################
+
+
+####################################################  DEPTH PROFILE  ####################################################
+####################################################  DEPTH PROFILE  ####################################################
+####################################################  DEPTH PROFILE  ####################################################
+
+profile <- read.csv(file = "~/Final_PAFL_Trophicstate/raw_data/AllLakes_depthprofile.csv", header = TRUE); 
+profile <- subset(profile, select = c('lakename',"trophicstate", "depth", "temp", "DO", "pH", "SpC"))
+#profile$depth <- as.numeric(profile$depth)
+#profile$depth <- as.factor(profile$depth)
+profile$DO. = NULL
+
+profile$trophicstate <- as.character(profile$trophicstate)
+profile$trophicstate[profile$trophicstate == "Eutrophic"] <- "Productive"
+profile$trophicstate[profile$trophicstate == "Mesotrophic"] <- "Productive"
+profile$trophicstate[profile$trophicstate == "Oligotrophic"] <- "Unproductive"
+profile$trophicstate[profile$trophicstate == "Mixed"] <- "Mixed"
+
+### SUMMARIZING WITH DDPLY 
+# STATS ON DO
+ave_prof_DO <- ddply(profile, c("depth", "trophicstate"), summarise, 
+                     N = length(DO),
+                     mean = mean(DO),
+                     sd   = sd(DO),
+                     se   = sd / sqrt(N))
+ave_prof_DO$Variable <- "DO"
+
+# STATS ON TEMP
+ave_prof_temp <- ddply(profile, c("depth", "trophicstate"), summarise, 
+                       N = length(temp),
+                       mean = mean(temp),
+                       sd   = sd(temp),
+                       se   = sd / sqrt(N))
+ave_prof_temp$Variable <- "temp"
+
+# STATS ON pH
+ave_prof_pH <- ddply(profile, c("depth", "trophicstate"), summarise, 
+                     N = length(pH),
+                     mean = mean(pH),
+                     sd   = sd(pH),
+                     se   = sd / sqrt(N))
+ave_prof_pH$Variable <- "pH"
+
+# STATS ON SpC
+ave_prof_SpC <- ddply(profile, c("depth", "trophicstate"), summarise, 
+                      N = length(SpC),
+                      mean = mean(SpC),
+                      sd   = sd(SpC),
+                      se   = sd / sqrt(N))
+ave_prof_SpC$Variable <- "SpC"
+
+mean_profile <- rbind(ave_prof_DO, ave_prof_temp, ave_prof_pH, ave_prof_SpC)
+
+profile_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="Variable") { 
+    value[value=="temp"] <- "Temperature \n (Celsius)"
+    value[value=="DO"]   <- "Dissolved Oxygen \n (mg/L)"
+    value[value=="pH"]   <- "pH"
+    value[value=="SpC"]   <- "Specific Conductivity \n (uS/cm)"
+  }
+  return(value)
+}
+
+mean_profile$Variable <-factor(mean_profile$Variable,levels=c("temp", "DO", "pH", "SpC"))
+mean_profile$trophicstate <-factor(mean_profile$trophicstate,levels=c("Productive", "Unproductive", "Mixed"))
+mean_profile13 <- subset(mean_profile, depth < 13.1)
+
+## AVERAGE PLOT!
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
+ggplot(mean_profile13, aes(x=mean, y = depth, color = trophicstate)) +   
+  facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
+  geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
+  theme_bw() +  geom_point(size=4, alpha = 0.8) + geom_hline(h=0) +
+  scale_y_reverse(breaks=seq(0, 30, 2), lim = c(14,0), expand = c(0, 0)) + 
+  geom_errorbarh(width=.1, aes(xmin = mean - se, xmax = mean + se)) +
+  scale_color_manual(name = "", breaks = c("Productive", "Unproductive", "Mixed"), 
+                     labels = c("Productive", "Unproductive", "Mixed"), 
+                     values = c("deeppink","turquoise3", "blue")) +
+  #scale_color_manual(name = "", breaks = c("Eutrophic", "Mesotrophic","Oligotrophic", "Mixed"), 
+  #                   labels = c("Eutrophic", "Mesotrophic","Oligotrophic", "Mixed"), 
+  #                   values = c("deeppink", "orange","turquoise3", "blue")) +
+  theme(axis.title.x = element_text(face="bold", size=14),
+        axis.text.x = element_text(colour = "black",size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position = c(0.81, 0.08));
+#dev.off()
+
+# ALL LAKES 
+library(tidyr)
+library(dplyr)
+profile_all <- profile %>%  gather(Variable, Value, 4:7)
+profile_all$lakename <- as.character(profile_all$lakename)
+profile_all$lakename[profile_all$lakename == "WIN"] <- "Wintergreen"
+profile_all$lakename[profile_all$lakename == "SIX"] <- "Sixteen"
+profile_all$lakename[profile_all$lakename == "SHE"] <- "Sherman"
+profile_all$lakename[profile_all$lakename == "PAY"] <- "Payne"
+profile_all$lakename[profile_all$lakename == "LON"] <- "Little Long"
+profile_all$lakename[profile_all$lakename == "LEE"] <- "Lee"
+profile_all$lakename[profile_all$lakename == "GUL"] <- "Gull"
+profile_all$lakename[profile_all$lakename == "BRI"] <- "Bristol"
+profile_all$lakename[profile_all$lakename == "BAK"] <- "Baker"
+profile_all$lakename[profile_all$lakename == "BAS"] <- "Baseline"
+profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
+
+## All LAKES
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.S1_AllLake_profiles.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
+ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
+  facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
+  geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
+  theme_bw() +  geom_point(size=4, alpha = 0.8) + geom_hline(h=0) +
+  scale_y_reverse(breaks=seq(0, 30, 5), lim = c(30,0), expand = c(0, 0)) + 
+  scale_color_manual(name = "Lake Name", 
+                     labels = c("Baker", "Baseline", "Bassett", "Bristol", "Gull", "Lee", "Little Long", "Payne", "Sherman", "Sixteen", "Wintergreen"), 
+                     values = c("blue", "red", "black", "forestgreen","violet","limegreen", "purple", "orange", "maroon1", "turquoise3", "thistle4")) +
+  theme(axis.title.x = element_text(face="bold", size=14),
+        axis.text.x = element_text(colour = "black",size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position=c(0.81, 0.215));
+#dev.off()
+
+
+####################################################  ORDINATIONS  ####################################################
+####################################################  ORDINATIONS  ####################################################
+####################################################  ORDINATIONS  ####################################################
 ########  NMDS + PCoA Plots
 ### Get rid of the Wintergreen HYPOLIMNION Samples
-nowin_scaled <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
+nowin_merged <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
 
 #########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
-nowinOTU <- otu_table(nowin_scaled)
+nowinOTU <- otu_table(nowin_merged)
 #weighted
 norm_bray <- vegdist(nowinOTU, method = "bray")  # calculates the Bray-Curtis Distances
 bray_pcoa <- pcoa(norm_bray)
@@ -265,138 +399,68 @@ multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
 
+####################################################  ALPHA DIVERSITY  ####################################################
+####################################################  ALPHA DIVERSITY  ####################################################
+####################################################  ALPHA DIVERSITY  ####################################################
+# For alpha diversity we will RAREFY our phyloseq object.  Our raw-data phyloseq object was:
+noscale_merge  # Raw Merged Samples
 
-####################################################  DEPTH PROFILE  ####################################################
-####################################################  DEPTH PROFILE  ####################################################
-####################################################  DEPTH PROFILE  ####################################################
+noscale_nowin <- subset_samples(noscale_merge, names != "WINH" & names != "WINH3um")
+noscale_nowin <- prune_taxa(taxa_sums(noscale_nowin) > 0, noscale_nowin)
 
-profile <- read.csv(file = "~/Final_PAFL_Trophicstate/raw_data/AllLakes_depthprofile.csv", header = TRUE); 
-profile <- subset(profile, select = c('lakename',"trophicstate", "depth", "temp", "DO", "pH", "SpC"))
-#profile$depth <- as.numeric(profile$depth)
-#profile$depth <- as.factor(profile$depth)
-profile$DO. = NULL
+#Data Import for rarefied data 
+nowinOTU
+#t_rareshare <- t(shared)
+#OTU = otu_table(t_rareshare, taxa_are_rows = TRUE)
+#tax <- import_mothur(mothur_constaxonomy_file = "stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy")#
 
-profile$trophicstate <- as.character(profile$trophicstate)
-profile$trophicstate[profile$trophicstate == "Eutrophic"] <- "Productive"
-profile$trophicstate[profile$trophicstate == "Mesotrophic"] <- "Productive"
-profile$trophicstate[profile$trophicstate == "Oligotrophic"] <- "Unproductive"
-profile$trophicstate[profile$trophicstate == "Mixed"] <- "Mixed"
+#TAX = tax_table(tax)
 
-### SUMMARIZING WITH DDPLY 
-# STATS ON DO
-ave_prof_DO <- ddply(profile, c("depth", "trophicstate"), summarise, 
-                     N = length(DO),
-                     mean = mean(DO),
-                     sd   = sd(DO),
-                     se   = sd / sqrt(N))
-ave_prof_DO$Variable <- "DO"
+#rare <- phyloseq(OTU, TAX)
 
-# STATS ON TEMP
-ave_prof_temp <- ddply(profile, c("depth", "trophicstate"), summarise, 
-                       N = length(temp),
-                       mean = mean(temp),
-                       sd   = sd(temp),
-                       se   = sd / sqrt(N))
-ave_prof_temp$Variable <- "temp"
+# We need to change the taxonomy names
+#tax_table(rare)<-cbind(tax_table(rare),row.names(tax_table(rare)))
+#colnames(tax_table(rare)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
 
-# STATS ON pH
-ave_prof_pH <- ddply(profile, c("depth", "trophicstate"), summarise, 
-                     N = length(pH),
-                     mean = mean(pH),
-                     sd   = sd(pH),
-                     se   = sd / sqrt(N))
-ave_prof_pH$Variable <- "pH"
+# Import metadata file and merge with mothurdata object
+#mapfile = "metadata"
+#map = import_qiime_sample_data(mapfile)
+#raredata = merge_phyloseq(rare,map)
 
-# STATS ON SpC
-ave_prof_SpC <- ddply(profile, c("depth", "trophicstate"), summarise, 
-                      N = length(SpC),
-                      mean = mean(SpC),
-                      sd   = sd(SpC),
-                      se   = sd / sqrt(N))
-ave_prof_SpC$Variable <- "SpC"
+#Remove Wintergreen hypolimnion 
+#sub_raredata <- subset_samples(raredata, names != "WINH1" & names != "WINH13um" & names != "WINH2" & names !="WINH23um")
 
-mean_profile <- rbind(ave_prof_DO, ave_prof_temp, ave_prof_pH, ave_prof_SpC)
+# Following code from Michelle's Butterflygut website: http://rstudio-pubs-static.s3.amazonaws.com/25722_9fc9bdc48f0d4f13b05fa61baeda57a0.html#alpha-diversity
+# Rarefy to 10750 reads with replacement 100 times to estimate species richness
+# Since we are rarefying to 10750 reads we need to remove the two samples with less than 1000 reads
+#raredata10750 <- prune_samples(sample_sums(sub_raredata) > 10750, sub_raredata)
 
-profile_labeller <- function(var, value){
-  value <- as.character(value)
-  if (var=="Variable") { 
-    value[value=="temp"] <- "Temperature \n (Celsius)"
-    value[value=="DO"]   <- "Dissolved Oxygen \n (mg/L)"
-    value[value=="pH"]   <- "pH"
-    value[value=="SpC"]   <- "Specific Conductivity \n (uS/cm)"
-  }
-  return(value)
-}
+# Initialize matrices to store richness and evenness estimates
+#richness <- matrix(nrow=75,ncol=100)
+#row.names(richness) <- sample_names(raredata10750)
 
-mean_profile$Variable <-factor(mean_profile$Variable,levels=c("temp", "DO", "pH", "SpC"))
-mean_profile$trophicstate <-factor(mean_profile$trophicstate,levels=c("Productive", "Unproductive", "Mixed"))
-mean_profile13 <- subset(mean_profile, depth < 13.1)
-
-## AVERAGE PLOT!
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
-ggplot(mean_profile13, aes(x=mean, y = depth, color = trophicstate)) +   
-  facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
-  geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
-  theme_bw() +  geom_point(size=4, alpha = 0.8) + geom_hline(h=0) +
-  scale_y_reverse(breaks=seq(0, 30, 2), lim = c(14,0), expand = c(0, 0)) + 
-  geom_errorbarh(width=.1, aes(xmin = mean - se, xmax = mean + se)) +
-  scale_color_manual(name = "", breaks = c("Productive", "Unproductive", "Mixed"), 
-                     labels = c("Productive", "Unproductive", "Mixed"), 
-                     values = c("deeppink","turquoise3", "blue")) +
-  #scale_color_manual(name = "", breaks = c("Eutrophic", "Mesotrophic","Oligotrophic", "Mixed"), 
-  #                   labels = c("Eutrophic", "Mesotrophic","Oligotrophic", "Mixed"), 
-  #                   values = c("deeppink", "orange","turquoise3", "blue")) +
-  theme(axis.title.x = element_text(face="bold", size=14),
-        axis.text.x = element_text(colour = "black",size=14),
-        axis.text.y = element_text(colour = "black", size=14),
-        axis.title.y = element_text(face="bold", size=16),
-        legend.title = element_text(size=12, face="bold"),
-        legend.text = element_text(size = 12),
-        strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
-        strip.background = element_blank(),
-        legend.position = c(0.81, 0.08));
-#dev.off()
-
-# ALL LAKES 
-library(tidyr)
-library(dplyr)
-profile_all <- profile %>%  gather(Variable, Value, 4:7)
-profile_all$lakename <- as.character(profile_all$lakename)
-profile_all$lakename[profile_all$lakename == "WIN"] <- "Wintergreen"
-profile_all$lakename[profile_all$lakename == "SIX"] <- "Sixteen"
-profile_all$lakename[profile_all$lakename == "SHE"] <- "Sherman"
-profile_all$lakename[profile_all$lakename == "PAY"] <- "Payne"
-profile_all$lakename[profile_all$lakename == "LON"] <- "Little Long"
-profile_all$lakename[profile_all$lakename == "LEE"] <- "Lee"
-profile_all$lakename[profile_all$lakename == "GUL"] <- "Gull"
-profile_all$lakename[profile_all$lakename == "BRI"] <- "Bristol"
-profile_all$lakename[profile_all$lakename == "BAK"] <- "Baker"
-profile_all$lakename[profile_all$lakename == "BAS"] <- "Baseline"
-profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
-
-## All LAKES
-jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.S1_AllLake_profiles.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
-ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
-  facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
-  geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
-  theme_bw() +  geom_point(size=4, alpha = 0.8) + geom_hline(h=0) +
-  scale_y_reverse(breaks=seq(0, 30, 5), lim = c(30,0), expand = c(0, 0)) + 
-  scale_color_manual(name = "Lake Name", 
-                     labels = c("Baker", "Baseline", "Bassett", "Bristol", "Gull", "Lee", "Little Long", "Payne", "Sherman", "Sixteen", "Wintergreen"), 
-                     values = c("blue", "red", "black", "forestgreen","violet","limegreen", "purple", "orange", "maroon1", "turquoise3", "thistle4")) +
-  theme(axis.title.x = element_text(face="bold", size=14),
-        axis.text.x = element_text(colour = "black",size=14),
-        axis.text.y = element_text(colour = "black", size=14),
-        axis.title.y = element_text(face="bold", size=16),
-        legend.title = element_text(size=12, face="bold"),
-        legend.text = element_text(size = 12),
-        strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
-        strip.background = element_blank(),
-        legend.position=c(0.81, 0.215));
-dev.off()
+#evenness <- matrix(nrow=75,ncol=100)
+#row.names(evenness) <- sample_names(raredata10750)
 
 
+# It is always important to set a seed when you subsample so your result is replicable 
+#set.seed(3)
 
+# For 100 replications, rarefy the OTU table to 1000 reads and store the richness and evennes estimates. 
+#The default for the rarefy_even_depth command is to pick with replacement so I set it to false. Picking without replacement is more computationally intensive 
+#for (i in 1:100) {
+#  r <- rarefy_even_depth(raredata10750, sample.size = 10750,verbose = FALSE,replace = FALSE)
+#  rich <- as.numeric(as.matrix(estimate_richness(r, measures="Observed")))
+#  richness[,i] <- rich
+#  even <- as.numeric(as.matrix(estimate_richness(r, measures="InvSimpson")))
+#  evenness[,i] <- even
+#}
+
+
+#write.table(richness, "ObservedRichness100", row.names = TRUE)
+#write.table(evenness, "InvSimpson100", row.names = TRUE)
+richness <- read.table("ObservedRichness100", header = TRUE)
+evenness <- read.table("InvSimpson100", header = TRUE)
 
 
 
