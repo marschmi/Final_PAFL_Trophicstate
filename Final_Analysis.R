@@ -151,21 +151,22 @@ nowin_scaled <- subset_samples(merged_final, names != "WINH" & names != "WINH3um
 #########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
 normOTU <- otu_table(nowin_scaled)
 #weighted
-nmds_bray <- metaMDS(normOTU, distance="bray", binary = FALSE)
+nmds_bray <- metaMDS(normOTU, distance="bray")
 nmds_bray <- data.frame(nmds_bray$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
 nmds_bray$names<-row.names(nmds_bray) #new names column
 nmds_bray <- makeCategories_dups(nmds_bray) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
 nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
-nmds_quad_scaled <- ggplot(nmds_bray, aes(MDS1, MDS2, color = quadrant, shape = trophicstate)) +
-  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis: Scaled") +
+nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1, MDS2, color = quadrant, shape = trophicstate)) +
+  xlab("NMDS1") + ylab("NMDS2") + #ggtitle("Bray-Curtis: Scaled") +
   geom_point(size= 6, alpha=0.9) + theme_bw() + 
+  annotate("text", label = " Stress = 0.17", x = (max(nmds_bray$MDS1) -0.25), y = (max(nmds_bray$MDS2) -0.02), size = 6, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
                      values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
   scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
                      labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
-                     values = c(15, 19, 18, 17)) +
+                     values = c(15, 19, 17)) +
   theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
         axis.title.x = element_text(face="bold", size=16),
@@ -173,7 +174,7 @@ nmds_quad_scaled <- ggplot(nmds_bray, aes(MDS1, MDS2, color = quadrant, shape = 
         legend.title = element_text(size=12, face="bold"),
         legend.text = element_text(size = 12),
         ###LEGEND TOP RIGHT CORNER
-        legend.position = "right");  nmds_quad_scaled
+        legend.position = "right");  nmds_bc_quad
 
 
 # UNWEIGHTED
@@ -184,14 +185,15 @@ nmds_soren <- makeCategories_dups(nmds_soren) #will add our categorical informat
 nmds_soren$quadrant <- factor(nmds_soren$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
 nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = trophicstate)) +
-  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Sorensen: Scaled") +
+  xlab("NMDS1") + ylab("NMDS2") + #ggtitle("Sorensen: Scaled") +
   geom_point(size= 6, alpha=0.9) + theme_bw() + 
+  annotate("text", label = " Stress = 0.14", x = (max(nmds_soren$MDS1) -0.25), y = (max(nmds_soren$MDS2) -0.02), size = 6, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
                      values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
   scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
                      labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
-                     values = c(15, 19, 18, 17)) +
+                     values = c(15, 19, 17)) +
   theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
         axis.title.x = element_text(face="bold", size=16),
@@ -202,7 +204,7 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
         legend.position = "right");  nmds_soren_quad
 
 
-
+multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
 ####### Profile Plots 

@@ -91,21 +91,19 @@ makeCategories <- function(dataframe){
   dataframe$lakenames[dataframe$lakenames == "BAK"] <- "Baker"
   dataframe$lakenames[dataframe$lakenames == "BAS"] <- "Baseline"
   dataframe$lakenames[dataframe$lakenames == "BST"] <- "Bassett"
+  ## Fix Sherman Lake
+  dataframe$limnion[dataframe$lakenames == "Sherman" & dataframe$limnion == "Epilimnion"] <- "Mixed"
+  dataframe$limnion[dataframe$lakenames == "Sherman" & dataframe$limnion == "Hypolimnion"] <- "Mixed"
   ## TO MAKE QUADRANT
   for(i in 1:length(dataframe$limnion)){
     dataframe$quadrant[i]<-paste(as.character(dataframe$filter[i]),as.character(dataframe$limnion[i]))}
-  ## Fix Sherman Lake
-  dataframe$quadrant[dataframe$lakenames == "Sherman" & dataframe$quadrant == "Free Top"] <- "Free Mixed"
-  dataframe$quadrant[dataframe$lakenames == "Sherman" & dataframe$quadrant == "Free Bottom"] <- "Free Mixed"
-  dataframe$quadrant[dataframe$lakenames == "Sherman" & dataframe$quadrant == "Particle Top"] <- "Particle Mixed"
-  dataframe$quadrant[dataframe$lakenames == "Sherman" & dataframe$quadrant == "Particle Bottom"] <- "Particle Mixed"
   #Add Trophic State column by using the name of the lake
   dataframe <- data.table(dataframe)
   library(data.table)
   dataframe[, trophicstate := ifelse(lakenames %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
-                                     ifelse(lakenames %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
-                                            ifelse(lakenames %in% c("Sherman"), "Mixed",
-                                                   ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+                                     ifelse(lakenames %in% c("Bassett", "Bristol", "Payne", "Sherman"), "Mesotrophic",
+                                            #ifelse(lakenames %in% c("Sherman"), "Mixed",
+                                                   ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA)))]
   dataframe$ProdLevel <- dataframe$trophicstate
   dataframe$ProdLevel <- as.character(dataframe$ProdLevel)
   dataframe$ProdLevel[dataframe$ProdLevel == "Eutrophic"] <- "Productive"
@@ -153,18 +151,13 @@ makeCategories_dups <- function(dataframe){ # IMPORTANT!!!  dataframe MUST have 
   ## TO MAKE QUADRANT
   for(i in 1:length(dataframe$limnion)){
     dataframe$quadrant[i]<-paste(as.character(dataframe$filter[i]),as.character(dataframe$limnion[i]))}
-  ## Fix Sherman Lake
-  #dataframe$quadrant[dataframe$lakenames == "Sherman" & dataframe$quadrant == "Free Epilimnion"] <- "Free Mixed"
-  #dataframe$quadrant[dataframe$lakenames == "Sherman" & dataframe$quadrant == "Free Hypolimnion"] <- "Free Mixed"
-  #dataframe$quadrant[dataframe$lakenames == "Sherman" & dataframe$quadrant == "Particle Epilimnion"] <- "Particle Mixed"
-  #dataframe$quadrant[dataframe$lakenames == "Sherman" & dataframe$quadrant == "Particle Hypolimnion"] <- "Particle Mixed"
   #Add Trophic State column by using the name of the lake
   dataframe <- data.table(dataframe)
   library(data.table)
   dataframe[, trophicstate := ifelse(lakenames %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
-                                     ifelse(lakenames %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
-                                            ifelse(lakenames %in% c("Sherman"), "Mixed",
-                                                   ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+                                     ifelse(lakenames %in% c("Bassett", "Bristol", "Payne", "Sherman"), "Mesotrophic",
+                                            #ifelse(lakenames %in% c("Sherman"), "Mixed",
+                                                   ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA)))]
 }
 #################################################################################### 3
 #################################################################################### 3
