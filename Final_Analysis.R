@@ -89,14 +89,17 @@ paste(c("The max sample read count is",maxs))
 
 ################################################################
 ### COMBINING BEFORE MCMURDIE HOLMES SCALING WITH OUR RAW READS
-noscale_merge <- merge_samples(bact_samples, "dups", fun = "mean") 
+noscale_merge <- merge_samples(bact_samples, "dups", fun = "mean") #  THE MEAN DOES NOT WORK
 noscale_merge <- prune_taxa(taxa_sums(noscale_merge) > 0, noscale_merge)
 range_nonscale <- max(sample_sums(noscale_merge)) - min(sample_sums(noscale_merge)); range_nonscale
-
-## Fix the metadata 
-samp_data_noscale <- sample_data(noscale_merge)
-samp_data_noscale$names <- row.names(samp_data_noscale)
-samp_data_noscale <- makeCategories_dups(samp_data_noscale)
+#######  Fixing the Metadata!
+data_dup <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup) <- data_dup$names
+data_dup$quadrant <- factor(data_dup$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+data_dup <- sample_data(data_dup)  # Metadata in our phyloseq object
+scale_otu <- otu_table(noscale_merge)  # OTU table in our phyloseq object
+scale_tax <- tax_table(noscale_merge)  # Taxonomy Table in our phyloseq object
+raw_merged <- merge_phyloseq(scale_otu, scale_tax, data_dup) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
 
 
 ##  Sample read counts with merging samples WITHOUT SCALING!!!! 
@@ -409,58 +412,37 @@ multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 ####################################################  ALPHA DIVERSITY  ####################################################
 ####################################################  ALPHA DIVERSITY  ####################################################
 # For alpha diversity we will RAREFY our phyloseq object.  Our raw-data phyloseq object was:
-noscale_merge  # Raw Merged Samples
-
-noscale_nowin <- subset_samples(noscale_merge, names != "WINH" & names != "WINH3um")
-noscale_nowin <- prune_taxa(taxa_sums(noscale_nowin) > 0, noscale_nowin)
+raw_merged  # Raw Merged Samples, we have 14,378 OTUs
+raw_nowin <- subset_samples(raw_merged, names != "WINH" & names != "WINH3um")
+raw_nowin <- prune_taxa(taxa_sums(raw_nowin) > 0, raw_nowin)
 
 #Data Import for rarefied data 
-nowinOTU
-#t_rareshare <- t(shared)
-#OTU = otu_table(t_rareshare, taxa_are_rows = TRUE)
-#tax <- import_mothur(mothur_constaxonomy_file = "stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy")#
-
-#TAX = tax_table(tax)
-
-#rare <- phyloseq(OTU, TAX)
-
-# We need to change the taxonomy names
-#tax_table(rare)<-cbind(tax_table(rare),row.names(tax_table(rare)))
-#colnames(tax_table(rare)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
-
-# Import metadata file and merge with mothurdata object
-#mapfile = "metadata"
-#map = import_qiime_sample_data(mapfile)
-#raredata = merge_phyloseq(rare,map)
-
-#Remove Wintergreen hypolimnion 
-#sub_raredata <- subset_samples(raredata, names != "WINH1" & names != "WINH13um" & names != "WINH2" & names !="WINH23um")
+raw_nowin  
+min(sample_sums(raw_nowin))
 
 # Following code from Michelle's Butterflygut website: http://rstudio-pubs-static.s3.amazonaws.com/25722_9fc9bdc48f0d4f13b05fa61baeda57a0.html#alpha-diversity
-# Rarefy to 10750 reads with replacement 100 times to estimate species richness
-# Since we are rarefying to 10750 reads we need to remove the two samples with less than 1000 reads
-#raredata10750 <- prune_samples(sample_sums(sub_raredata) > 10750, sub_raredata)
+# Rarefy to 14937 reads with replacement 100 times to estimate species richness
+# Since we are rarefying to 14937 reads we need to remove the two samples with less than 1000 reads
+raredata14936 <- prune_samples(sample_sums(raw_nowin) > 14936, raw_nowin)
 
 # Initialize matrices to store richness and evenness estimates
-#richness <- matrix(nrow=75,ncol=100)
-#row.names(richness) <- sample_names(raredata10750)
+richness <- matrix(nrow = 41,ncol = 100)  # Store richness:  We have 41 samples 
+row.names(richness) <- sample_names(raredata14936)
+evenness <- matrix(nrow = 41,ncol = 100)  #Store evenness
+row.names(evenness) <- sample_names(raredata14936)
 
-#evenness <- matrix(nrow=75,ncol=100)
-#row.names(evenness) <- sample_names(raredata10750)
+# We want to be reproducible - so let's set the seed.
+set.seed(3)
 
-
-# It is always important to set a seed when you subsample so your result is replicable 
-#set.seed(3)
-
-# For 100 replications, rarefy the OTU table to 1000 reads and store the richness and evennes estimates. 
+# For 100 replications, rarefy the OTU table to 14936 reads and store the richness and evennes estimates in our 2 matrices we just created.
 #The default for the rarefy_even_depth command is to pick with replacement so I set it to false. Picking without replacement is more computationally intensive 
-#for (i in 1:100) {
-#  r <- rarefy_even_depth(raredata10750, sample.size = 10750,verbose = FALSE,replace = FALSE)
-#  rich <- as.numeric(as.matrix(estimate_richness(r, measures="Observed")))
-#  richness[,i] <- rich
-#  even <- as.numeric(as.matrix(estimate_richness(r, measures="InvSimpson")))
-#  evenness[,i] <- even
-#}
+for (i in 1:100) {
+  r <- rarefy_even_depth(raredata14936, sample.size = 14936, verbose = FALSE, replace = FALSE)
+  rich <- as.numeric(as.matrix(estimate_richness(r, measures="Observed")))
+  richness[,i] <- rich
+  even <- as.numeric(as.matrix(estimate_richness(r, measures="InvSimpson")))
+  evenness[,i] <- even
+}
 
 
 #write.table(richness, "ObservedRichness100", row.names = TRUE)

@@ -158,6 +158,13 @@ makeCategories_dups <- function(dataframe){ # IMPORTANT!!!  dataframe MUST have 
                                      ifelse(lakenames %in% c("Bassett", "Bristol", "Payne", "Sherman"), "Mesotrophic",
                                             #ifelse(lakenames %in% c("Sherman"), "Mixed",
                                                    ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA)))]
+  #dataframe$ProdLevel <- as.character(dataframe$trophicstate)
+  #dataframe$ProdLevel[dataframe$trophicstate == "Eutrophic"] <- "Productive"
+  #dataframe$ProdLevel[dataframe$trophicstate == "Mesotrophic"] <- "Productive"
+  #dataframe$ProdLevel[dataframe$trophicstate == "Oligotrophic"] <- "Unproductive"
+  #dataframe$ProdLevel[dataframe$ProdLevel == "Mixed"] <- "Productive"
+  #dataframe$ProdLevel <- as.factor(dataframe$ProdLevel)
+  #dataframe$ProdLevel <-factor(dataframe$ProdLevel,levels=c("Productive","Unproductive"))
 }
 #################################################################################### 3
 #################################################################################### 3
