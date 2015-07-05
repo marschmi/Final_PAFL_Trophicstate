@@ -93,6 +93,12 @@ noscale_merge <- merge_samples(bact_samples, "dups", fun = "mean")
 noscale_merge <- prune_taxa(taxa_sums(noscale_merge) > 0, noscale_merge)
 range_nonscale <- max(sample_sums(noscale_merge)) - min(sample_sums(noscale_merge)); range_nonscale
 
+## Fix the metadata 
+samp_data_noscale <- sample_data(noscale_merge)
+samp_data_noscale$names <- row.names(samp_data_noscale)
+samp_data_noscale <- makeCategories_dups(samp_data_noscale)
+
+
 ##  Sample read counts with merging samples WITHOUT SCALING!!!! 
 # Histogram of RAW sample read counts
 ggplot(data.frame(sum=sample_sums(noscale_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
