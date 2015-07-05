@@ -972,17 +972,29 @@ print(prodbeta_plot2, vp=viewport(layout.pos.row=3,layout.pos.col=1))
 #########  Looking at Beta diversity within particles and free living 
 #######  Creating geom_point plot for Beta Diverstiy.
 # STATS ON BETA
-betaPAFL <- subset(indep, filter1 == filter2)
+betaPAFL <- subset(nomix_beta2, filter1 == filter2)
 
-ddply_betaPAFL <- ddply(betaPAFL, c("filter1"), summarise, 
+for(i in 1:length(betaPAFL$limnion1)){
+  betaPAFL$troph_filt[i]<-paste(as.character(betaPAFL$trophicstate1[i]),
+                            as.character(betaPAFL$filter1[i]))}
+
+ddply_betaPAFL <- ddply(betaPAFL, c("troph_filt", "trophicstate1"), summarise, 
                         N = length(value),
                         mean = mean(value),
                         sd   = sd(value),
                         se   = sd / sqrt(N))
 
-betaPAFL_plotSE <- ggplot(ddply_betaPAFL, aes(x = filter1, y = mean, color = filter1)) + geom_point(size = 5) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2, position=position_dodge(.9)) +
-  xlab("Filter Fraction") + ylab("Bray Curtis Dissimilarity: SE") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+ddply_betaPAFL$troph_filt <-factor(ddply_betaPAFL$troph_filt,levels=c("Eutrophic Particle","Eutrophic Free","Mesotrophic Particle", "Mesotrophic Free", "Oligotrophic Particle", "Oligotrophic Free"))
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3_beta_filter.jpeg", width= 25, height=15, units= "cm", pointsize= 14, res=500)
+betaPAFL_plotSE <- ggplot(ddply_betaPAFL, aes(x = troph_filt, y = mean, color = troph_filt)) + geom_point(size = 5) +
+  facet_grid(. ~ trophicstate1, scale = "free") + 
+  scale_color_manual(name = "", limits=c("Eutrophic Particle","Eutrophic Free","Mesotrophic Particle", "Mesotrophic Free", "Oligotrophic Particle", "Oligotrophic Free"), 
+                     values = c("deeppink", "deeppink","orange","orange","turquoise3","turquoise3"))+
+  scale_x_discrete(breaks=c("Eutrophic Particle","Eutrophic Free","Mesotrophic Particle", "Mesotrophic Free", "Oligotrophic Particle", "Oligotrophic Free"),
+                   labels=c("Particle-Associated", "Free-Living", "Particle-Associated", "Free-Living", "Particle-Associated", "Free-Living")) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  xlab("Filter Fraction") + ylab("Bray Curtis Dissimilarity: SD") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
   theme(axis.title.x = element_text(face="bold", size=14),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
         axis.text.y = element_text(colour = "black", size=14),
@@ -990,4 +1002,5 @@ betaPAFL_plotSE <- ggplot(ddply_betaPAFL, aes(x = filter1, y = mean, color = fil
         plot.title = element_text(face="bold", size = 20),
         strip.text.x = element_text(size=12, face = "bold", colour = "black"),
         strip.background = element_blank(),
-        legend.position="none"); 
+        legend.position="none"); betaPAFL_plotSE
+#dev.off()
