@@ -6,7 +6,7 @@
 #####Directories:
 1. **raw_data:**  Includes the raw output files from the mothur pipline and the raw environmental data collected for the project.  
 2. **alpha_data:**  Includes the 100X rarefied data for within-sample (alpha) diversity calculations.  
-3. **Figures**
+3. **Figures:**  A home for all the figures created in the `Final_Analysis.R` file.
 
 #####Code Files:
 1. `MergeReps.R` file houses all the code for merging replicates analysis.  
