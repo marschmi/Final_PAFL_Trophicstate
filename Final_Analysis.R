@@ -609,8 +609,8 @@ facet_prod_stats <- ggplot(prodalpha_stats, aes(x = troph_lim, y = Meantroph_lim
   scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                             "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
                             "Mixed Mixed Particle", "Mixed Mixed Free"), 
-                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
-                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Particle", "Free")) + 
   theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
