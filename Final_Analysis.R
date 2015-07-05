@@ -436,19 +436,48 @@ set.seed(3)
 
 # For 100 replications, rarefy the OTU table to 14936 reads and store the richness and evennes estimates in our 2 matrices we just created.
 #The default for the rarefy_even_depth command is to pick with replacement so I set it to false. Picking without replacement is more computationally intensive 
-for (i in 1:100) {
-  r <- rarefy_even_depth(raredata14936, sample.size = 14936, verbose = FALSE, replace = FALSE)
-  rich <- as.numeric(as.matrix(estimate_richness(r, measures="Observed")))
-  richness[,i] <- rich
-  even <- as.numeric(as.matrix(estimate_richness(r, measures="InvSimpson")))
-  evenness[,i] <- even
-}
+#for (i in 1:100) {
+#  r <- rarefy_even_depth(raredata14936, sample.size = 14936, verbose = FALSE, replace = FALSE)
+#  rich <- as.numeric(as.matrix(estimate_richness(r, measures="Observed")))
+#  richness[,i] <- rich
+#  even <- as.numeric(as.matrix(estimate_richness(r, measures="InvSimpson")))
+#  evenness[,i] <- even
+#}
 
 #write.table(richness, "~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100", row.names = TRUE)
 #write.table(evenness, "~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100", row.names = TRUE)
 
 richness <- read.table("~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100", header = TRUE)
 evenness <- read.table("~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100", header = TRUE)
+
+# Create a new matrix to hold the means and standard deviations of all the richness estimates
+rich_stats = matrix(nrow= nrow(richness), ncol=2)
+rich_stats[,1] = apply(richness, 1, mean)
+rich_stats[,2] = apply(richness, 1, sd)
+rich_stats = data.frame(row.names(richness), rich_stats)
+colnames(rich_stats) = c("samples","mean","sd")
+rich_stats$Test <- "ObsRich"
+
+# Create a new matrix to hold the means and standard deviations of the evenness estimates
+even_stats = matrix(nrow = nrow(evenness), ncol = 2)
+even_stats[,1] = apply(evenness, 1, mean)
+even_stats[,2] = apply(evenness, 1, sd)
+even_stats = data.frame(row.names(evenness), even_stats)
+colnames(even_stats) = c("samples","mean","sd")
+even_stats$Test <- "InvSimpson"
+
+
+#Combine the rich.stats and the even.stats dataframes
+alpha_stats <- rbind(rich_stats, even_stats)
+alpha_stats$names <- alpha_stats$samples
+alpha_stats <- makeCategories_dups(alpha_stats)
+alpha_stats$ProdLevel <- as.character(alpha_stats$trophicstate)
+alpha_stats$ProdLevel[alpha_stats$trophicstate == "Eutrophic"] <- "Productive"
+alpha_stats$ProdLevel[alpha_stats$trophicstate == "Mesotrophic"] <- "Productive"
+alpha_stats$ProdLevel[alpha_stats$trophicstate == "Oligotrophic"] <- "Unproductive"
+alpha_stats$ProdLevel[alpha_stats$lakenames == "Sherman"] <- "Mixed"
+
+
 
 
 
