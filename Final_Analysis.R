@@ -451,24 +451,32 @@ richness <- read.table("~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100
 evenness <- read.table("~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100", header = TRUE)
 
 # Create a new matrix to hold the means and standard deviations of all the richness estimates
-rich_stats = matrix(nrow= nrow(richness), ncol=2)
+rich_stats = matrix(nrow= nrow(richness), ncol=1)
 rich_stats[,1] = apply(richness, 1, mean)
-rich_stats[,2] = apply(richness, 1, sd)
+#rich_stats[,2] = apply(richness, 1, sd)
 rich_stats = data.frame(row.names(richness), rich_stats)
-colnames(rich_stats) = c("samples","mean","sd")
+colnames(rich_stats) = c("samples","mean")
 rich_stats$Test <- "ObsRich"
 
 # Create a new matrix to hold the means and standard deviations of the evenness estimates
-even_stats = matrix(nrow = nrow(evenness), ncol = 2)
+even_stats = matrix(nrow = nrow(evenness), ncol = 1)
 even_stats[,1] = apply(evenness, 1, mean)
-even_stats[,2] = apply(evenness, 1, sd)
+#even_stats[,2] = apply(evenness, 1, sd)
 even_stats = data.frame(row.names(evenness), even_stats)
-colnames(even_stats) = c("samples","mean","sd")
+colnames(even_stats) = c("samples","mean")
 even_stats$Test <- "InvSimpson"
 
 
+###  Add SIMPSON'S EVENNESS!
+#simps_even = as.data.frame(matrix(nrow = nrow(evenness), ncol = 2))
+simps_even <- data.frame(matrix(nrow = nrow(evenness), ncol = 3))
+colnames(simps_even) = c("samples","mean", "Test")
+simps_even$samples <- even_stats$samples
+simps_even$mean <-  even_stats$mean/rich_stats$mean
+simps_even$Test <- "SimpsEven"
+
 #Combine the rich.stats and the even.stats dataframes
-alpha_stats <- rbind(rich_stats, even_stats)
+alpha_stats <- rbind(rich_stats, even_stats, simps_even)
 alpha_stats$names <- alpha_stats$samples
 alpha_stats <- makeCategories_dups(alpha_stats)
 alpha_stats$ProdLevel <- as.character(alpha_stats$trophicstate)
@@ -485,6 +493,7 @@ for(i in 1:length(alpha_stats$limnion)){
                                   as.character(alpha_stats$limnion[i]),
                                   as.character(alpha_stats$filter[i]))}
 
+
 ### Observed Richness and InvSimpson for Troph_lim
 Meantroph_lim <- ddply(alpha_stats, ~Test+troph_lim, function(x){data.frame(Meantroph_lim = mean(x$mean))})
 alpha_stats <- join(alpha_stats,Meantroph_lim) 
@@ -493,6 +502,14 @@ alpha_stats <- join(alpha_stats,SEtroph_lim)
 SDtroph_lim <- ddply(alpha_stats, ~Test+troph_lim, function(x){data.frame(SDtroph_lim = sd(x$mean))})
 alpha_stats <- join(alpha_stats,SDtroph_lim)
 
+
+###  OVERALL FILTER ALPHA STATS
+Meanfilter_troph <- ddply(alpha_stats, ~Test+filter+trophicstate, function(x){data.frame(Meanfilter_troph = mean(x$mean))})
+alpha_stats <- join(alpha_stats,Meanfilter_troph) 
+SEfilter_troph <- ddply(alpha_stats, ~Test+filter+trophicstate, function(x){data.frame(SEfilter_troph = se(x$mean))})
+alpha_stats <- join(alpha_stats,SEfilter_troph)
+SDfilter_troph <- ddply(alpha_stats, ~Test+filter+trophicstate, function(x){data.frame(SDfilter_troph = sd(x$mean))})
+alpha_stats <- join(alpha_stats,SDfilter_troph)
 
 
 
