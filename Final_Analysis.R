@@ -12,7 +12,7 @@ library(sciplot)
 library("DESeq2")
 library(tidyr)
 library(dplyr)
-
+library(scales)
 
 ### Set the Working Directory
 setwd("~/Final_PAFL_Trophicstate")
@@ -1199,43 +1199,65 @@ mf_labeller <- function(var, value){
   return(value)
 }
 
-dfrat <- subset(dfrat, Phylum != "unclassified")
+#dfrat <- subset(dfrat, Phylum != "unclassified")
 
-dfrat$Phylum <- factor(dfrat$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria",
-                                               "Actinobacteria", "Planctomycetes", "Alphaproteobacteria",  
-                                               "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae",
-                                               "Firmicutes", "Chlorobi", "Armatimonadetes", "Spirochaetae", 
-                                               "Acidobacteria", "NPL-UPA2", "Candidate_division_OD1", 
-                                               "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Epsilonproteobacteria", "TA18",
-                                               "Chlamydiae", "Fibrobacteres", "Candidate_division_SR1",
-                                               "Candidate_division_BRC1", "BD1-5", 
-                                               "Candidate_division_WS3", "Tenericutes", "Elusimicrobia",
-                                               "Gemmatimonadetes", "WCHB1-60", "Deferribacteres", "Candidate_division_OP8",
-                                               "Candidate_division_TM7", "Thermotogae", "Fusobacteria")) #, "unclassified"))
+dfrat$Phylum <- factor(dfrat$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Chlamydiae", "Epsilonproteobacteria", "TA18", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))
 
 dfrat$Phylum = with(dfrat, factor(Phylum, levels = rev(levels(Phylum))))
 
 
 
 
-ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
-  scale_fill_gradient2(name = "Odds-Ratio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white") + #scale_y_reverse() + 
-  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
-  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
-  #scale_y_discrete(limits=phys) + xlab("Habitat") + ylab("Phylum") + 
-  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
-  theme(axis.text.x = element_text(colour="black", size=14, angle = 60, hjust = 1, vjust = 1), 
-        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
-        axis.title.x = element_blank(), #text(face="bold", size=16),
-        legend.title = element_text(face="bold", size=12),
-        legend.text = element_text(size = 12),
-        legend.position = "left",
+
+
+#################################################################################  OVERALL ABUNDANCE PLOT
+good_phylum_proteo <-tax_glom(merged_final,taxrank = "Phylum")
+goodsamps_phylum <- tax_glom(good_phylum_proteo,taxrank = "Phylum")
+goodsamps_phy_melt <- psmelt(goodsamps_phylum)  ##  Melt it into a dataframe 
+sub_goodsamps_phy_melt <- subset(goodsamps_phy_melt, select = c("Sample", "ProdLevel", "quadrant", "Phylum","Abundance"))
+TOTALS <- ddply(sub_goodsamps_phy_melt, c("Sample"), summarise, ##  Let's get the McMurdie and Holmes Scaled  Total for each sample 
+                total   = sum(Abundance))   
+sub_phy_melt_totals <- merge(sub_goodsamps_phy_melt, TOTALS, by = "Sample")  ### Merge phylum sums and the total numbers -> so we can calculate the Relative Abundance
+sub_phy_melt_totals$RelAbundance <- sub_phy_melt_totals$Abundance/sub_phy_melt_totals$total  ## Calculate the relative abundance
+sub_phy_melt_totals$PercentAbund <- sub_phy_melt_totals$RelAbundance * 100  ##  Calculate the Percent Abundance
+
+####  Make a new dataframe with the percent abudance within the entire dataset!
+phy_stats <- ddply(sub_phy_melt_totals, c("Phylum"), summarise, 
+                   N = length(PercentAbund),
+                   PercentPhy = mean(PercentAbund),
+                   sd   = sd(PercentAbund),
+                   se   = sd / sqrt(N))
+abund <- subset(phy_stats,PercentPhy > 0.001)  # Only take the phyla that are more than 0.01% abundant
+
+abund_ordered <- arrange(abund, desc(PercentPhy))
+
+abund$Phylum <- factor(abund$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Chlamydiae", "Epsilonproteobacteria", "TA18", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))   
+
+abund$Phylum = with(abund, factor(Phylum, levels = rev(levels(Phylum)))) 
+
+#Relative abundance plot 
+abund_plot <- ggplot(abund, aes(y=PercentPhy , x=Phylum))  +
+  #geom_boxplot(fill = "magenta4", colour = "black") + 
+  geom_bar(stat="identity", position=position_dodge(),  fill = "magenta4", colour = "black") +
+  theme_bw() + ggtitle("Phyla Above 0.1% in All Samples") +
+  xlab("Phylum") + ylab("Mean Relative Abundance (%)") +
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25) + coord_flip() +
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=0, colour = "black", size=14),
+        axis.text.y = element_text(colour = "black", size=14),
         axis.title.y = element_text(face="bold", size=16),
-        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
-        strip.text.x = element_text(size=16, face = "bold", colour = "white"),
-        strip.background = element_rect(colour="black", fill = "black")); 
-
-
+        plot.title = element_text(face="bold", size = 20),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        legend.position="none"); abund_plot
 
 
 #################################################################################
@@ -1280,6 +1302,9 @@ heat <- ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChang
 dev.off()
 
 #http://stackoverflow.com/questions/4559229/drawing-pyramid-plot-using-r-and-ggplot2
+
+##abund$Phylum %in% dfrat$Phylum
+###
 
 relabun_plot <- ggplot(abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
   geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
