@@ -251,7 +251,7 @@ mean_profile13 <- subset(mean_profile, depth < 13.1)
 mean_profile13b <- subset(mean_profile13, Variable != "SpC")
 
 ## AVERAGE PLOT!
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
+jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 32, height=30, units= "cm",pointsize= 18, res=500)
 ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +   
   facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
@@ -269,12 +269,12 @@ ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +
         axis.text.y = element_text(colour = "black", size=14),
         axis.title.y = element_text(face="bold", size=16),
         legend.title = element_text(size=12, face="bold"),
-        legend.text = element_text(size = 12),
+        legend.text = element_text(size = 14),
         strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
         strip.background = element_blank(),
         legend.position = c(0.1, 0.93));
         #legend.position = c(0.81, 0.08));
-#dev.off()
+dev.off()
 
 # ALL LAKES 
 library(tidyr)
