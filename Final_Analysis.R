@@ -1823,3 +1823,266 @@ ggplot(OTU_20, aes(y=mean, x=Phylum, fill=Preference)) + theme_bw() +
         legend.position = "right" ) # c(0.18, 0.12))
 #dev.off()
 
+
+
+
+
+
+
+
+
+##################################################################################### ABUNDANCE PLOTS 
+##################################################################################### ABUNDANCE PLOTS 
+##################################################################################### ABUNDANCE PLOTS 
+### Check lines 1211 for how sub_phy_melt_totals was created:
+### Calculate the mean relative abundance based on ProdLevel + Quadrant for each PHYLUM 
+sub_phy_melt_totals_nosherwin <- subset(sub_phy_melt_totals, Sample != "SHEE" & Sample != "SHEE3um" & Sample !="SHEH" & Sample != "SHEH3um")
+prod_quad_phylum_stats <- ddply(sub_phy_melt_totals_nosherwin, c("ProdLevel","quadrant", "Phylum"), summarise, 
+                                N = length(PercentAbund),
+                                mean_abundance = mean(PercentAbund),
+                                sd   = sd(PercentAbund),
+                                se   = sd / sqrt(N))
+
+abund_only_by_phylum <- ddply(prod_quad_phylum_stats, c("Phylum"), summarise, 
+                              N = length(mean_abundance),
+                              phylum_mean = mean(mean_abundance))
+
+abund_only_by_phylum <-arrange(abund_only_by_phylum, desc(phylum_mean)) # abund_only_by_phylum[with(abund_only_by_phylum, order(-phylum_mean)), ]
+
+phy_order <- as.character(abund_only_by_phylum$Phylum)  # THIS IS A VECTOR OF THE PHYLUM IN THE ORDER THAT WE WANT
+
+### TOP 25 PHYLA!
+top15phy <- prod_quad_phylum_stats[prod_quad_phylum_stats$Phylum %in% phy_order[1:15], ]
+
+top15phy$Phylum <- factor(top15phy$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi","Acidobacteria",         
+                                                     "Spirochaetae", "Candidate_division_OD1",  "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "TA18", "Epsilonproteobacteria", "Chlamydiae"))
+
+top15phy$quadrant <- factor(top15phy$quadrant,levels = c("Free Epilimnion", "Particle Epilimnion", "Free Hypolimnion", "Particle Hypolimnion"))
+
+top15phy$Phylum = with(top15phy, factor(Phylum, levels = rev(levels(Phylum))))
+
+abund_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="quadrant") { 
+    value[value=="Particle Epilimnion"] <- "Particle \n Epilimnion"
+    value[value=="Free Epilimnion"]   <- "Free \n Epilimnion"
+    value[value=="Particle Hypolimnion"]   <- "Particle \n Hypolimnion"
+    value[value=="Free Hypolimnion"]   <- "Free \n Hypolimnion"
+  }
+  return(value)
+}
+
+#### ADDING NO SPACES FOR FREE LIVING and ADDING 2 SPACE FOR PARICLE ASSOCIATED AT THE END
+top15phy$quadrant <- as.character(top15phy$quadrant)
+top15phy$quadrant[top15phy$quadrant=="Particle Epilimnion"] <- "Epilimnion   "
+top15phy$quadrant[top15phy$quadrant=="Free Epilimnion"]   <- "Epilimnion"
+top15phy$quadrant[top15phy$quadrant=="Particle Hypolimnion"]   <- " Hypolimnion  "
+top15phy$quadrant[top15phy$quadrant=="Free Hypolimnion"]   <- "Hypolimnion"
+
+#### ADDING NO SPACES FOR PRODUCTIVE and ADDING 1 SPACE FOR UNPRODUCTIVE
+top15phy$prod <- top15phy$ProdLevel
+top15phy$prod <- as.character(top15phy$prod)
+top15phy$prod[top15phy$prod =="Productive"]   <- ""
+top15phy$prod[top15phy$prod =="Unproductive"]   <- " "
+
+for(i in 1:length(top15phy$prod)){
+  top15phy$prod_quad [i]<-paste(as.character(top15phy$prod[i]),as.character(top15phy$quadrant[i]))}
+
+top15phy$prod_quad <- factor(top15phy$prod_quad,levels = c(" Epilimnion", " Hypolimnion", " Epilimnion   ", "  Hypolimnion  ", 
+                                                           "  Epilimnion", "  Hypolimnion", "  Epilimnion   ",  "   Hypolimnion  "))
+
+phy.colors.whew <- c(Acidobacteria = "grey26", Actinobacteria = "palevioletred2", Alphaproteobacteria = "steelblue4", Armatimonadetes = "red", Bacteroidetes = "darkorange",
+                     "BD1-5" = "chartreuse", Betaproteobacteria = "royalblue", Caldiserica = "black","Candidate_division_BRC1" = "red",
+                     "Candidate_division_JS1" = "aquamarine1",
+                     "Candidate_division_OD1" = "#6DDE88", "Candidate_division_OP3" = "yellow1", "Candidate_division_OP8" = "goldenrod1", "Candidate_division_OP11" = "chocolate4",
+                     "Candidate_division_SR1" = "tan3", "Candidate_division_TM7" = "skyblue1", "Candidate_division_WS3" = "magenta",
+                     Chlamydiae="violet", Chlorobi="cyan2", Chloroflexi="darkgreen", Cyanobacteria = "chartreuse3", 
+                     Deferribacteres = "slateblue3", "Deinococcus-Thermus" = "violetred", Dictyoglomi = "cornsilk4", Deltaproteobacteria = "deepskyblue", 
+                     Elusimicrobia = "violetred4", Epsilonproteobacteria = "lightskyblue", Fibrobacteres = "hotpink", Firmicutes = "blue4", FGL7S = "palevioletred1",
+                     Fusobacteria = "slateblue1", Gammaproteobacteria = "plum2", Gemmatimonadetes="black", GOUTA4 = "plum1", "Hyd24-12" = "sienna2", JTB23 = "seashell2",
+                     Lentisphaerae = "yellow1", "NPL-UPA2"="royalblue", OC31 = "mediumpurple4", Planctomycetes = "mediumorchid3", Proteobacteria = "deepskyblue",
+                     "SHA-109" = "lightsalmon3", SM2F11 = "lightskyblue2", SPOTSOCT00m83 = "orangered",
+                     Spirochaetae = "gold3", Tenericutes="pink", Thermotogae = "chocolate1", TA06 = "lightslateblue",TA18 = "rosybrown3", TM6 = "olivedrab",
+                     unclassified = "grey", Verrucomicrobia = "purple4", "WCHB1-60" = "palegreen")
+
+#jpeg(filename="Abundance_top15.jpeg", width= 28, height=25, units= "cm", pointsize= 10, res=250)
+top15plot <- ggplot(top15phy, aes(y=mean_abundance , x=Phylum, fill=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  guides(fill = guide_legend(reverse=TRUE)) + ggtitle("") + 
+  geom_bar(stat="identity", position=position_dodge()) + #theme_classic() +
+  geom_bar(stat="identity", position=position_dodge(), colour = "black", show_guide = FALSE) +
+  facet_wrap(~ prod_quad, ncol = 8) + xlab("Top 15 Most Abundant Phyla") +
+  scale_fill_manual(values = phy.colors.whew,name="Phylum") + 
+  geom_errorbar(aes(ymin = mean_abundance -se, ymax = mean_abundance +se), width = 0.25, color = "black") + 
+  ylab("Mean Percent Relative Abundance (%)") + coord_flip() + theme_bw() + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(colour = "black", size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="grey77", color = NA),
+        legend.position="right"); top15plot
+#dev.off()
+
+
+library(gtable)
+# get gtable object
+z <- ggplot_gtable(ggplot_build(top15plot))
+
+# add label for top strip
+z <- gtable_add_rows(z, z$heights[[3]], 2)
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 4, 3, 7, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Particle-Associated", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 9, 3, 13, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.6))),
+                             textGrob("Productive", gp = gpar(fontsize = 14, col = "black"))),
+                     2, 4, 2, 13, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 15, 3, 19, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Particle-Associated", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 22, 3, 25, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gray(0.6))),
+                             textGrob("Unproductive", gp = gpar(fontsize = 14, col = "black"))),
+                     2, 15, 2, 25, name = paste(runif(2)))
+
+# add margins
+z <- gtable_add_cols(z, unit(1/8, "line"), 7)
+z <- gtable_add_rows(z, unit(1/8, "line"), 3)
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.S2_Abundance_top15_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
+# draw it
+grid.newpage()
+grid.draw(z)
+#dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+###  MIDDLE 19 PHYLA 
+mid20phy <- prod_quad_phylum_stats[prod_quad_phylum_stats$Phylum %in% phy_order[16:35], ]
+
+mid20phy$Phylum <- factor(mid20phy$Phylum,levels = c("Acidobacteria", "Spirochaetae",  "Candidate_division_OD1", "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", 
+                                                     "TM6", "TA18", "Epsilonproteobacteria", "Chlamydiae",  "Fibrobacteres", "Candidate_division_SR1",
+                                                     "Candidate_division_BRC1", "BD1-5",  "Candidate_division_WS3", "Tenericutes", "Elusimicrobia","Gemmatimonadetes", "WCHB1-60", "Fusobacteria"))
+
+
+#### ADDING NO SPACES FOR FREE LIVING and ADDING 2 SPACE FOR PARICLE ASSOCIATED AT THE END
+mid20phy$quadrant <- as.character(mid20phy$quadrant)
+mid20phy$quadrant[mid20phy$quadrant=="Particle Epilimnion"] <- "Epilimnion   "
+mid20phy$quadrant[mid20phy$quadrant=="Free Epilimnion"]   <- "Epilimnion"
+mid20phy$quadrant[mid20phy$quadrant=="Particle Hypolimnion"]   <- " Hypolimnion  "
+mid20phy$quadrant[mid20phy$quadrant=="Free Hypolimnion"]   <- "Hypolimnion"
+
+#### ADDING NO SPACES FOR PRODUCTIVE and ADDING 1 SPACE FOR UNPRODUCTIVE
+mid20phy$prod <- mid20phy$ProdLevel
+mid20phy$prod <- as.character(mid20phy$prod)
+mid20phy$prod[mid20phy$prod =="Productive"]   <- ""
+mid20phy$prod[mid20phy$prod =="Unproductive"]   <- " "
+
+for(i in 1:length(mid20phy$prod)){
+  mid20phy$prod_quad [i]<-paste(as.character(mid20phy$prod[i]),as.character(mid20phy$quadrant[i]))}
+
+mid20phy$prod_quad <- factor(mid20phy$prod_quad,levels = c(" Epilimnion", " Hypolimnion", " Epilimnion   ", "  Hypolimnion  ", 
+                                                           "  Epilimnion", "  Hypolimnion", "  Epilimnion   ",  "   Hypolimnion  "))
+
+
+
+
+
+mid20phy$quadrant <- factor(mid20phy$quadrant,levels = c("Free Epilimnion", "Particle Epilimnion", "Free Hypolimnion", "Particle Hypolimnion"))
+
+mid20phy$Phylum = with(mid20phy, factor(Phylum, levels = rev(levels(Phylum))))
+
+#jpeg(filename="Abundance_middle19.jpeg", width= 28, height=25, units= "cm", pointsize= 10, res=250)
+mid20phy_plot <- ggplot(mid20phy, aes(y=mean_abundance , x=Phylum, fill=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  guides(fill = guide_legend(reverse=TRUE)) + ggtitle("") + 
+  geom_bar(stat="identity", position=position_dodge()) + #theme_classic() +
+  geom_bar(stat="identity", position=position_dodge(), colour = "black", show_guide = FALSE) +
+  facet_wrap(~ prod_quad, ncol = 8) + xlab("Middle 20 Most Abundant Phyla") +
+  scale_fill_manual(values = phy.colors.whew,name="Phylum") + 
+  geom_errorbar(aes(ymin = mean_abundance -se, ymax = mean_abundance +se), width = 0.25, color = "black") + 
+  ylab("Mean Percent Relative Abundance (%)") + coord_flip() + theme_bw() + 
+  scale_y_continuous(breaks=seq(0, 1.6, 0.4), lim = c(0, 1.7)) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(colour = "black", size=14, vjust = 1, hjust = 1, angle = 60),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="grey77", color = NA),
+        legend.position="right"); #mid20phy_plot
+#dev.off()
+
+
+
+library(gtable)
+# get gtable object
+z <- ggplot_gtable(ggplot_build(mid20phy_plot))
+
+# http://stackoverflow.com/questions/22818061/annotating-facet-title-as-strip-over-facet
+# http://stackoverflow.com/questions/11353287/how-do-you-add-a-general-label-to-facets-in-ggplot2
+# http://stackoverflow.com/questions/11442981/ggplot2-strip-text-labels-facet-wrap
+# add label for top strip
+z <- gtable_add_rows(z, z$heights[[3]], 2)
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 4, 3, 7, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Particle-Associated", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 9, 3, 13, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.6))),
+                             textGrob("Productive", gp = gpar(fontsize = 14, col = "black"))),
+                     2, 4, 2, 13, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 15, 3, 19, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Particle-Associated", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 22, 3, 25, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gray(0.6))),
+                             textGrob("Unproductive", gp = gpar(fontsize = 14, col = "black"))),
+                     2, 15, 2, 25, name = paste(runif(2)))
+
+# add margins
+z <- gtable_add_cols(z, unit(1/8, "line"), 7)
+z <- gtable_add_rows(z, unit(1/8, "line"), 3)
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.S3_Abundance_mid20_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
+# draw it
+grid.newpage()
+grid.draw(z)
+#dev.off()
+
+
+
