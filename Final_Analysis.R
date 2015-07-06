@@ -2228,3 +2228,206 @@ grid.draw(z)
 
 
 
+####################################################################################  OTU SUM
+####################################################################################  OTU SUM
+####################################################################################  OTU SUM
+# For alpha diversity we will RAREFY our phyloseq object.  Our raw-data phyloseq object was:
+raw_merged  # Raw Merged Samples, we have 14,378 OTUs
+raw_nowin <- subset_samples(raw_merged, names != "WINH" & names != "WINH3um")
+raw_nosherwin <- subset_samples(raw_nowin, lakenames != "Sherman")
+raw_nosherwin <- prune_taxa(taxa_sums(raw_nosherwin) > 0, raw_nosherwin)
+
+#Data Import for rarefied data 
+raw_nosherwin  
+min(sample_sums(raw_nowin))
+
+# Following code from Michelle's Butterflygut website: http://rstudio-pubs-static.s3.amazonaws.com/25722_9fc9bdc48f0d4f13b05fa61baeda57a0.html#alpha-diversity
+# Rarefy to 14937 reads with replacement 100 times to estimate species richness
+# Since we are rarefying to 14937 reads we need to remove the two samples with less than 1000 reads
+nosherwin_raredata14936 <- prune_samples(sample_sums(raw_nosherwin) > 14936, raw_nosherwin)
+ggplot(data.frame(sum=sample_sums(nosherwin_raredata14936)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="violetred")  + xlab("Total Sequences") 
+
+
+nosherwin_raredata14936 <- rarefy_even_depth(nosherwin_raredata14936, sample.size = 14936, rngseed =3)
+ggplot(data.frame(sum=sample_sums(nosherwin_raredata14936)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="deepskyblue")  + xlab("Total Sequences") 
+
+nosherwin_raredata14936 = prune_taxa(taxa_sums(nosherwin_raredata14936) > 0, nosherwin_raredata14936)
+good_OTU <- nosherwin_raredata14936
+
+#################  FREE LIVING VS PARTICLE ASSOCIATED 
+#Create FREE LIVING DF 
+freeOTU <- subset_samples(good_OTU, filter == "Free")
+freeOTU2 <- prune_taxa(taxa_sums(freeOTU) > 0, freeOTU)
+freeOTU_melt <- psmelt(freeOTU2)
+freeOTU_melt <- subset(freeOTU_melt, select = c("Sample", "filter", "Species"))
+dim(freeOTU_melt)
+# Creating the df 
+free_vector <- as.vector(unique(freeOTU_melt$Species))
+erp <- rep("Free", len = length(free_vector))
+unique_free <- as.data.frame(cbind(erp, free_vector))
+colnames(unique_free) <- c("Preference", "OTU")
+unique_free$OTU <- as.character(unique_free$OTU)
+
+## CREATE PARTICLE ASSOCIATED DF 
+partOTU <- subset_samples(good_OTU, filter == "Particle")
+partOTU2 <- prune_taxa(taxa_sums(partOTU) > 0, partOTU)
+partOTU_melt <- psmelt(partOTU2)
+partOTU_melt <- subset(partOTU_melt, select = c("Sample", "filter", "Species"))
+dim(partOTU_melt)
+#creating the df 
+part_vector <- as.vector(unique(partOTU_melt$Species))
+erppart <- rep("Particle", len = length(part_vector))
+unique_part <- as.data.frame(cbind(erppart, part_vector))
+colnames(unique_part) <- c("Preference", "OTU")
+unique_part$OTU <- as.character(unique_part$OTU)
+
+overlap <- length(intersect(unique_part$OTU, unique_free$OTU))
+free_only <- length(setdiff(unique_free$OTU, unique_part$OTU))
+part_only <- length(setdiff(unique_part$OTU, unique_free$OTU))
+free_total <- length(free_vector)
+part_total <- length(part_vector)
+
+
+# Create Data Frame with NA's
+PAFL_otu <- data.frame(matrix(NA, nrow=6, ncol=3))
+# Confirm Size of Data Frame
+dim(PAFL_otu)
+# Change Variable Names
+names(PAFL_otu) <- c("SampleType","Type", "NumOTUs")
+PAFL_otu$SampleType <- c("Particle", "Particle", "Particle", "Free", "Free", "Free")
+PAFL_otu$Type <- c("Total", "Particle-Associated Only", "Both", "Total", "Free-Living Only", "Both")
+PAFL_otu$NumOTUs <- c(part_total, part_only, overlap, free_total, free_only, overlap)
+PAFL_otu2 <- subset(PAFL_otu, Type != "Total")
+#Fisher's test = INSIGNIFICANT
+
+#################  TOP VS BOTTOM 
+#Create EPILIMNION  DF 
+topOTU <- subset_samples(good_OTU, limnion == "Epilimnion")
+topOTU2 <- prune_taxa(taxa_sums(topOTU) > 0, topOTU)
+topOTU_melt <- psmelt(topOTU2)
+topOTU_melt <- subset(topOTU_melt, select = c("Sample", "limnion", "Species"))
+dim(topOTU_melt)
+# Creating the df 
+top_vector <- as.vector(unique(topOTU_melt$Species))
+toperp <- rep("Epilimnion", len = length(top_vector))
+unique_top <- as.data.frame(cbind(toperp, top_vector))
+colnames(unique_top) <- c("Preference", "OTU")
+unique_top$OTU <- as.character(unique_top$OTU)
+
+## CREATE PARTICLE ASSOCIATED DF 
+bottomOTU <- subset_samples(good_OTU, limnion == "Hypolimnion")
+bottomOTU2 <- prune_taxa(taxa_sums(bottomOTU) > 0, bottomOTU)
+bottomOTU_melt <- psmelt(bottomOTU2)
+bottomOTU_melt <- subset(bottomOTU_melt, select = c("Sample", "limnion", "Species"))
+dim(bottomOTU_melt)
+#creating the df 
+bot_vector <- as.vector(unique(bottomOTU_melt$Species))
+boterp <- rep("Hypolimnion", len = length(bot_vector))
+unique_bottom <- as.data.frame(cbind(boterp, bot_vector))
+colnames(unique_bottom) <- c("Preference", "OTU")
+unique_bottom$OTU <- as.character(unique_bottom$OTU)
+
+
+library(dplyr)
+TB_overlap <- length(intersect(unique_bottom$OTU, unique_top$OTU))
+top_only <- length(setdiff(unique_top$OTU, unique_bottom$OTU))
+bottom_only <- length(setdiff(unique_bottom$OTU, unique_top$OTU))
+top_total <- length(top_vector)
+bottom_total <- length(bot_vector)
+
+# Create Data Frame with NA's
+TB_otu <- data.frame(matrix(NA, nrow=6, ncol=3))
+# Confirm Size of Data Frame
+dim(TB_otu)
+# Change Variable Names
+names(TB_otu) <- c("SampleType","Type", "NumOTUs")
+TB_otu$SampleType <- c("Epilimnion", "Epilimnion", "Epilimnion", "Hypolimnion", "Hypolimnion", "Hypolimnion")
+TB_otu$Type <- c("Total", "Epilimnion Only", "Both", "Total", "Hypolimnion Only", "Both")
+TB_otu$NumOTUs <- c(top_total, top_only, TB_overlap, bottom_total, bottom_only, TB_overlap)
+TB_otu2 <- subset(TB_otu, Type != "Total")
+# Fisher's test:  p = 0.0001
+
+#################  EU/MESO/OLIGO + PRODUCTIVE VS UNPRODUCTIVE 
+#Create EPILIMNION  DF 
+prodOTU <- subset_samples(good_OTU, ProdLevel == "Productive")
+prodOTU2 <- prune_taxa(taxa_sums(prodOTU) > 0, prodOTU)
+prodOTU_melt <- psmelt(prodOTU2)
+prodOTU_melt <- subset(prodOTU_melt, select = c("Sample", "ProdLevel", "Species"))
+dim(prodOTU_melt)
+# Creating the df 
+prod_vector <- as.vector(unique(prodOTU_melt$Species))
+proderp <- rep("Productve", len = length(prod_vector))
+unique_prod <- as.data.frame(cbind(proderp, prod_vector))
+colnames(unique_prod) <- c("Preference", "OTU")
+unique_prod$OTU <- as.character(unique_prod$OTU)
+
+## CREATE PARTICLE ASSOCIATED DF 
+unprodOTU <- subset_samples(good_OTU, ProdLevel == "Unproductive")
+unprodOTU2 <- prune_taxa(taxa_sums(unprodOTU) > 0, unprodOTU)
+unprodOTU_melt <- psmelt(unprodOTU2)
+unprodOTU_melt <- subset(unprodOTU_melt, select = c("Sample", "ProdLevel", "Species"))
+dim(unprodOTU_melt)
+#creating the df 
+unprod_vector <- as.vector(unique(unprodOTU_melt$Species))
+unproderp <- rep("Unproductive", len = length(unprod_vector))
+unique_unprod <- as.data.frame(cbind(unproderp, unprod_vector))
+colnames(unique_unprod) <- c("Preference", "OTU")
+unique_unprod$OTU <- as.character(unique_unprod$OTU)
+
+Prod_overlap <- length(intersect(unique_unprod$OTU, unique_prod$OTU))
+prod_only <- length(setdiff(unique_prod$OTU, unique_unprod$OTU))
+unprod_only <- length(setdiff(unique_unprod$OTU, unique_prod$OTU))
+prod_total <- length(prod_vector)
+unprod_total <- length(unprod_vector)
+
+# Create Data Frame with NA's
+prod_otu <- data.frame(matrix(NA, nrow=6, ncol=3))
+# Confirm Size of Data Frame
+dim(prod_otu)
+# Change Variable Names
+names(prod_otu) <- c("SampleType","Type", "NumOTUs")
+prod_otu$SampleType <- c("High Nutrient", "High Nutrient", "High Nutrient", "Low Nutrient", "Low Nutrient", "Low Nutrient")
+prod_otu$Type <- c("Total", "High Nutrient Only", "Both", "Total", "Low Nutrient Only", "Both")
+prod_otu$NumOTUs <- c(prod_total, prod_only, Prod_overlap, unprod_total, unprod_only, Prod_overlap)
+prod_otu2 <- subset(prod_otu, Type != "Total")
+#Fisher's test:  p = 0.0001
+
+
+###  PUT IT ALL TOGETHER! 
+PAFL_otu2$Comparison <- "Particle-Associated \n vs. Free-Living"
+TB_otu2$Comparison <- "Epilimnion \n vs. Hypolimnion"
+prod_otu2$Comparison <- "High  vs. Low \nNutrient"
+otusums <- rbind(PAFL_otu2, TB_otu2, prod_otu2)
+
+otusums$Comparison <- factor(otusums$Comparison,levels = c("Particle-Associated \n vs. Free-Living", "High  vs. Low \nNutrient", "Epilimnion \n vs. Hypolimnion"))
+otusums$SampleType <- factor(otusums$SampleType,levels = c("Free", "Particle", "Low Nutrient", "High Nutrient", "Epilimnion", "Hypolimnion"))
+otusums$Type <- factor(otusums$Type, levels = c("Both","Free-Living Only", "Particle-Associated Only", "Low Nutrient Only", "High Nutrient Only", "Epilimnion Only", "Hypolimnion Only"))
+#otusums$Type <- factor(otusums$Type, levels = rev(levels(otusums$Type)))
+
+
+label.df <- data.frame(Group = c("Productive \n vs. Unproductive", "Epilimnion \n vs. Hypolimnion"),
+                       Value = c(8600, 8000))
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.5_DetectedOTUs_rarefied.jpeg", width= 23, height=18, units= "cm", pointsize= 10, res=250)
+ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
+  facet_grid(. ~ Comparison,scales = "free") + #geom_text(x = 2, y = 8750, label = "***") +
+  xlab("Sample Type ") + ylab("Number of Deteceted UniqueOTUs") + 
+  geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
+  scale_y_continuous(expand = c(0,0), breaks=seq(0, 6000, 1000), lim = c(0, 6000)) + 
+  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low Nutrient Only", "High Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Both"),
+                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low Nutrient Only", "High Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Both"),
+                    values = c("orange", "red", "darkgreen", "limegreen", "deepskyblue", "blue4", "gray39")) +
+  theme_classic() + theme(axis.title.x = element_text(face="bold", size=16),
+                          axis.text.x = element_text(angle=20, vjust = 1, hjust = 1, colour = "black", size=14),
+                          axis.text.y = element_text(colour = "black", size=14),
+                          axis.title.y = element_text(face="bold", size=16),
+                          plot.title = element_text(face="bold", size = 20),
+                          strip.text.x = element_text(size=14, face="bold"),
+                          legend.title = element_blank(),
+                          legend.text = element_text(size = 12),
+                          strip.background = element_blank(),
+                          legend.position="right")
+#dev.off()
+
