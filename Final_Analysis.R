@@ -162,6 +162,22 @@ sc_otu <- otu_table(scaled_merged)  # OTU table in our phyloseq object
 sc_tax <- tax_table(scaled_merged)  # Taxonomy Table in our phyloseq object
 merged_final <- merge_phyloseq(sc_tax, sc_otu, data_dup) 
 
+########## ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(merged_final))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
+
+phy$Phylum <- Phylum
+t <- tax_table(as.matrix(phy))
+
+tax_table(merged_final) <- t
+
 # Our phyloseq object!
 merged_final 
 
@@ -363,16 +379,17 @@ pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, sha
 
 
 ############## NMDS NMDS NMDS NMDS NDMS
-nmds_bray <- metaMDS(normOTU, distance="bray")  #, autotransform = FALSE
+set.seed(3)
+nmds_bray <- metaMDS(nowinOTU, distance="bray")  #, autotransform = FALSE
 nmds_bray <- data.frame(nmds_bray$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
 nmds_bray$names<-row.names(nmds_bray) #new names column
 nmds_bray <- makeCategories_dups(nmds_bray) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
 nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
-nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1, MDS2, color = quadrant, shape = trophicstate)) +
-  xlab("NMDS1") + ylab("NMDS2") + #ggtitle("Bray-Curtis: Scaled") +
-  geom_point(size= 6, alpha=0.9) + theme_bw() + 
-  annotate("text", label = " Stress = 0.17", x = (max(nmds_bray$MDS1) -0.25), y = (max(nmds_bray$MDS2) -0.02), size = 6, colour = "black") +
+nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape = trophicstate)) +
+  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
+  annotate("text", label = " Stress = 0.17", x = (max(nmds_bray$MDS1*10) -0.2), y = (max(nmds_bray$MDS2*10) -0.02), size = 6, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
                      values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
@@ -385,21 +402,23 @@ nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1, MDS2, color = quadrant, shape = trop
         axis.title.y = element_text(face="bold", size=16),
         legend.title = element_text(size=12, face="bold"),
         legend.text = element_text(size = 12),
+        plot.title = element_text(size = 16, face="bold"),
         ###LEGEND TOP RIGHT CORNER
-        legend.position = "right");  nmds_bc_quad
+        legend.position = "none");  nmds_bc_quad
 
 
 # UNWEIGHTED
-nmds_soren <- metaMDS(normOTU, distance="bray", binary = TRUE)
+set.seed(3)
+nmds_soren <- metaMDS(nowinOTU, distance="bray", binary = TRUE)
 nmds_soren <- data.frame(nmds_soren$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
 nmds_soren$names<-row.names(nmds_soren) #new names column
 nmds_soren <- makeCategories_dups(nmds_soren) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
 nmds_soren$quadrant <- factor(nmds_soren$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
 nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = trophicstate)) +
-  xlab("NMDS1") + ylab("NMDS2") + #ggtitle("Sorensen: Scaled") +
-  geom_point(size= 6, alpha=0.9) + theme_bw() + 
-  annotate("text", label = " Stress = 0.14", x = (max(nmds_soren$MDS1) -0.25), y = (max(nmds_soren$MDS2) -0.02), size = 6, colour = "black") +
+  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Sorensen Dissimilarity") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
+  annotate("text", label = " Stress = 0.14", x = (max(nmds_soren$MDS1) -0.18), y = (max(nmds_soren$MDS2) -0.01), size = 6, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
                      values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
@@ -412,13 +431,20 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
         axis.title.y = element_text(face="bold", size=16),
         legend.title = element_text(size=12, face="bold"),
         legend.text = element_text(size = 12),
+        plot.title = element_text(size = 16, face="bold"),
         ###LEGEND TOP RIGHT CORNER
         legend.position = "right");  nmds_soren_quad
 
 
-multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
+#multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.2_NMDS_bc+soren.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.42,0.58))))
+print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
 
 ####################################################  ALPHA DIVERSITY  ####################################################
 ####################################################  ALPHA DIVERSITY  ####################################################
@@ -1025,21 +1051,6 @@ betaPAFL_plotSE <- ggplot(ddply_betaPAFL, aes(x = troph_filt, y = mean, color = 
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################
-########## ADD THE PROTEOBACTERIA TO THE PHYLA
-phy <- data.frame(tax_table(merged_final))
-Phylum <- as.character(phy$Phylum)
-Class <- as.character(phy$Class)
-
-for  (i in 1:length(Phylum)){ 
-  if (Phylum[i] == "Proteobacteria"){
-    Phylum[i] <- Class[i]
-  } 
-}
-
-phy$Phylum <- Phylum
-t <- tax_table(as.matrix(phy))
-
-tax_table(merged_final) <- t
 #View(data.frame(tax_table(merged_final)))  #Sanity check
 good_phylum_proteo <-tax_glom(merged_final,taxrank = "Phylum")
 
