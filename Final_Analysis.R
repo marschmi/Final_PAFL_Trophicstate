@@ -248,10 +248,11 @@ profile_labeller <- function(var, value){
 mean_profile$Variable <-factor(mean_profile$Variable,levels=c("temp", "DO", "pH", "SpC"))
 mean_profile$trophicstate <-factor(mean_profile$trophicstate,levels=c("Productive", "Unproductive", "Mixed"))
 mean_profile13 <- subset(mean_profile, depth < 13.1)
+mean_profile13b <- subset(mean_profile13, Variable != "SpC")
 
 ## AVERAGE PLOT!
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
-ggplot(mean_profile13, aes(x=mean, y = depth, color = trophicstate)) +   
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
+ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +   
   facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
   theme_bw() +  geom_point(size=4, alpha = 0.8) + geom_hline(h=0) +
@@ -271,7 +272,8 @@ ggplot(mean_profile13, aes(x=mean, y = depth, color = trophicstate)) +
         legend.text = element_text(size = 12),
         strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
         strip.background = element_blank(),
-        legend.position = c(0.81, 0.08));
+        legend.position = c(0.1, 0.93));
+        #legend.position = c(0.81, 0.08));
 #dev.off()
 
 # ALL LAKES 
