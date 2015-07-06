@@ -251,7 +251,7 @@ mean_profile13 <- subset(mean_profile, depth < 13.1)
 mean_profile13b <- subset(mean_profile13, Variable != "SpC")
 
 ## AVERAGE PLOT!
-jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 32, height=30, units= "cm",pointsize= 18, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 32, height=30, units= "cm",pointsize= 18, res=500)
 ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +   
   facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
@@ -274,11 +274,9 @@ ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +
         strip.background = element_blank(),
         legend.position = c(0.1, 0.93));
         #legend.position = c(0.81, 0.08));
-dev.off()
+#dev.off()
 
 # ALL LAKES 
-library(tidyr)
-library(dplyr)
 profile_all <- profile %>%  gather(Variable, Value, 4:7)
 profile_all$lakename <- as.character(profile_all$lakename)
 profile_all$lakename[profile_all$lakename == "WIN"] <- "Wintergreen"
@@ -455,16 +453,24 @@ print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 ####################################################################################  ADONIS  ####################################################################################
 ####################################################################################  ADONIS  ####################################################################################
 #  First we need to organize our environmental data
+nowin_merged <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
+nowin_merged <- prune_taxa(taxa_sums(nowin_merged) > 0, nowin_merged)
+nosherwin_merged <- subset_samples(nowin_merged, lakenames != "Sherman")
+nosherwin_merged <- prune_taxa(taxa_sums(nosherwin_merged) > 0, nosherwin_merged)  # 594 OTUs are unique to SHERMAN!
+
 #nowin_merged
-environ <- sample_data(nowin_merged)
+environ <- sample_data(nosherwin_merged)
 environ <- subset(environ, select = c("names", "lakenames", "limnion", "filter", "trophicstate","ProdLevel", "totaldepth", "DO", "SpC", "temp", "pH")) # , "nitrate", "chla", "ammonia", "SRP", "TP", "Ncoord", "Wcoord"))
 environ <- data.frame(environ)
 ## TO MAKE QUADRANT
 for(i in 1:length(environ$limnion)){
   environ$quadrant[i]<-paste(as.character(environ$filter[i]),as.character(environ$limnion[i]))}
 
+
+#########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
+nosherwinOTU <- otu_table(nosherwin_merged)
 #nowinOTU # This is our OTU table that we will use for Adonis 
-BCdist <- vegdist(nowinOTU, method = "bray", binary = FALSE)
+BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)
 # 
 # #Run an ADONIS test!
 adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +trophicstate+ DO+temp + pH, data=environ) # R2 = 0.36245
@@ -481,7 +487,7 @@ adonis_PAFL_pH <- adonis(BCdist~ pH,data=environ) # R2 =
 # adonis_PAFL_troph <- adonis(BCdist~trophicstate,data=environ)
 
 # Epilimnion!
-epi <- subset_samples(nowin_merged, limnion == "Epilimnion")
+epi <- subset_samples(nosherwin_merged, limnion == "Epilimnion")
 epiOTU <- otu_table(epi)
 epi_BC <- vegdist(epiOTU, method = "bray")
 epi_env <- subset(environ, limnion == "Epilimnion")
@@ -496,7 +502,7 @@ epi_adon_pH <- adonis(epiOTU ~ pH, data=epi_env) # R2 = 0.086
 
 
 # hypolimnion!
-hypo <- subset_samples(nowin_merged, limnion == "Hypolimnion")
+hypo <- subset_samples(nosherwin_merged, limnion == "Hypolimnion")
 hypoOTU <- otu_table(hypo)
 hypo_BC <- vegdist(hypoOTU, method = "bray")
 hypo_env <- subset(environ, limnion == "Hypolimnion")
@@ -511,7 +517,7 @@ hypo_adon_pH <- adonis(hypoOTU ~ pH, data=hypo_env) # R2 =
 
 
 # Oligotrophic!!
-oligo <- subset_samples(nowin_merged, trophicstate == "Oligotrophic")
+oligo <- subset_samples(nosherwin_merged, trophicstate == "Oligotrophic")
 oligoOTU <- otu_table(oligo)
 oligo_BC <- vegdist(oligoOTU, method = "bray")
 oligo_env <- subset(environ, trophicstate == "Oligotrophic")
@@ -524,7 +530,7 @@ oligo_adon_mult <- adonis(oligo_BC ~ limnion+filter+DO + temp + pH, data=oligo_e
 
 
 # MESO + EUTROPHIC!!
-prod <- subset_samples(nowin_merged, ProdLevel == "Productive")
+prod <- subset_samples(nosherwin_merged, ProdLevel == "Productive")
 prodOTU <- otu_table(prod)
 prod_BC <- vegdist(prodOTU, method = "bray")
 prod_env <- subset(environ, ProdLevel == "Productive")
@@ -536,6 +542,37 @@ prod_adon_pH <- adonis(prod_BC ~ pH, data=prod_env) # R2 =
 prod_adon_mult <- adonis(prod_BC ~ limnion+filter+DO + temp + pH, data=prod_env) # R2 = 
 
 
+#  First we need to organize our environmental data
+sherman_merged <- subset_samples(merged_final, lakenames == "Sherman")
+sherman_merged <- prune_taxa(taxa_sums(sherman_merged) > 0, sherman_merged)
+
+#nowin_merged
+sherm_environ <- sample_data(sherman_merged)
+sherm_environ <- subset(sherm_environ, select = c("names", "lakenames", "limnion", "filter", "trophicstate","ProdLevel", "totaldepth", "DO", "SpC", "temp", "pH")) # , "nitrate", "chla", "ammonia", "SRP", "TP", "Ncoord", "Wcoord"))
+sherm_environ <- data.frame(sherm_environ)
+sherm_environ$limnion <- as.character(sherm_environ$limnion)
+sherm_environ$limnion[sherm_environ$limnion == "Mixed" & sherm_environ$names == "SHEE"] <- "Surface"
+sherm_environ$limnion[sherm_environ$limnion == "Mixed" & sherm_environ$names == "SHEH"] <- "Bottom"
+sherm_environ$limnion[sherm_environ$limnion == "Mixed" & sherm_environ$names == "SHEE3um"] <- "Surface"
+sherm_environ$limnion[sherm_environ$limnion == "Mixed" & sherm_environ$names == "SHEH3um"] <- "Bottom"
+
+## TO MAKE QUADRANT
+for(i in 1:length(sherm_environ$limnion)){
+  sherm_environ$quadrant[i]<-paste(as.character(sherm_environ$filter[i]),as.character(sherm_environ$limnion[i]))}
+
+
+#########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
+sherm_OTU <- otu_table(sherman_merged)
+#nowinOTU # This is our OTU table that we will use for Adonis 
+sherm_BCdist <- vegdist(sherm_OTU, method = "bray", binary = FALSE)
+# 
+# #Run an ADONIS test!
+adonis_sherm_mult <- adonis(sherm_BCdist ~ filter+limnion+DO+temp+pH, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_filt <- adonis(sherm_BCdist ~ filter, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_limnion <- adonis(sherm_BCdist ~ limnion, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_temp <- adonis(sherm_BCdist ~ temp, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_pH <- adonis(sherm_BCdist ~ pH, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_DO <- adonis(sherm_BCdist ~ DO, data=sherm_environ, nperm = 999) # R2 = 0.36245
 
 
 
