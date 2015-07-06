@@ -316,11 +316,37 @@ ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +
 ####################################################  ORDINATIONS  ####################################################
 ####################################################  ORDINATIONS  ####################################################
 ####################################################  ORDINATIONS  ####################################################
-########  NMDS + PCoA Plots
+### Clustering 
 ### Get rid of the Wintergreen HYPOLIMNION Samples
 nowin_merged <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
 nowin_merged <- prune_taxa(taxa_sums(nowin_merged) > 0, nowin_merged)
+otu <- otu_table(nowin_merged)
+otu_bray <- vegdist(otu, method = "bray")  # calculates the Bray-Curtis Distances
+df_otu <- data.frame(otu)
+otu_soren <- vegdist(df_otu, method = "bray", binary = TRUE)  # calculates the Bray-Curtis Distances
 
+
+### Clustering based on 
+#jpeg(filename="clustering_bray+soren.jpeg", width= 45, height=32, units= "cm", pointsize= 14, res=500)
+par(mfrow = c(2,1))
+plot(hclust(otu_bray), main = "Bray-Curtis Distance")
+plot(hclust(otu_soren), main = "Sorensen Distance")
+#dev.off()
+
+# vector of colors
+mypal = c("black", "red", "blue", "purple", "green3", "orange", "maroon1", "gold")
+# cutting dendrogram in 5 clusters
+hc <- hclust(otu_bray)
+clus5 = cutree(hc, 5)
+par(mfrow = c(1,1))
+plot(as.phylo(hc), tip.color = mypal[clus5],  main = "Bray Curtis Dissimilarity") 
+
+plot(as.phylo(hc), main = "", xlab = "Samples", sub = "", tip.color = mypal[clus5], ylab = "Bray Curtis Dissimilarity") 
+
+
+
+
+########  NMDS + PCoA Plots
 #########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
 nowinOTU <- otu_table(nowin_merged)
 #weighted
@@ -351,8 +377,10 @@ pcoa_BC <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape =
         legend.position = "right"); pcoa_BC
 
 ##########  SORENSEN'S DISSIMILARITY
-nowinOTU <- as.matrix(nowinOTU)
-norm_soren <- vegdist(nowinOTU, method = "bray", binary = TRUE)
+nowinOTU2 <- data.frame(otu_table(nowin_merged))
+nowinOTU3 <- t(nowinOTU2)
+norm_soren <- vegdist(nowinOTU3, method = "bray", binary = TRUE)
+
 soren_pcoa <- pcoa(norm_soren)
 soren_pcoa2 <- soren_pcoa$vectors
 soren_pcoa3 <- data.frame(soren_pcoa2[, 1:3])
@@ -377,6 +405,10 @@ pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, sha
         legend.text = element_text(size = 12),
         ###LEGEND TOP RIGHT CORNER
         legend.position = "right"); pcoa_soren
+
+
+
+
 
 
 ############## NMDS NMDS NMDS NMDS NDMS
