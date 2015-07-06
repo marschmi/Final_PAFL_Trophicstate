@@ -1041,14 +1041,12 @@ t <- tax_table(as.matrix(phy))
 
 tax_table(merged_final) <- t
 #View(data.frame(tax_table(merged_final)))  #Sanity check
-
 good_phylum_proteo <-tax_glom(merged_final,taxrank = "Phylum")
 
 ### Subsetting Sherman lake for differences between particle and free living 
 phy_sherm <- subset_samples(good_phylum_proteo, lakenames == "Sherman")  
 phy_shemeister <- deSEQ(phy_sherm, ~ filter)
 physherm_plot <- plot_phylum_deSEQ(phy_shemeister, "Sherman: Phylum-Level")
-#sherm_plots <- multiplot(physherm_plot,sherm_plot, cols = 2)
 
 ########## SUBSET OUT SHERMAN AND WINTERGREEN HYPOLIMNION
 good_phylum_nosher <- subset_samples(good_phylum_proteo, lakenames != "Sherman")
@@ -1057,22 +1055,22 @@ good_phylum_nosherwin <- subset_samples(good_phylum_nosher, names != "WINH" & na
 
 ############################
 ###########################################################PA VS FL
-#1. Top prod = 22 samples
+#1. Top prod 
 phytopProd <- subset_samples(good_phylum_nosherwin, ProdLevel == "Productive" & limnion == "Epilimnion") 
 de_phytopProd<- deSEQ(phytopProd, ~ filter)
 phytopProd_plot <- plot_phylum_deSEQ(de_phytopProd, "PA vs FL:  Surface Productive (Phylum)")
 
-#2 Top Oligo = 12 samples
+#2 Top Oligo 
 phytopUNProd <- subset_samples(good_phylum_nosherwin, ProdLevel == "Unproductive" & limnion == "Epilimnion") 
 de_phytopUNProd <- deSEQ(phytopUNProd, ~ filter)
 phytopUNProd_plot <- plot_phylum_deSEQ(de_phytopUNProd, "PA vs FL:  Surface Unproductive (Phylum)")
 
-#3 Bottom Productive = 20 samples
+#3 Bottom Productive 
 phybotProd <- subset_samples(good_phylum_nosherwin, ProdLevel == "Productive" & limnion == "Hypolimnion")
 de_phybotProd <- deSEQ(phybotProd, ~ filter)
 phybotProd_plot <- plot_phylum_deSEQ(de_phybotProd, "PA vs FL:  Bottom Productive (Phylum)")
 
-#4 Bottom Unproductive = 13 samples
+#4 Bottom Unproductive 
 phybotUNProd <- subset_samples(good_phylum_nosherwin, ProdLevel == "Unproductive" & limnion == "Hypolimnion") 
 de_phybotUNProd <- deSEQ(phybotUNProd, ~ filter)
 phybotUNProd_plot <- plot_phylum_deSEQ(de_phybotUNProd, "PA vs FL:  Bottom Unproductive (Phylum)")
@@ -1082,22 +1080,22 @@ pafl_phylum <- multiplot(phytopProd_plot, phybotProd_plot, phytopUNProd_plot, ph
 
 ############################
 ###########################################################TOP VS BOTTOM
-#1. PA prod = 22 samples
+#1. PA prod 
 phyprodPA <- subset_samples(good_phylum_nosherwin, ProdLevel == "Productive" & filter == "Particle") 
 de_phyprodPA <- deSEQ(phyprodPA, ~ limnion)
 phyprodPA_plot <- plot_phylum_deSEQ(de_phyprodPA, "Surface vs Bottom:  PA Productive (Phylum)")
 
-#2 PA Oligo = 13 samples
+#2 PA Oligo 
 phyunprodPA <- subset_samples(good_phylum_nosherwin, ProdLevel == "Unproductive" & filter == "Particle") 
 de_phyunprodPA <- deSEQ(phyunprodPA, ~ limnion)
 phyunprodPA_plot <- plot_phylum_deSEQ(de_phyunprodPA, "Surface vs Bottom:  PA Unproductive (Phylum)")
 
-#3 FL Productive = 21 samples
+#3 FL Productive 
 phyprodFL <- subset_samples(good_phylum_nosherwin, ProdLevel == "Productive" & filter == "Free") 
 de_phyprodFL <- deSEQ(phyprodFL, ~ limnion)
 phyprodFL_plot <- plot_phylum_deSEQ(de_phyprodFL, "Surface vs Bottom:  FL Productive (Phylum)")
 
-#4 FL Unproductive = 13 samples
+#4 FL Unproductive 
 phyunprodFL <- subset_samples(good_phylum_nosherwin, ProdLevel == "Unproductive" & filter == "Free") 
 de_phyunprodFL <- deSEQ(phyunprodFL, ~ limnion)
 phyunprodFL_plot <- plot_phylum_deSEQ(de_phyunprodFL, "Surface vs Bottom:  FL Unproductive (Phylum)")
@@ -1107,22 +1105,22 @@ topbot_phylum <- multiplot(phyprodPA_plot, phyprodFL_plot, phyunprodPA_plot, phy
 
 ############################
 ###########################################################PROD VS OLIGO
-#1. Top PA = 17 samples
+#1. Top PA 
 phytopPA <- subset_samples(good_phylum_nosherwin, limnion == "Epilimnion" & filter == "Particle") ## DOES NOT WORK!!!!!!!!!!
 de_phytopPA <- deSEQ(phytopPA, ~ ProdLevel)   ## DOES NOT WORK!!!!!!!!!!
 phytopPA_plot <- plot_phylum_deSEQ(de_phytopPA, "Productive vs Unproductive:  PA Surface (Phylum)")
 
-#2 BOTTOM PA = 17 samples
+#2 BOTTOM PA 
 phybotPA <- subset_samples(good_phylum_nosherwin, limnion == "Hypolimnion" & filter == "Particle") 
 de_phybotPA <- deSEQ(phybotPA, ~ ProdLevel)
 phybotPA_plot <- plot_phylum_deSEQ(de_phybotPA, "Productive vs Unproductive:  PA Bottom (Phylum)")
 
-#3 TOP FL = 17 samples
+#3 TOP FL
 phytopFL <- subset_samples(good_phylum_nosherwin, limnion == "Epilimnion" & filter == "Free") 
 de_phytopFL <- deSEQ(phytopFL, ~ ProdLevel)  ## DOES NOT WORK!!!!!!!!!!
 phytopFL_plot <- plot_phylum_deSEQ(de_phytopFL, "Productive vs Unproductive:  FL Surface (Phylum)")
 
-#4 Bottom FL = 16 samples
+#4 Bottom FL 
 phybotFL <- subset_samples(good_phylum_nosherwin, limnion == "Hypolimnion" & filter == "Free") 
 de_phybotFL <- deSEQ(phybotFL, ~ ProdLevel)
 phybotFL_plot <- plot_phylum_deSEQ(de_phybotFL, "Productive vs Unproductive:  FL Bottom (Phylum)")
@@ -1210,10 +1208,6 @@ dfrat$Phylum <- factor(dfrat$Phylum,levels = c("Bacteroidetes", "Cyanobacteria",
 dfrat$Phylum = with(dfrat, factor(Phylum, levels = rev(levels(Phylum))))
 
 
-
-
-
-
 #################################################################################  OVERALL ABUNDANCE PLOT
 good_phylum_proteo <-tax_glom(merged_final,taxrank = "Phylum")
 goodsamps_phylum <- tax_glom(good_phylum_proteo,taxrank = "Phylum")
@@ -1285,7 +1279,7 @@ dfrat$Habitat <- factor(dfrat$Habitat,levels = c("Epilimnion Productive", "Hypol
 heat <- ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
   scale_fill_gradient2(name = "Odds\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 18)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + 
-  ylab("Phylum") + xlab("Comparison & Habitat") + 
+  ylab("Phylum") + xlab("Habitat") + 
   #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
   #scale_y_discrete(limits=phys) + xlab("Habitat") + ylab("Phylum") + 
   facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
@@ -1336,5 +1330,379 @@ pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(relabun_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
+
+
+####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################
+####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################
+####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################
+### Subsetting Sherman lake for differences between particle and free living 
+sherm <- subset_samples(merged_final, lakenames == "Sherman")  
+shemeister <- deSEQ(sherm, ~ filter)
+sherm_plot <- plot_deSEQ(shemeister, "Sherman: OTU-Level")
+sherm_plots <- multiplot(physherm_plot,sherm_plot, cols = 2)
+
+
+########## SUBSET OUT SHERMAN AND WINTERGREEN HYPOLIMNION
+good_samps_nosher <- subset_samples(merged_final, lakenames != "Sherman")
+good_samps_nosherwin <- subset_samples(good_samps_nosher, names != "WINH" & names != "WINH3um")
+#View(data.frame(sample_data(good_samps_nosherwin))) 
+
+
+############################
+###########################################################PA VS FL
+#1. Top prod 
+topProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & limnion == "Epilimnion")
+de_topProd <- deSEQ(topProd, ~ filter)
+topProd_plot <- plot_deSEQ(de_topProd, "PA vs FL:  Surface Productive (OTU)")
+
+#2 Top Oligo 
+topUNProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & limnion == "Epilimnion")
+de_topUNProd <- deSEQ(topUNProd, ~ filter)
+topUNProd_plot <- plot_deSEQ(de_topUNProd, "PA vs FL:  Surface Unproductive (OTU)")
+
+#3 Bottom Productive 
+botProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & limnion == "Hypolimnion") 
+de_botProd <- deSEQ(botProd, ~ filter)
+botProd_plot <- plot_deSEQ(de_botProd, "PA vs FL:  Bottom Productive (OTU)")
+
+#4 Bottom Unproductive 
+botUNProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & limnion == "Hypolimnion") 
+de_botUNProd <- deSEQ(botUNProd, ~ filter)
+botUNProd_plot <- plot_deSEQ(de_botUNProd, "PA vs FL:  Bottom Unproductive (OTU)")
+
+pafl_otu <- multiplot(topProd_plot, botProd_plot, topUNProd_plot, botUNProd_plot,cols = 2)
+
+
+############################
+###########################################################TOP VS BOTTOM
+#1. Top prod 
+prodPA <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & filter == "Particle") 
+de_prodPA <- deSEQ(prodPA, ~ limnion)
+prodPA_plot <- plot_deSEQ(de_prodPA, "Surface vs Bottom:  PA Productive (OTU)")
+
+#2 Top Oligo 
+unprodPA <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & filter == "Particle") 
+de_unprodPA <- deSEQ(unprodPA, ~ limnion)
+unprodPA_plot <- plot_deSEQ(de_unprodPA, "Surface vs Bottom:  PA Unproductive (OTU)")
+
+#3 Bottom Productive 
+prodFL <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & filter == "Free") 
+de_prodFL <- deSEQ(prodFL, ~ limnion)
+prodFL_plot <- plot_deSEQ(de_prodFL, "Surface vs Bottom:  FL Productive (OTU)")
+
+#4 Bottom Unproductive 
+unprodFL <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & filter == "Free") 
+de_unprodFL <- deSEQ(unprodFL, ~ limnion)
+unprodFL_plot <- plot_deSEQ(de_unprodFL, "Surface vs Bottom:  FL Unproductive (OTU)")
+
+topbot_otu <- multiplot(prodPA_plot, prodFL_plot, unprodPA_plot, unprodFL_plot,cols = 2)
+
+############################
+###########################################################PROD VS OLIGO
+#1. Top prod 
+topPA <- subset_samples(good_samps_nosherwin, limnion == "Epilimnion" & filter == "Particle") 
+de_topPA <- deSEQ(topPA, ~ ProdLevel)
+topPA_plot <- plot_deSEQ(de_topPA, "Productive vs Unproductive:  PA Surface (OTU)")
+
+#2 Top Oligo 
+botPA <- subset_samples(good_samps_nosherwin, limnion == "Hypolimnion" & filter == "Particle") 
+de_botPA <- deSEQ(botPA, ~ ProdLevel)
+botPA_plot <- plot_deSEQ(de_botPA, "Productive vs Unproductive:  PA Bottom (OTU)")
+
+#3 Bottom Productive 
+topFL <- subset_samples(good_samps_nosherwin, limnion == "Epilimnion" & filter == "Free") 
+de_topFL <- deSEQ(topFL, ~ ProdLevel)
+topFL_plot <- plot_deSEQ(de_topFL, "Productive vs Unproductive:  FL Surface (OTU)")
+
+#4 Bottom Unproductive 
+botFL <- subset_samples(good_samps_nosherwin, limnion == "Hypolimnion" & filter == "Free") 
+de_botFL <- deSEQ(botFL, ~ ProdLevel)
+botFL_plot <- plot_deSEQ(de_botFL, "Productive vs Unproductive:  FL Bottom (OTU)")
+
+prodoligo_otu <- multiplot(topFL_plot, botFL_plot, topPA_plot, botPA_plot, cols = 2)
+
+
+
+#PA VS FL:  
+#Surface productive
+pafl1 <- subset(de_topProd, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+pafl1$Habitat <- "PA vs. FL: Epilimnion Productive"
+#Surface unproductive
+pafl2 <- subset(de_botProd, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+pafl2$Habitat <- "PA vs. FL: Epilimnion Unproductive"
+#Bottom Productive
+pafl3 <- subset(de_topUNProd, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+pafl3$Habitat <- "PA vs. FL: Hypolimnion Productive"
+#Bottom Unproductive
+pafl4 <- subset(de_botUNProd, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+pafl4$Habitat <- "PA vs. FL: Hypolimnion Unproductive"
+
+
+
+###Top vs Bottom:  
+otu_topbot1 <- subset(de_prodPA, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+otu_topbot1$Habitat <- "Top vs. Bottom: Productive \n Particle-Associated"
+# Particle-Associated UNproductive
+otu_topbot2 <- subset(de_unprodPA, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+otu_topbot2$Habitat <- "Top vs. Bottom: Unproductive \n Particle-Associated"
+# Free-Living Productive 
+otu_topbot3 <- subset(de_prodFL, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+otu_topbot3$Habitat <- "Top vs. Bottom: Productive \n Free-Living"
+# Free-Living UNproductive
+otu_topbot4 <- subset(de_unprodFL, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+otu_topbot4$Habitat <- "Top vs. Bottom: Unproductive \n Free-Living"
+
+
+
+#Prod vs Oligo:  
+otu_troph1 <- subset(de_topPA, select = c(Phylum, Genus, Species, log2FoldChange, padj)) 
+otu_troph1$Habitat <- "Prod vs. Unprod: Particle-Associated \n Epilimnion"
+# Particle-Associated BOTTOM
+otu_troph2 <- subset(de_botPA, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+otu_troph2$Habitat <- "Prod vs. Unprod: Particle-Associated \n Hypolimnion"
+# Free-Living TOP 
+otu_troph3 <- subset(de_topFL, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+otu_troph3$Habitat <- "Prod vs. Unprod: Free-Living \nEpilimnion"
+# Free-Living BOTTOM
+otu_troph4 <- subset(de_botFL, select = c(Phylum, Genus, Species, log2FoldChange, padj))
+otu_troph4$Habitat <- "Prod vs. Unprod: Free-Living \nHypolimnion"
+
+
+######  Combing all into one dataframe named out_ratio
+otu_trophs <- rbind(otu_troph1, otu_troph2, otu_troph3, otu_troph4)
+newlog2foldchange <- as.numeric(otu_trophs$log2FoldChange * -1) # To correlate with Top vs bottom
+otu_trophs$log2FoldChange <- newlog2foldchange
+
+otu_ratio <-rbind(pafl1, pafl2, pafl3, pafl4,
+                  otu_topbot1, otu_topbot2, otu_topbot3, otu_topbot4,
+                  otu_trophs) #otu_troph1, otu_troph2, otu_troph3, otu_troph4)
+
+#What's the min and max ratios?
+paste(c("The range of the log2foldChange is", min(otu_ratio$log2FoldChange), "to",  max(otu_ratio$log2FoldChange)))
+
+
+#Split of the habitat column to 2 columns named comparison and habitat
+otu_cols <- colsplit(otu_ratio$Habitat, ":", c("Comparison", "Habitat"))
+otu_ratio$Habitat = NULL
+otu_ratios <- cbind(otu_ratio, otu_cols)
+
+mf_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="Comparison") { 
+    value[value=="PA vs. FL"] <- "Particle-Associated \n vs. \n Free-Living"
+    value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. \nEpilimnion"
+    value[value=="Prod vs. Unprod"]   <- "Productive \n vs. \nUnproductive"
+  }
+  return(value)
+}
+
+no_unclass_genus <- subset(otu_ratios, Genus != "unclassified")
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/genus_heat.jpeg", width= 30, height=60, units= "cm", pointsize= 8, res=250)
+## GENUS LEVEL HEAT PLOT
+ggplot(no_unclass_genus, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-Ratio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 18)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
+  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
+  xlab("Habitat") + ylab("Genus") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_blank(), #text(face="bold", size=16),
+        legend.title = element_text(face="bold", size=12),
+        legend.text = element_text(size = 12),
+        legend.position = c(0.1, 0.93), #"left",
+        axis.title.y = element_text(face="bold", size=16),
+        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
+        strip.text.x = element_text(size=16, face = "bold", colour = "black"),
+        strip.background = element_blank());  
+#dev.off()
+
+
+
+
+########   Attempting the Vanette Plot
+### PA (positive) vs FL (negative)
+### Top (negative) vs Bottom (positive)
+###Prod (negative) vs Unprod (positive)
+#head(otu_ratios)
+#subset out prod vs unprod
+sig_oturats <- otu_ratios
+pvu <- subset(sig_oturats, Comparison == "Prod vs. Unprod")
+tvb <- subset(sig_oturats, Comparison == "Top vs. Bottom")
+pvf <- subset(sig_oturats, Comparison == "PA vs. FL")
+#plot_deSEQ(pvu, "Prod vs. Unprod")
+#plot_deSEQ(tvb, "Top vs Bottom")
+#plot_deSEQ(pvf, "PA vs FL")
+
+
+
+
+# Let's start with PA vs FL as it has the clearest trend and the fewest Phyla
+#we need a df with the sums of significant OTUs in each phylum for PA AND FL
+pvf_FL <- subset(pvf, log2FoldChange < 0)  # There are 
+length(unique(pvf_FL$Species))  ### 35 OTUs are significantly overrepresented in FL across all habitats
+pvf_FL$Preference <- "Free-Living"
+pvf_PA <- subset(pvf, log2FoldChange > 0)
+length(unique(pvf_PA$Species))  ### 67 OTUs are significantly overrepresented in FL across all habitats
+pvf_PA$Preference <- "Particle-Associated"
+pvf2 <- rbind(pvf_FL, pvf_PA)
+# Make a new data frame with each phylum and the number of sigs in each environment
+phylumlist <- as.character(unique(pvf2$Phylum))
+res_PA <- data.frame(matrix(NA,length(pvf2),3)) #Create a dummy table to fill in values with during for loop.
+names(res_PA) <- c("Phylum", "NumSigOTUs", "Preference")
+res_FL <- data.frame(matrix(NA,length(pvf2),3))
+names(res_FL) <- c("Phylum", "NumSigOTUs", "Preference")
+for(i in 1:length(phylumlist)){
+  ## PARTICLE ASSOCIATED
+  df_PA <- subset(pvf_PA, Phylum == phylumlist[i]) #particle-associated phylum i
+  num_sigOTUs <- length(unique(df_PA$Species))
+  res_PA[i,1] <- phylumlist[i] #put the name of the phylum in the table
+  res_PA[i,2] <- num_sigOTUs #put the number of sig OTUs in the table. 
+  res_PA[i,3] <- "Particle-Associated"
+  ##FREE LIVING
+  df_FL <- subset(pvf_FL, Phylum == phylumlist[i]) #free phylum i
+  num_sigOTUs <- length(unique(df_FL$Species))
+  res_FL[i,1] <- phylumlist[i] #put the name of the phylum in the table.
+  res_FL[i,2] <- num_sigOTUs * -1 #put the number of sig OTUs in the table. 
+  res_FL[i,3] <- "Free-Living"
+  PAFL_OTUresults <- rbind(res_PA, res_FL)
+  PAFL_OTUresults$Comparison <- "Particle-Associated \nvs. \nFree-Living"
+}
+
+
+#we need a df with the sums of significant OTUs in each phylum for PROD AND UNPROD
+###  Prod (POSITIVE) vs Unprod (NEGATIVE)
+#Select Unproductive
+pvu_oligo <- subset(pvu, log2FoldChange < 0) 
+length(unique(pvu_oligo$Species))  ### 63 OTUs are significantly overrepresented in FL across all habitats
+pvu_oligo$Preference <- "Unproductive"
+#Select Productive
+pvu_prod <- subset(pvu, log2FoldChange > 0)
+length(unique(pvu_prod$Species))  ### 67 OTUs are significantly overrepresented in FL across all habitats
+pvu_prod$Preference <- "Productive"
+pvu2 <- rbind(pvu_oligo, pvu_prod)
+# Make a new data frame with each phylum and the number of sigs in each environment
+pvu_phylumlist <- as.character(unique(pvu2$Phylum))
+res_prod <- data.frame(matrix(NA,length(pvu_phylumlist),3))
+names(res_prod) <- c("Phylum", "NumSigOTUs", "Preference")
+res_oligo <- data.frame(matrix(NA,length(pvu_phylumlist),3))
+names(res_oligo) <- c("Phylum", "NumSigOTUs", "Preference")
+for(i in 1:length(pvu_phylumlist)){
+  ## PRODUCTIVE
+  df_prod <- subset(pvu_prod, Phylum == pvu_phylumlist[i]) #free phylum i
+  num_sigOTUs <- length(unique(df_prod$Species))
+  res_prod[i,1] <- pvu_phylumlist[i] #put the name of the phylum in the table
+  res_prod[i,2] <- num_sigOTUs #put the number of sig OTUs in the table. 
+  res_prod[i,3] <- "Productive"
+  ## UNPRODUCTIVE
+  df_oligo <- subset(pvu_oligo, Phylum == pvu_phylumlist[i]) #free phylum i
+  num_sigOTUs <- length(unique(df_oligo$Species))
+  res_oligo[i,1] <- pvu_phylumlist[i] #put the name of the phylum in the table.
+  res_oligo[i,2] <- num_sigOTUs * -1 #put the number of sig OTUs in the table. 
+  res_oligo[i,3] <- "Unproductive"
+  PVU_OTUresults <- rbind(res_prod,res_oligo)
+  PVU_OTUresults$Comparison <- "Productive \n vs. \n Unproductive"
+}
+
+
+#we need a df with the sums of significant OTUs in each phylum for TOP AND BOTTOM
+### Top (negative) vs Bottom (positive)
+#Select TOP
+tvb_top <- subset(tvb, log2FoldChange < 0) 
+length(unique(tvb_top$Species))  ### 51 OTUs are significantly overrepresented in FL across all habitats
+tvb_top$Preference <- "Epilimnion"
+#Select Bottom
+tvb_bottom <- subset(tvb, log2FoldChange > 0)
+length(unique(tvb_bottom$Species))  ### 169 OTUs are significantly overrepresented in FL across all habitats
+tvb_bottom$Preference <- "Hypolimnion"
+tvb2 <- rbind(tvb_top, tvb_bottom)
+# Make a new data frame with each phylum and the number of sigs in each environment
+tvb_phylumlist <- as.character(unique(tvb2$Phylum))
+res_top <- data.frame(matrix(NA,length(tvb_phylumlist),3))
+names(res_top) <- c("Phylum", "NumSigOTUs", "Preference")
+res_bottom <- data.frame(matrix(NA,length(tvb_phylumlist),3))
+names(res_bottom) <- c("Phylum", "NumSigOTUs", "Preference")
+for(i in 1:length(tvb_phylumlist)){
+  ## BOTTOM
+  df_bottom <- subset(tvb_bottom, Phylum == tvb_phylumlist[i]) #free phylum i
+  num_sigOTUs <- length(unique(df_bottom$Species))
+  res_bottom[i,1] <- tvb_phylumlist[i] #put the name of the phylum in the table
+  res_bottom[i,2] <- num_sigOTUs #put the number of sig OTUs in the table. 
+  res_bottom[i,3] <- "Hypolimnion"
+  ## TOP
+  df_top <- subset(tvb_top, Phylum == tvb_phylumlist[i]) #free phylum i
+  num_sigOTUs <- length(unique(df_top$Species))
+  res_top[i,1] <- tvb_phylumlist[i] #put the name of the phylum in the table.
+  res_top[i,2] <- num_sigOTUs * -1 #put the number of sig OTUs in the table. 
+  res_top[i,3] <- "Epilimnion"
+  TVB_OTUresults <- rbind(res_bottom,res_top)
+  TVB_OTUresults$Comparison <- "Hypolimnion \n vs. \n Epilimnion"
+}
+
+
+### COMBINING ALL
+allOTU_results <- rbind(TVB_OTUresults, PAFL_OTUresults, PVU_OTUresults)
+
+allOTU_results$Preference <- factor(allOTU_results$Preference,
+                                    levels = c("Particle-Associated","Free-Living","Productive","Unproductive","Hypolimnion","Epilimnion")) 
+
+allOTU_results$Comparison <- factor(allOTU_results$Comparison,
+                                    levels = c("Particle-Associated \nvs. \nFree-Living", "Productive \n vs. \n Unproductive","Hypolimnion \n vs. \n Epilimnion")) 
+
+allOTU_results$Phylum <- factor(allOTU_results$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+                                                                 "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                                                 "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Chlamydiae", "Epsilonproteobacteria", "TA18", "Fibrobacteres", "Candidate_division_SR1", 
+                                                                 "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
+                                                                 "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))
+
+###### Trying without the positive and negative 
+#original 
+ggplot(allOTU_results, aes(x=Phylum, y=NumSigOTUs, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() + scale_y_continuous(breaks=seq(-200, 200, 25)) +
+  facet_grid(Comparison ~ Phylum, scales = "free",  labeller = mf_labeller) + 
+  ylab("Number of Significant OTUs") +  xlab("Phylum") +
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=12),
+        axis.text.y = element_text(colour = "black", size=12),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        strip.text.x = element_blank(),
+        strip.text.y = element_text(size = 12, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position="top")
+
+allOTU_results$Phylum = with(allOTU_results, factor(Phylum, levels = rev(levels(Phylum))))
+
+### This plot is flipped!
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/summed_otus.jpeg.jpeg",  width= 25, height=35, units= "cm", pointsize= 8, res=250)
+ggplot(allOTU_results, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + coord_flip() + ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() +# scale_y_continuous(breaks=seq(-200, 200, 25)) +
+  facet_grid(. ~ Comparison, scales = "free_y", labeller = mf_labeller) + theme_bw() +
+  ylab("Number of Significant OTUs") +  xlab("Phylum") + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(colour = "black", size=12),
+        axis.text.y = element_text(colour = "black", size=12),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 12, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position="right")
+#dev.off()
+
+
+
+
+
+
 
 
