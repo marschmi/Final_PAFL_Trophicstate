@@ -1679,7 +1679,7 @@ ggplot(allOTU_results, aes(x=Phylum, y=NumSigOTUs, fill=Preference)) +
 allOTU_results$Phylum = with(allOTU_results, factor(Phylum, levels = rev(levels(Phylum))))
 
 ### This plot is flipped!
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/summed_otus.jpeg.jpeg",  width= 25, height=35, units= "cm", pointsize= 8, res=250)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/summed_otus.jpeg",  width= 25, height=35, units= "cm", pointsize= 8, res=250)
 ggplot(allOTU_results, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
@@ -1700,9 +1700,126 @@ ggplot(allOTU_results, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) +
 #dev.off()
 
 
+################# AVERAGE OTU PLOT ##############
+################# AVERAGE OTU PLOT ##############
+################# AVERAGE OTU PLOT ##############
+###### Attempting to do the AVERAGE-OTU PLOT
+#we need a df with the sums of unique & significant OTUs in each phylum for each HABITAT PA AND FL
+# Make a new data frame with each phylum and the number of sigs in each environment
+# PA VS FL:  FL (negative) PA (positive)
+group_pvfPA <- group_by(pvf_PA, Phylum, Comparison, Habitat, Preference)
+sum_group_pvfPA <- summarize(group_pvfPA,count=n())
+group_pvfFL <- group_by(pvf_FL, Phylum, Comparison, Habitat, Preference)
+sum_group_pvfFL <- summarize(group_pvfFL,count=n())
+sum_group_pvfFL$count <- sum_group_pvfFL$count * -1
+#library(plyr) #plyr way
+#count_PA <-count(pvf_PA, c("Phylum", "Comparison", "Habitat", "Preference"))
+#count_FL <-count(pvf_FL, c("Phylum", "Comparison", "Habitat", "Preference"))
+#count_FL$freq <- count_FL$freq * -1
+#count_PAFL <- rbind(count_PA, count_FL)
+
+# PROD VS UNPROD  ###  Prod (POSITIVE) vs Unprod (NEGATIVE)
+group_pvu_prod <- group_by(pvu_prod, Phylum, Comparison, Habitat, Preference)
+sum_group_pvu_prod <- summarize(group_pvu_prod,count=n())
+group_pvu_oligo <- group_by(pvu_oligo, Phylum, Comparison, Habitat, Preference)
+sum_group_pvu_oligo <- summarize(group_pvu_oligo,count=n())
+sum_group_pvu_oligo$count <- sum_group_pvu_oligo$count * -1
+#plyr way
+#count_prod <-count(pvu_prod, c("Phylum", "Comparison", "Habitat", "Preference"))
+#count_oligo <-count(pvu_oligo, c("Phylum", "Comparison", "Habitat", "Preference"))
+#count_oligo$freq <- count_oligo$freq * -1
+
+### Top (negative) vs Bottom (positive)
+group_tvb_bottom <- group_by(tvb_bottom, Phylum, Comparison, Habitat, Preference)
+sum_group_tvb_bottom <- summarize(group_tvb_bottom,count=n())
+group_tvb_top <- group_by(tvb_top, Phylum, Comparison, Habitat, Preference)
+sum_group_tvb_top <- summarize(group_tvb_top,count=n())
+sum_group_tvb_top$count <- sum_group_tvb_top$count * -1
+
+#counts_ALL <- rbind(count_PA, count_FL, count_prod, count_oligo, count_top, count_bottom)
+counts_ALL <- rbind(sum_group_pvfPA, sum_group_pvfFL, sum_group_pvu_prod, sum_group_pvu_oligo, sum_group_tvb_top, sum_group_tvb_bottom)
+counts_ALL$Phylum <- factor(counts_ALL$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+                                                         "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                                         "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Chlamydiae", "Epsilonproteobacteria", "TA18", "Fibrobacteres", "Candidate_division_SR1", 
+                                                         "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
+                                                         "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))
+
+counts_ALL$Phylum = with(counts_ALL, factor(Phylum, levels = rev(levels(Phylum))))
 
 
 
+### SUMMARIZING WITH DDPLY 
+#df_top16_positive <- df_top16
+#df_top16_positive$freq <- abs(df_top16_positive$freq)
+df_all <- ddply(counts_ALL, c("Phylum", "Preference"), summarise, 
+                N = length(count),
+                mean = mean(count),
+                sd   = sd(count),
+                se   = sd / sqrt(N))
 
 
+# Add a Comparison Column 
+df_all$Comparison <- ""  # Add an empty column named Comparison 
+ddply_table <- data.table(df_all)
+##  Add in the values
+ddply_table[, Comparison := ifelse(Preference %in% c("Particle-Associated", "Free-Living"), "Particle-Associated \nvs. \nFree-Living",
+                                   ifelse(Preference %in% c("Epilimnion", "Hypolimnion"), "Hypolimnion \n vs. \n Epilimnion",
+                                          ifelse(Preference %in% c("Unproductive", "Productive"), "Productive \n vs. \n Unproductive", NA)))]
+###  Order the values
+ddply_table$Comparison <- factor(ddply_table$Comparison, levels = c("Particle-Associated \nvs. \nFree-Living", "Productive \n vs. \n Unproductive", "Hypolimnion \n vs. \n Epilimnion"))
+ddply_table$Preference <- factor(ddply_table$Preference,levels = c("Particle-Associated", "Free-Living", "Productive", "Unproductive", "Hypolimnion", "Epilimnion"))
+
+### PLOTTING THE AVERAGE! 
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/average_otus_all_SE.jpeg", width= 30, height=35, units= "cm", pointsize= 8, res=250)
+ggplot(ddply_table, aes(y=mean, x=Phylum, fill=Preference)) + theme_bw() +
+  geom_bar(stat="identity", position="identity") + coord_flip() + 
+  geom_hline(yintercept = 0) + guides(fill = guide_legend(keywidth = 2, keyheight = 2)) +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  scale_y_continuous(breaks=seq(-20, 100, 20)) +#scale_y_continuous(breaks=seq(-200, 200, 25))+
+  facet_grid(. ~ Comparison, scales = "free_y", labeller = mf_labeller) + 
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.25) +
+  ylab("Mean Number of Significant OTUs") +  xlab("Phylum") + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(colour = "black", size=12),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 12, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position = "right")#c(0.88, 0.12))
+#dev.off()
+
+
+
+# Top 20 Phyla
+OTUtop20 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+              "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae","unclassified")
+top20_ddplyOTU <- subset(ddply_table, Phylum == OTUtop20)
+
+OTU_20 <- ddply_table[ddply_table$Phylum %in% OTUtop20, ]
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.6_average_otus_top17_SE.jpeg", width= 25, height=20, units= "cm", pointsize= 8, res=250)
+ggplot(OTU_20, aes(y=mean, x=Phylum, fill=Preference)) + theme_bw() +
+  geom_bar(stat="identity", position="identity") + coord_flip() + 
+  geom_hline(yintercept = 0) + guides(fill = guide_legend(keywidth = 2, keyheight = 2)) +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  scale_y_continuous(breaks=seq(-20, 100, 20)) +#scale_y_continuous(breaks=seq(-200, 200, 25))+
+  facet_grid(. ~ Comparison, scales = "free_y", labeller = mf_labeller) + 
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.25) +
+  ylab("Mean Number of Significant OTUs") +  xlab("Phylum") + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(colour = "black", size=12),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 12, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position = "right" ) # c(0.18, 0.12))
+#dev.off()
 
