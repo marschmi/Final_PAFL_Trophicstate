@@ -319,6 +319,7 @@ ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +
 ########  NMDS + PCoA Plots
 ### Get rid of the Wintergreen HYPOLIMNION Samples
 nowin_merged <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
+nowin_merged <- prune_taxa(taxa_sums(nowin_merged) > 0, nowin_merged)
 
 #########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
 nowinOTU <- otu_table(nowin_merged)
@@ -445,6 +446,97 @@ pushViewport(viewport(layout=grid.layout(1,2,width=c(0.42,0.58))))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
+
+
+
+####################################################################################  ADONIS  ####################################################################################
+####################################################################################  ADONIS  ####################################################################################
+####################################################################################  ADONIS  ####################################################################################
+#  First we need to organize our environmental data
+#nowin_merged
+environ <- sample_data(nowin_merged)
+environ <- subset(environ, select = c("names", "lakenames", "limnion", "filter", "trophicstate","ProdLevel", "totaldepth", "DO", "SpC", "temp", "pH")) # , "nitrate", "chla", "ammonia", "SRP", "TP", "Ncoord", "Wcoord"))
+environ <- data.frame(environ)
+## TO MAKE QUADRANT
+for(i in 1:length(environ$limnion)){
+  environ$quadrant[i]<-paste(as.character(environ$filter[i]),as.character(environ$limnion[i]))}
+
+#nowinOTU # This is our OTU table that we will use for Adonis 
+BCdist <- vegdist(nowinOTU, method = "bray", binary = FALSE)
+# 
+# #Run an ADONIS test!
+adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +trophicstate+ DO+temp + pH, data=environ) # R2 = 0.36245
+adonis_PAFL_quad <- adonis(BCdist~quadrant,data=environ) #  R2 = 
+adonis_PAFL_filt <- adonis(BCdist~filter,data=environ)  #R2 = 
+adonis_PAFL_limnion <- adonis(BCdist~limnion,data=environ) #R2 = 
+adonis_PAFL_DO <- adonis(BCdist~DO,data=environ) # R2 = 
+adonis_PAFL_trophicstate <- adonis(BCdist~trophicstate, data = environ) # R2 = 
+adonis_PAFL_prod <- adonis(BCdist~ProdLevel, data = environ) # R2 = 
+adonis_PAFL_temp <- adonis(BCdist~ temp,data=environ) # R2 = 
+adonis_PAFL_pH <- adonis(BCdist~ pH,data=environ) # R2 = 
+
+
+# adonis_PAFL_troph <- adonis(BCdist~trophicstate,data=environ)
+
+# Epilimnion!
+epi <- subset_samples(nowin_merged, limnion == "Epilimnion")
+epiOTU <- otu_table(epi)
+epi_BC <- vegdist(epiOTU, method = "bray")
+epi_env <- subset(environ, limnion == "Epilimnion")
+
+epi_adon_mult<- adonis(epiOTU ~ filter+trophicstate+ DO + temp + pH, data=epi_env) #R2 = 
+epi_adon_filt <- adonis(epiOTU ~ filter, data=epi_env) # R2 = 
+epi_adon_troph <- adonis(epiOTU ~ trophicstate, data=epi_env) # R2 =  
+epi_adon_prod <- adonis(epiOTU ~ ProdLevel, data=epi_env) # R2 =  
+epi_adon_DO <- adonis(epiOTU ~ DO, data=epi_env) # R2 = 0.086
+epi_adon_temp <- adonis(epiOTU ~ temp, data=epi_env) # R2 = 0.086
+epi_adon_pH <- adonis(epiOTU ~ pH, data=epi_env) # R2 = 0.086
+
+
+# hypolimnion!
+hypo <- subset_samples(nowin_merged, limnion == "Hypolimnion")
+hypoOTU <- otu_table(hypo)
+hypo_BC <- vegdist(hypoOTU, method = "bray")
+hypo_env <- subset(environ, limnion == "Hypolimnion")
+hypo_adon_mult <- adonis(hypoOTU ~ filter+trophicstate+DO + temp + pH, data=hypo_env) # R2 = 
+#hypo_adon_mult2 <- adonis(hypoOTU ~ trophicstate + filter, data=hypo_env) # 
+hypo_adon_filt <- adonis(hypoOTU ~ filter, data=hypo_env) # R2 = 
+hypo_adon_troph <- adonis(hypoOTU ~ trophicstate, data=hypo_env) # R2 = 
+hypo_adon_prod <- adonis(hypoOTU ~ ProdLevel, data=hypo_env) # R2 = 
+hypo_adon_DO <- adonis(hypoOTU ~ DO, data=hypo_env) # R2 = 
+hypo_adon_temp <- adonis(hypoOTU ~ temp, data=hypo_env) # R2 = 
+hypo_adon_pH <- adonis(hypoOTU ~ pH, data=hypo_env) # R2 = 
+
+
+# Oligotrophic!!
+oligo <- subset_samples(nowin_merged, trophicstate == "Oligotrophic")
+oligoOTU <- otu_table(oligo)
+oligo_BC <- vegdist(oligoOTU, method = "bray")
+oligo_env <- subset(environ, trophicstate == "Oligotrophic")
+oligo_adon_filt <- adonis(oligo_BC ~ filter, data=oligo_env) # R2 = 
+oligo_adon_limnion <- adonis(oligo_BC ~ limnion, data=oligo_env) # R2 = 
+oligo_adon_DO <- adonis(oligo_BC ~ DO, data=oligo_env) # R2 = 
+oligo_adon_temp <- adonis(oligo_BC ~ temp, data=oligo_env) # R2 = 
+oligo_adon_pH <- adonis(oligo_BC ~ pH, data=oligo_env) # R2 = 
+oligo_adon_mult <- adonis(oligo_BC ~ limnion+filter+DO + temp + pH, data=oligo_env) # R2 = 
+
+
+# MESO + EUTROPHIC!!
+prod <- subset_samples(nowin_merged, ProdLevel == "Productive")
+prodOTU <- otu_table(prod)
+prod_BC <- vegdist(prodOTU, method = "bray")
+prod_env <- subset(environ, ProdLevel == "Productive")
+prod_adon_filt <- adonis(prod_BC ~ filter, data=prod_env) # R2 = 
+prod_adon_limnion <- adonis(prod_BC ~ limnion, data=prod_env) # R2 = 
+prod_adon_DO <- adonis(prod_BC ~ DO, data=prod_env) # R2 = 
+prod_adon_temp <- adonis(prod_BC ~ temp, data=prod_env) # R2 = 
+prod_adon_pH <- adonis(prod_BC ~ pH, data=prod_env) # R2 = 
+prod_adon_mult <- adonis(prod_BC ~ limnion+filter+DO + temp + pH, data=prod_env) # R2 = 
+
+
+
+
+
 
 ####################################################  ALPHA DIVERSITY  ####################################################
 ####################################################  ALPHA DIVERSITY  ####################################################
