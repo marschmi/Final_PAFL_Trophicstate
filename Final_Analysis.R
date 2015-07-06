@@ -1192,14 +1192,14 @@ dfrat <- cbind(df_ratio, split_cols)
 mf_labeller <- function(var, value){
   value <- as.character(value)
   if (var=="Comparison") { 
-    value[value=="PA vs. FL"] <- "Particle-Associated \n vs. Free-Living"
-    value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. Epilimnion"
-    value[value=="Prod vs. Unprod"]   <- "Productive  vs.\nUnproductive"
+    value[value=="PA vs. FL"] <- "Particle-Associated \n vs. \nFree-Living"
+    value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. \nEpilimnion"
+    value[value=="Prod vs. Unprod"]   <- "Productive \n vs.\nUnproductive"
   }
   return(value)
 }
 
-#dfrat <- subset(dfrat, Phylum != "unclassified")
+uncla <- subset(dfrat, Phylum == "unclassified")
 
 dfrat$Phylum <- factor(dfrat$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
                                                "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
@@ -1281,32 +1281,37 @@ dfrat$Habitat <- factor(dfrat$Habitat,levels = c("Epilimnion Productive", "Hypol
                                                  "Particle-Associated \nHypolimnion", "Free-Living \nEpilimnion", "Free-Living \nHypolimnion", 
                                                  "Productive \nParticle-Associated", "Productive \nFree-Living", "Unproductive \nParticle-Associated", "Unproductive \nFree-Living"))
 
-jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.4_heat_only.jpeg", width= 30, height=35, units= "cm", pointsize= 8, res=250)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.4_heat_only.jpeg", width= 30, height=35, units= "cm", pointsize= 8, res=250)
 heat <- ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
-  scale_fill_gradient2(name = "Odds\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 2, barheight = 14)) + #scale_y_reverse() + 
+  scale_fill_gradient2(name = "Odds\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 18)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + 
   ylab("Phylum") + xlab("Comparison & Habitat") + 
   #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
   #scale_y_discrete(limits=phys) + xlab("Habitat") + ylab("Phylum") + 
   facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
   theme(axis.text.x = element_text(colour="black", size=12, angle = 30, hjust = 1, vjust = 1), 
-        axis.text.y = element_text(colour="black", vjust=0.5, size=12),
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
         axis.title.x = element_text(face="bold", size=16),
-        legend.title = element_text(face="bold", size=12),
-        legend.text = element_text(size = 12),
-        legend.position = "left",
+        legend.title = element_text(face="bold", size=14),
+        legend.text = element_text(size = 14),
+        legend.position = c(0.94, 0.13),#"left",
         axis.title.y = element_text(face="bold", size=16),
         plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
         strip.text.x = element_text(size=14, face = "bold", colour = "black"),
-        strip.background = element_blank()); heat
-dev.off()
+        strip.background = element_blank()); 
+#dev.off()
 
 #http://stackoverflow.com/questions/4559229/drawing-pyramid-plot-using-r-and-ggplot2
 
-##abund$Phylum %in% dfrat$Phylum
-###
+setdiff(abund$Phylum, dfrat$Phylum)  # Discover the phyla that are in the abundance plot but NOT significantly differentially abundant at the phylum level
+phylum_delete <- c("Candidate_division_OP11", "Candidate_division_OP8", "Candidate_division_TM7", "Deferribacteres", "Deltaproteobacteria", "Dictyoglomi", "SPOTSOCT00m83", "Thermotogae", "TM6", "unclassified", "WCHB1-60")
 
-relabun_plot <- ggplot(abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+subset_abundPhylum <- subset(abund, !(Phylum %in% phylum_delete))
+#setdiff(subset_abundPhylum$Phylum, dfrat$Phylum)  # Sanity check
+#setdiff(dfrat$Phylum, subset_abundPhylum$Phylum)  # Double sanity check
+
+
+relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
   geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
   ylab("Mean Percent \n Relative \n Abundance (%)") + coord_flip() + theme_bw() + 
   geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
@@ -1316,16 +1321,16 @@ relabun_plot <- ggplot(abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(x
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),
         strip.background = element_rect(colour="black", fill = "black"),
-        plot.margin = unit(c(1.48, 2, 1.2, -1.25), "cm"), #top, right, bottom, left
+        plot.margin = unit(c(2, 2, 1.65, -1.25), "cm"), #top, right, bottom, left
         #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
-        legend.position="none")
+        legend.position="none"); #relabun_plot
 
 
 
 #multiplot(relabun_plot, heat2, cols = 2)
 
 #http://stackoverflow.com/questions/20817094/how-to-control-width-of-multiple-plots-in-ggplot2
-#jpeg(filename="PhylumHeat_paper.jpeg", width= 30, height=35, units= "cm", pointsize= 8, res=250)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.4_heat+abund.jpeg", width= 35, height=35, units= "cm", pointsize= 8, res=250)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
