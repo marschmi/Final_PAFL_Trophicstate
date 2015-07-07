@@ -521,14 +521,55 @@ adonis_PAFL_temp <- adonis(BCdist~ temp,data=environ) # R2 =
 adonis_PAFL_pH <- adonis(BCdist~ pH,data=environ) # R2 = 
 
 
-#adonis_PAFL_cross <- adonis(BCdist~limnion*DO,data=environ) #R2 = 
-#adonis_PAFL_DO <- adonis(BCdist~DO,data=environ) # R2 = 
-#adonis_PAFL_whew <- adonis(BCdist ~ limnion*filter *trophicstate* DO*temp * pH, data=environ) # R2 = 0.36245
+# Particle-Associated!
+part <- subset_samples(nosherwin_merged, filter == "Particle")
+set.seed(3)
+partOTU <- otu_table(part)
+part_BC <- vegdist(partOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+
+#df_partOTU <- data.frame(partOTU)
+#part_soren <- vegdist(df_partOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#part_BC <- part_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for part_BC (BC vs sorensen???)
+##  Are you sure?! 
+
+part_env <- subset(environ, filter == "Particle")  #Load Environmental Data
+
+part_adon_mult<- adonis(part_BC ~ limnion+trophicstate+ DO + temp + pH, data=part_env) #R2 = 
+part_adon_limn <- adonis(part_BC ~ limnion, data=part_env) # R2 = 
+part_adon_troph <- adonis(part_BC ~ trophicstate, data=part_env) # R2 =  
+part_adon_prod <- adonis(part_BC ~ ProdLevel, data=part_env) # R2 =  
+part_adon_DO <- adonis(part_BC ~ DO, data=part_env) # R2 = 0.086
+part_adon_temp <- adonis(part_BC ~ temp, data=part_env) # R2 = 0.086
+part_adon_pH <- adonis(part_BC ~ pH, data=part_env) # R2 = 0.086
 
 
 
+# FREE-LIVING!!!
+free <- subset_samples(nosherwin_merged, filter == "Free")
+set.seed(3)
+freeOTU <- otu_table(free)
+#free_BC <- vegdist(freeOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
 
-# adonis_PAFL_troph <- adonis(BCdist~trophicstate,data=environ)
+df_freeOTU <- data.frame(freeOTU)
+free_soren <- vegdist(df_freeOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+free_BC <- free_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for free_BC (BC vs sorensen???)
+##  Are you sure?! 
+
+free_env <- subset(environ, filter == "Free")  #Load Environmental Data
+
+free_adon_mult<- adonis(free_BC ~ limnion+trophicstate+ DO + temp + pH, data=free_env) #R2 = 
+free_adon_limn <- adonis(free_BC ~ limnion, data=free_env) # R2 = 
+free_adon_troph <- adonis(free_BC ~ trophicstate, data=free_env) # R2 =  
+free_adon_prod <- adonis(free_BC ~ ProdLevel, data=free_env) # R2 =  
+free_adon_DO <- adonis(free_BC ~ DO, data=free_env) # R2 = 0.086
+free_adon_temp <- adonis(free_BC ~ temp, data=free_env) # R2 = 0.086
+free_adon_pH <- adonis(free_BC ~ pH, data=free_env) # R2 = 0.086
+
+
 
 # Epilimnion!
 epi <- subset_samples(nosherwin_merged, limnion == "Epilimnion")
