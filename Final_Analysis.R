@@ -1830,31 +1830,16 @@ allOTU_results$Phylum <- factor(allOTU_results$Phylum,levels = c("Bacteroidetes"
                                                                  "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
                                                                  "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))
 
-###### Trying without the positive and negative 
-#original 
-ggplot(allOTU_results, aes(x=Phylum, y=NumSigOTUs, fill=Preference)) + 
-  geom_bar(stat="identity", position="identity") +
-  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
-  theme_gray() + scale_y_continuous(breaks=seq(-200, 200, 25)) +
-  facet_grid(Comparison ~ Phylum, scales = "free",  labeller = mf_labeller) + 
-  ylab("Number of Significant OTUs") +  xlab("Phylum") +
-  theme(axis.title.x = element_text(face="bold", size=16),
-        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=12),
-        axis.text.y = element_text(colour = "black", size=12),
-        axis.title.y = element_text(face="bold", size=16),
-        plot.title = element_text(face="bold", size = 20),
-        legend.title = element_blank(),
-        legend.text = element_text(size = 10),
-        strip.text.x = element_blank(),
-        strip.text.y = element_text(size = 12, face = "bold", colour = "black"),
-        strip.background = element_blank(),
-        legend.position="top")
+OTUtop20 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+              "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae","unclassified")
 
-allOTU_results$Phylum = with(allOTU_results, factor(Phylum, levels = rev(levels(Phylum))))
+summed_20 <- allOTU_results[allOTU_results$Phylum %in% OTUtop20, ]
+
+summed_20$Phylum = with(summed_20, factor(Phylum, levels = rev(levels(Phylum))))
 
 ### This plot is flipped!
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/summed_otus.jpeg",  width= 25, height=35, units= "cm", pointsize= 8, res=250)
-ggplot(allOTU_results, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/summed_otus_top17.jpeg",  width= 25, height=35, units= "cm", pointsize= 8, res=250)
+summed <- ggplot(summed_20, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
   theme_gray() +# scale_y_continuous(breaks=seq(-200, 200, 25)) +
@@ -1870,7 +1855,7 @@ ggplot(allOTU_results, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) +
         strip.text.y = element_blank(),
         strip.text.x = element_text(size = 12, face = "bold", colour = "black"),
         strip.background = element_blank(),
-        legend.position="right")
+        legend.position="none"); summed
 #dev.off()
 
 
@@ -1976,7 +1961,7 @@ top20_ddplyOTU <- subset(ddply_table, Phylum == OTUtop20)
 OTU_20 <- ddply_table[ddply_table$Phylum %in% OTUtop20, ]
 
 #jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.6_average_otus_top17_SE.jpeg", width= 25, height=20, units= "cm", pointsize= 8, res=250)
-ggplot(OTU_20, aes(y=mean, x=Phylum, fill=Preference)) + theme_bw() +
+ave <- ggplot(OTU_20, aes(y=mean, x=Phylum, fill=Preference)) + theme_bw() +
   geom_bar(stat="identity", position="identity") + coord_flip() + 
   geom_hline(yintercept = 0) + guides(fill = guide_legend(keywidth = 2, keyheight = 2)) +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
@@ -1994,15 +1979,19 @@ ggplot(OTU_20, aes(y=mean, x=Phylum, fill=Preference)) + theme_bw() +
         strip.text.y = element_blank(),
         strip.text.x = element_text(size = 12, face = "bold", colour = "black"),
         strip.background = element_blank(),
-        legend.position = "right" ) # c(0.18, 0.12))
+        legend.position = "right" ); ave # c(0.18, 0.12))
 #dev.off()
 
 
+average <- ave + ggtitle("Averaged OTUs") + xlab(" ") ; average
 
 
-
-
-
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/OTUs_summed+avg_top17.jpeg", width= 45, height=25, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.42,0.58))))
+print(summed, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(average, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
 
 
 ##################################################################################### ABUNDANCE PLOTS 
