@@ -499,11 +499,16 @@ for(i in 1:length(environ$limnion)){
   environ$quadrant[i]<-paste(as.character(environ$filter[i]),as.character(environ$limnion[i]))}
 
 
-#########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
-nosherwinOTU <- otu_table(nosherwin_merged)
-#nowinOTU # This is our OTU table that we will use for Adonis 
-BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)
-# 
+##  Calculate the BC dissimilarity and the Sorensen Dissimilarity
+nosherwinOTU <- otu_table(nosherwin_merged)  # This is our OTU table that we will use for Adonis
+#BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+df_nosherwinOTU <- data.frame(nosherwinOTU)
+otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for BCdist (BC vs sorensen???)
+##  Are you sure?!  
+
 # #Run an ADONIS test!
 adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +trophicstate+ DO+temp + pH, data=environ) # R2 = 0.36245
 adonis_PAFL_quad <- adonis(BCdist~quadrant,data=environ) #  R2 = 
@@ -516,13 +521,28 @@ adonis_PAFL_temp <- adonis(BCdist~ temp,data=environ) # R2 =
 adonis_PAFL_pH <- adonis(BCdist~ pH,data=environ) # R2 = 
 
 
+#adonis_PAFL_cross <- adonis(BCdist~limnion*DO,data=environ) #R2 = 
+#adonis_PAFL_DO <- adonis(BCdist~DO,data=environ) # R2 = 
+#adonis_PAFL_whew <- adonis(BCdist ~ limnion*filter *trophicstate* DO*temp * pH, data=environ) # R2 = 0.36245
+
+
+
+
 # adonis_PAFL_troph <- adonis(BCdist~trophicstate,data=environ)
 
 # Epilimnion!
 epi <- subset_samples(nosherwin_merged, limnion == "Epilimnion")
 epiOTU <- otu_table(epi)
 epi_BC <- vegdist(epiOTU, method = "bray")
-epi_env <- subset(environ, limnion == "Epilimnion")
+
+df_epiOTU <- data.frame(epi)
+epi_soren <- vegdist(df_epiOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+BCdist <- epi_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for BCdist (BC vs sorensen???)
+##  Are you sure?! 
+
+epi_env <- subset(environ, limnion == "Epilimnion")  #Load Environmental Data
 
 epi_adon_mult<- adonis(epiOTU ~ filter+trophicstate+ DO + temp + pH, data=epi_env) #R2 = 
 epi_adon_filt <- adonis(epiOTU ~ filter, data=epi_env) # R2 = 
