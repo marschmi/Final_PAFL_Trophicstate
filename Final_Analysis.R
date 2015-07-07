@@ -350,7 +350,7 @@ plot(as.phylo(hc), main = "", xlab = "Samples", sub = "", tip.color = mypal[clus
 #########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
 nowinOTU <- otu_table(nowin_merged)
 #weighted
-norm_bray <- vegdist(nowinOTU, method = "bray")  # calculates the Bray-Curtis Distances
+norm_bray <- vegdist(nowinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
 bray_pcoa <- pcoa(norm_bray)
 bray_pcoa2 <- bray_pcoa$vectors
 bray_pcoa3 <- data.frame(bray_pcoa2[, 1:3])
@@ -377,9 +377,8 @@ pcoa_BC <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape =
         legend.position = "right"); pcoa_BC
 
 ##########  SORENSEN'S DISSIMILARITY
-nowinOTU2 <- data.frame(otu_table(nowin_merged))
-norm_soren <- vegdist(nowinOTU3, method = "bray", binary = TRUE)
-
+nowinOTU_df <- data.frame(otu_table(nowin_merged))  
+norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
 soren_pcoa <- pcoa(norm_soren)
 soren_pcoa2 <- soren_pcoa$vectors
 soren_pcoa3 <- data.frame(soren_pcoa2[, 1:3])
