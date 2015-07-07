@@ -378,7 +378,6 @@ pcoa_BC <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape =
 
 ##########  SORENSEN'S DISSIMILARITY
 nowinOTU2 <- data.frame(otu_table(nowin_merged))
-nowinOTU3 <- t(nowinOTU2)
 norm_soren <- vegdist(nowinOTU3, method = "bray", binary = TRUE)
 
 soren_pcoa <- pcoa(norm_soren)
@@ -533,24 +532,24 @@ adonis_PAFL_pH <- adonis(BCdist~ pH,data=environ) # R2 =
 # Epilimnion!
 epi <- subset_samples(nosherwin_merged, limnion == "Epilimnion")
 epiOTU <- otu_table(epi)
-epi_BC <- vegdist(epiOTU, method = "bray")
+#epi_BC <- vegdist(epiOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
 
-df_epiOTU <- data.frame(epi)
+df_epiOTU <- data.frame(epiOTU)
 epi_soren <- vegdist(df_epiOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-BCdist <- epi_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+epi_BC <- epi_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for BCdist (BC vs sorensen???)
 ##  Are you sure?! 
 
 epi_env <- subset(environ, limnion == "Epilimnion")  #Load Environmental Data
 
-epi_adon_mult<- adonis(epiOTU ~ filter+trophicstate+ DO + temp + pH, data=epi_env) #R2 = 
-epi_adon_filt <- adonis(epiOTU ~ filter, data=epi_env) # R2 = 
-epi_adon_troph <- adonis(epiOTU ~ trophicstate, data=epi_env) # R2 =  
-epi_adon_prod <- adonis(epiOTU ~ ProdLevel, data=epi_env) # R2 =  
-epi_adon_DO <- adonis(epiOTU ~ DO, data=epi_env) # R2 = 0.086
-epi_adon_temp <- adonis(epiOTU ~ temp, data=epi_env) # R2 = 0.086
-epi_adon_pH <- adonis(epiOTU ~ pH, data=epi_env) # R2 = 0.086
+epi_adon_mult<- adonis(epi_BC ~ filter+trophicstate+ DO + temp + pH, data=epi_env) #R2 = 
+epi_adon_filt <- adonis(epi_BC ~ filter, data=epi_env) # R2 = 
+epi_adon_troph <- adonis(epi_BC ~ trophicstate, data=epi_env) # R2 =  
+epi_adon_prod <- adonis(epi_BC ~ ProdLevel, data=epi_env) # R2 =  
+epi_adon_DO <- adonis(epi_BC ~ DO, data=epi_env) # R2 = 0.086
+epi_adon_temp <- adonis(epi_BC ~ temp, data=epi_env) # R2 = 0.086
+epi_adon_pH <- adonis(epi_BC ~ pH, data=epi_env) # R2 = 0.086
 
 
 # hypolimnion!
@@ -558,7 +557,7 @@ hypo <- subset_samples(nosherwin_merged, limnion == "Hypolimnion")
 hypoOTU <- otu_table(hypo)
 hypo_BC <- vegdist(hypoOTU, method = "bray")
 hypo_env <- subset(environ, limnion == "Hypolimnion")
-hypo_adon_mult <- adonis(hypoOTU ~ filter+trophicstate+DO + temp + pH, data=hypo_env) # R2 = 
+hypo_adon_mult <- adonis(hypo_BC ~ filter+trophicstate+DO + temp + pH, data=hypo_env) # R2 = 
 #hypo_adon_mult2 <- adonis(hypoOTU ~ trophicstate + filter, data=hypo_env) # 
 hypo_adon_filt <- adonis(hypoOTU ~ filter, data=hypo_env) # R2 = 
 hypo_adon_troph <- adonis(hypoOTU ~ trophicstate, data=hypo_env) # R2 = 
