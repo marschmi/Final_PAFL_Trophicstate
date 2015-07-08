@@ -430,18 +430,26 @@ nmds_bray <- metaMDS(nowinOTU, distance="bray")  #, autotransform = FALSE
 nmds_bray <- data.frame(nmds_bray$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
 nmds_bray$names<-row.names(nmds_bray) #new names column
 nmds_bray <- makeCategories_dups(nmds_bray) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
+nmds_bray$ProdLevel <- as.character(nmds_bray$trophicstate)
+nmds_bray$ProdLevel[nmds_bray$trophicstate == "Eutrophic"] <- "Productive"
+nmds_bray$ProdLevel[nmds_bray$trophicstate == "Mesotrophic"] <- "Productive"
+nmds_bray$ProdLevel[nmds_bray$trophicstate == "Oligotrophic"] <- "Unproductive"
 nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
-nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape = trophicstate)) +
+nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape = ProdLevel)) +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") +
   geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
-  annotate("text", label = " Stress = 0.17", x = (max(nmds_bray$MDS1*10) -0.2), y = (max(nmds_bray$MDS2*10) -0.02), size = 6, colour = "black") +
+  annotate("text", label = "A", x = (min(nmds_bray$MDS1*10) + 0.05), y = (max(nmds_bray$MDS2*10) -0.02), face = "bold",size = 10, colour = "black") +
+  annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*10) -0.2), y = (max(nmds_bray$MDS2*10) -0.02), size = 6, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
-                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
-  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
-                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
-                     values = c(15, 19, 17)) +
+                     values = c("darkgreen", "mediumblue", "purple3", "green", "deepskyblue", "orchid1")) +
+  scale_shape_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
+                     labels = c("High", "Low"),
+                     values = c(15, 17)) +
+  #scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+  #                  labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+  #                   values = c(15, 19, 17)) +
   theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
         axis.title.x = element_text(face="bold", size=16),
@@ -459,18 +467,24 @@ nmds_soren <- metaMDS(nowinOTU, distance="bray", binary = TRUE)
 nmds_soren <- data.frame(nmds_soren$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
 nmds_soren$names<-row.names(nmds_soren) #new names column
 nmds_soren <- makeCategories_dups(nmds_soren) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
+nmds_soren$ProdLevel <- as.character(nmds_soren$trophicstate)
+nmds_soren$ProdLevel[nmds_soren$trophicstate == "Eutrophic"] <- "Productive"
+nmds_soren$ProdLevel[nmds_soren$trophicstate == "Mesotrophic"] <- "Productive"
+nmds_soren$ProdLevel[nmds_soren$trophicstate == "Oligotrophic"] <- "Unproductive"
 nmds_soren$quadrant <- factor(nmds_soren$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
-nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = trophicstate)) +
+nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = ProdLevel)) +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Sorensen Dissimilarity") +
   geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
-  annotate("text", label = " Stress = 0.14", x = (max(nmds_soren$MDS1) -0.18), y = (max(nmds_soren$MDS2) -0.01), size = 6, colour = "black") +
+  annotate("text", label = "B", x = (min(nmds_soren$MDS1) + 0.05), y = (max(nmds_soren$MDS2) -0.02), face = "bold",size = 10, colour = "black") +
+  annotate("text", label = "Stress = 0.14", x = (max(nmds_soren$MDS1) -0.18), y = (max(nmds_soren$MDS2) -0.01), size = 6, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
-                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
-  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
-                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
-                     values = c(15, 19, 17)) +
+                     values = c("darkgreen", "mediumblue", "purple3", "green", "deepskyblue", "orchid1")) +
+  scale_shape_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
+                     labels = c("High", "Low"),
+                     values = c(15, 17)) +
+  guides(shape = guide_legend(order=1), color = guide_legend(order=2)) +
   theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
         axis.title.x = element_text(face="bold", size=16),
@@ -485,12 +499,12 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
 #multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.2_NMDS_bc+soren.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.2_NMDS_bc+soren_prod.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.42,0.58))))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
-#dev.off()
+dev.off()
 
 
 
@@ -2361,7 +2375,7 @@ z <- ggplot_gtable(ggplot_build(mid20phy_plot))
 # http://stackoverflow.com/questions/22818061/annotating-facet-title-as-strip-over-facet
 # http://stackoverflow.com/questions/11353287/how-do-you-add-a-general-label-to-facets-in-ggplot2
 # http://stackoverflow.com/questions/11442981/ggplot2-strip-text-labels-facet-wrap
-# add label for top strip
+# add label for Epilimnio strip
 z <- gtable_add_rows(z, z$heights[[3]], 2)
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
                              textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
@@ -2612,4 +2626,240 @@ limnion_chisq <-matrix(c(2347,1540,3730,1540),nrow=2)
 limnion_chisq_res <- chisq.test(limnion_chisq, correct = FALSE)
 shared_chisq <- matrix(c(2263,1502,1540),nrow=1)
 shared_chisq_res <- chisq.test(shared_chisq, correct = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+####################################################################################  DUPLICATE BRAY CURTIS DISTANCE!  #################################################################################### 
+####################################################################################  DUPLICATE BRAY CURTIS DISTANCE!  #################################################################################### 
+####################################################################################  DUPLICATE BRAY CURTIS DISTANCE!  #################################################################################### 
+
+bact_samples
+
+
+## Raw Sample read counts
+# Histogram of RAW sample read counts
+ggplot(data.frame(sum=sample_sums(bact_samples)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="dodgerblue2", binwidth = 750)  + xlab("Total Sequences") + ggtitle("Raw Sample Read Counts")
+
+scaled_bact <- scale_reads(physeq = bact_samples, n = min(sample_sums(bact_samples)))
+
+ggplot(data.frame(sum=sample_sums(scaled_bact)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="dodgerblue2", binwidth = 25)  + xlab("Total Sequences") + ggtitle("Raw Sample Read Counts")
+
+
+
+nowin <- subset_samples(scaled_bact, names != "WINH1" & names != "WINH13um" & names != "WINH2" & names !="WINH23um")
+nowin <- prune_taxa(taxa_sums(nowin)>0,nowin)
+normOTU_nowin <- otu_table(nowin)
+dnormOTU_nowin <- data.frame(normOTU_nowin)
+tdnormOTU_nowin <- t(dnormOTU_nowin )
+bray.dist <- vegdist(tdnormOTU_nowin, method = "bray")
+
+bray <- melt(as.matrix(bray.dist), varnames = c("samp1", "samp2"))
+bray <- subset(bray, value > 0)
+
+bray$lakenames1 <- substr(bray$samp1,1,3) # Create a new row called "lakenames" with first 3 letters of string
+bray$lakenames2 <- substr(bray$samp2,1,3) # Create a new row called "lakenames" with first 3 letters of string
+bray$limnion1 <- substr(bray$samp1, 4, 4) # Create a column called limnon with hypo or epi
+bray$limnion2 <- substr(bray$samp2, 4, 4) # Create a column called limnon with hypo or epi
+bray$filter1 <- substr(bray$samp1, 6, 8) 
+bray$filter2 <- substr(bray$samp2, 6, 8) 
+
+
+bray$lakenames1 <- as.character(bray$lakenames1)
+bray$lakenames1[bray$lakenames1 == "WIN"] <- "Wintergreen"
+bray$lakenames1[bray$lakenames1 == "SIX"] <- "Sixteen"
+bray$lakenames1[bray$lakenames1 == "SHE"] <- "Sherman"
+bray$lakenames1[bray$lakenames1 == "PAY"] <- "Payne"
+bray$lakenames1[bray$lakenames1 == "LON"] <- "LittleLong"
+bray$lakenames1[bray$lakenames1 == "LEE"] <- "Lee"
+bray$lakenames1[bray$lakenames1 == "GUL"] <- "Gull"
+bray$lakenames1[bray$lakenames1 == "BRI"] <- "Bristol"
+bray$lakenames1[bray$lakenames1 == "BAK"] <- "Baker"
+bray$lakenames1[bray$lakenames1 == "BAS"] <- "Baseline"
+bray$lakenames1[bray$lakenames1 == "BST"] <- "Bassett"
+
+bray$lakenames2 <- as.character(bray$lakenames2)
+bray$lakenames2[bray$lakenames2 == "WIN"] <- "Wintergreen"
+bray$lakenames2[bray$lakenames2 == "SIX"] <- "Sixteen"
+bray$lakenames2[bray$lakenames2 == "SHE"] <- "Sherman"
+bray$lakenames2[bray$lakenames2 == "PAY"] <- "Payne"
+bray$lakenames2[bray$lakenames2 == "LON"] <- "LittleLong"
+bray$lakenames2[bray$lakenames2 == "LEE"] <- "Lee"
+bray$lakenames2[bray$lakenames2 == "GUL"] <- "Gull"
+bray$lakenames2[bray$lakenames2 == "BRI"] <- "Bristol"
+bray$lakenames2[bray$lakenames2 == "BAK"] <- "Baker"
+bray$lakenames2[bray$lakenames2 == "BAS"] <- "Baseline"
+bray$lakenames2[bray$lakenames2 == "BST"] <- "Bassett"
+
+
+
+#Add Trophic State column by using the name of the lake
+bray <- data.table(bray)
+library(data.table)
+bray[, trophicstate1 := ifelse(lakenames1 %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
+                               ifelse(lakenames1 %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                      ifelse(lakenames1 %in% c("Sherman"), "Mixed",
+                                             ifelse(lakenames1 %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+bray[, trophicstate2 := ifelse(lakenames2 %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
+                               ifelse(lakenames2 %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                      ifelse(lakenames2 %in% c("Sherman"), "Mixed",
+                                             ifelse(lakenames2 %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+
+bray$limnion1[bray$limnion1 == "E"] <- "Epilimnion"
+bray$limnion1[bray$limnion1 == "H"] <- "Hypolimnion"
+bray$limnion2[bray$limnion2 == "E"] <- "Epilimnion"
+bray$limnion2[bray$limnion2 == "H"] <- "Hypolimnion"
+
+
+###  Pull out the SHERMAN LAKE SAMPLES
+bray$limnion1[bray$lakenames1 == "Sherman" & bray$limnion1 == "Epilimnion"] <- "Mixed"
+bray$limnion1[bray$lakenames1 == "Sherman" & bray$limnion1 == "Hypolimnion"] <- "Mixed"
+bray$limnion2[bray$lakenames2 == "Sherman" & bray$limnion2 == "Epilimnion"] <- "Mixed"
+bray$limnion2[bray$lakenames2 == "Sherman" & bray$limnion2 == "Hypolimnion"] <- "Mixed"
+
+
+bray$filter1[bray$filter1 == "3um"] <- "Particle"
+bray$filter1[bray$filter1 == ""] <- "Free"
+bray$filter2[bray$filter2 == "3um"] <- "Particle"
+bray$filter2[bray$filter2 == ""] <- "Free"
+
+#Add the combined lake layer
+bray$combined<-rep(NA,length(bray$limnion1))
+bray$combined[bray$limnion1=="Epilimnion"&bray$limnion2=="Epilimnion"]<-"Epilimnion"
+bray$combined[bray$limnion1=="Hypolimnion"&bray$limnion2=="Hypolimnion"]<-"Hypolimnion"
+bray$combined[bray$limnion1=="Hypolimnion"&bray$limnion2=="Epilimnion"]<-"EH"
+bray$combined[bray$limnion1=="Epilimnion"&bray$limnion2=="Hypolimnion"]<-"EH"
+
+bray$combined[bray$limnion1=="Mixed"&bray$limnion2=="Mixed"]<-"Mixed"
+bray$combined[bray$limnion1=="Mixed"&bray$limnion2=="Hypolimnion"]<-"Mixed Hypolimnion"
+bray$combined[bray$limnion1=="Hypolimnion"&bray$limnion2=="Mixed"]<-"Mixed Hypolimnion"
+bray$combined[bray$limnion1=="Epilimnion"&bray$limnion2=="Mixed"]<-"Mixed Epilimnion"
+bray$combined[bray$limnion1=="Mixed"&bray$limnion2=="Epilimnion"]<-"Mixed Epilimnion"
+
+
+##  Add the commbined filter.
+bray$filt_comb<-rep(NA,length(bray$filter1))
+bray$filt_comb[bray$filter1=="Free"&bray$filter2=="Free"]<-"Free"
+bray$filt_comb[bray$filter1=="Particle"&bray$filter2=="Particle"]<-"Particle"
+bray$filt_comb[bray$filter1=="Particle"&bray$filter2=="Free"]<-"PF"
+bray$filt_comb[bray$filter1=="Free"&bray$filter2=="Particle"]<-"PF"
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(bray$limnion1)){
+  bray$cat[i]<-paste(as.character(bray$filt_comb[i]),as.character(bray$combined[i]))}
+
+
+#  Add for trophicstate combintions
+bray$troph_comb<-rep(NA,length(bray$lakenames2))
+bray$troph_comb[bray$trophicstate1=="Eutrophic" & bray$trophicstate2=="Eutrophic"]<-"Eutrophic"
+bray$troph_comb[bray$trophicstate1=="Eutrophic" & bray$trophicstate2=="Mesotrophic"]<-"Eutrophic-Mesotrophic"
+bray$troph_comb[bray$trophicstate1=="Mesotrophic" & bray$trophicstate2=="Eutrophic"]<-"Eutrophic-Mesotrophic"
+bray$troph_comb[bray$trophicstate1=="Eutrophic" & bray$trophicstate2=="Oligotrophic"]<-"Eutrophic-Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Oligotrophic" & bray$trophicstate2=="Eutrophic"]<-"Eutrophic-Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Eutrophic" & bray$trophicstate2=="Mixed"]<-"Eutrophic-Mixed"
+bray$troph_comb[bray$trophicstate1=="Mixed" & bray$trophicstate2=="Eutrophic"]<-"Eutrophic-Mixed"
+
+bray$troph_comb[bray$trophicstate1=="Mesotrophic" & bray$trophicstate2=="Mesotrophic"]<-"Mesotrophic"
+bray$troph_comb[bray$trophicstate1=="Mesotrophic" & bray$trophicstate2=="Oligotrophic"]<-"Mesotrophic-Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Oligotrophic" & bray$trophicstate2=="Mesotrophic"]<-"Mesotrophic-Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Mesotrophic" & bray$trophicstate2=="Mixed"]<-"Mesotrophic-Mixed"
+bray$troph_comb[bray$trophicstate1=="Mixed" & bray$trophicstate2=="Mesotrophic"]<-"Mesotrophic-Mixed"
+
+bray$troph_comb[bray$trophicstate1=="Oligotrophic" & bray$trophicstate2=="Oligotrophic"]<-"Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Mixed" & bray$trophicstate2=="Oligotrophic"]<-"Oligotrophic-Mixed"
+bray$troph_comb[bray$trophicstate1=="Oligotrophic" & bray$trophicstate2=="Mixed"]<-"Oligotrophic-Mixed"
+
+bray$troph_comb[bray$trophicstate1=="Mixed" & bray$trophicstate2=="Mixed"]<-"Mixed"
+
+##  Add combined trophicstate, filter, and limnion 
+for(i in 1:length(bray$limnion1)){
+  bray$troph_lim1[i]<-paste(as.character(bray$trophicstate1[i]),
+                            as.character(bray$limnion1[i]),
+                            as.character(bray$filter1[i]))}
+for(i in 1:length(bray$limnion2)){
+  bray$troph_lim2[i]<-paste(as.character(bray$trophicstate2[i]),
+                            as.character(bray$limnion2[i]),
+                            as.character(bray$filter2[i]))}
+
+bray$samp1 <- as.character(bray$samp1)
+bray$samp2 <- as.character(bray$samp2)
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(bray$limnion1)){
+  bray$cat[i]<-paste(as.character(bray$filt_comb[i]),as.character(bray$combined[i]))}
+
+
+bray$samp1 <- as.character(bray$samp1)
+bray$samp2 <- as.character(bray$samp2)
+
+bray$duplicate<-rep(NA,length(bray$limnion1))
+
+bray$samp1a <-gsub("\\d", "", bray$samp1) 
+bray$samp2a <-gsub("\\d", "", bray$samp2)
+
+bray$duplicate[bray$samp1a == bray$samp2a] <- "Duplicate Samples"
+bray$duplicate[bray$samp1a != bray$samp2a] <- "Independent Samples"
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(bray$limnion1)){
+  bray$cat[i]<-paste(as.character(bray$filt_comb[i]),as.character(bray$combined[i]))}
+
+bray <- subset(bray, troph_lim1 == troph_lim2)
+
+
+#indep <- subset(bray, duplicate == "independent")
+#dup <- subset(bray, duplicate == "duplicate")
+
+bray$trophicstate1 <-factor(bray$trophicstate1,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+bray$trophicstate2 <-factor(bray$trophicstate2,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+
+
+
+bray$troph_lim2 <-factor(bray$troph_lim2,levels=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                                  "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                                  "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                                  "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+
+#nomix_bray <- subset(bray)
+jpeg(filename= "~/Final_PAFL_Trophicstate/Figures/BC_duplicate+independent.jpeg", width= 65, height=30, units= "cm", pointsize= 14, res=500)
+ggplot(bray, aes(x = troph_lim2, y = value, fill = troph_lim1)) + geom_boxplot() +
+  scale_fill_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                        "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                        "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                        "Mixed Mixed Particle", "Mixed Mixed Free"),
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink","orange","orange","orange","orange", 
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                            "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                            "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"),
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle-Associated", "Free-Living")) + 
+  xlab("Habitat") + ylab("Bray Curtis Dissimilarity of Duplicate Samples") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  facet_grid(.~ duplicate, scale = "free", space = "free") +
+  theme(axis.title.x = element_text(face="bold", size=14),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.text.x = element_text(size=14, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position="none")
+dev.off()
 
