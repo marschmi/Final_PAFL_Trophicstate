@@ -321,17 +321,18 @@ ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +
 ### Get rid of the Wintergreen HYPOLIMNION Samples
 nowin_merged <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
 nowin_merged <- prune_taxa(taxa_sums(nowin_merged) > 0, nowin_merged)
-otu <- otu_table(nowin_merged)
-otu_bray <- vegdist(otu, method = "bray")  # calculates the Bray-Curtis Distances
-df_otu <- data.frame(otu)
-otu_soren <- vegdist(df_otu, method = "bray", binary = TRUE)  # calculates the Bray-Curtis Distances
+nowinOTU <- otu_table(nowin_merged)
+#weighted
+norm_bray <- vegdist(nowinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+nowinOTU_df <- data.frame(otu_table(nowin_merged))  
+norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
 
 
 ### Clustering based on 
 #jpeg(filename="clustering_bray+soren.jpeg", width= 45, height=32, units= "cm", pointsize= 14, res=500)
 par(mfrow = c(2,1))
-plot(hclust(otu_bray), main = "Bray-Curtis Distance")
-plot(hclust(otu_soren), main = "Sorensen Distance")
+plot(hclust(norm_bray), main = "Bray-Curtis Distance")
+plot(hclust(norm_soren), main = "Sorensen Distance")
 #dev.off()
 
 # vector of colors
@@ -342,25 +343,28 @@ clus5 = cutree(hc, 5)
 par(mfrow = c(1,1))
 plot(as.phylo(hc), tip.color = mypal[clus5],  main = "Bray Curtis Dissimilarity") 
 
-plot(as.phylo(hc), main = "", xlab = "Samples", sub = "", tip.color = mypal[clus5], ylab = "Bray Curtis Dissimilarity") 
-
-
 
 
 ########  NMDS + PCoA Plots
 #########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
-nowinOTU <- otu_table(nowin_merged)
-#weighted
-norm_bray <- vegdist(nowinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
 bray_pcoa <- pcoa(norm_bray)
 bray_pcoa2 <- bray_pcoa$vectors
 bray_pcoa3 <- data.frame(bray_pcoa2[, 1:3])
 bray_pcoa3$names <- row.names(bray_pcoa3)
 bray_pcoa4 <- makeCategories_dups(bray_pcoa3)
 bray_pcoa4$quadrant <- factor(bray_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+### Let's extract the values of each axis for the pcoa
+bray_values <- bray_pcoa$values
+bray_rel_eigens <- bray_values$Relative_eig
+bray_rel_eigen1 <- bray_rel_eigens[1]
+bray_rel_eigen1_percent <- round(bray_rel_eigen1 * 100, digits = 1)
+bray_rel_eigen2 <- bray_rel_eigens[2]
+bray_rel_eigen2_percent <- round(bray_rel_eigen2 * 100, digits = 1)
+bray_axis1 <- paste("PCoA1:",bray_rel_eigen1_percent,"%")
+bray_axis2 <- paste("PCoA2:",bray_rel_eigen2_percent,"%")
 
-pcoa_BC <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape = trophicstate)) +
-  xlab("PCoA1 [23.1%]") + ylab("PCoA2 [17.9%]") + #ggtitle("Bray-Curtis: Trophic State") +
+pcoa_bray <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape = trophicstate)) +
+  xlab(bray_axis1) + ylab(bray_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
   geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
@@ -375,20 +379,27 @@ pcoa_BC <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape =
         legend.title = element_text(size=12, face="bold"),
         legend.text = element_text(size = 12),
         ###LEGEND TOP RIGHT CORNER
-        legend.position = "right"); pcoa_BC
+        legend.position = "none"); pcoa_bray
 
 ##########  SORENSEN'S DISSIMILARITY
-nowinOTU_df <- data.frame(otu_table(nowin_merged))  
-norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
 soren_pcoa <- pcoa(norm_soren)
 soren_pcoa2 <- soren_pcoa$vectors
 soren_pcoa3 <- data.frame(soren_pcoa2[, 1:3])
 soren_pcoa3$names <- row.names(soren_pcoa3)
 soren_pcoa4 <- makeCategories_dups(soren_pcoa3)
 soren_pcoa4$quadrant <- factor(soren_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+### Let's extract the values of each axis for the pcoa
+soren_values <- soren_pcoa$values
+soren_rel_eigens <- soren_values$Relative_eig
+soren_rel_eigen1 <- soren_rel_eigens[1]
+soren_rel_eigen1_percent <- round(soren_rel_eigen1 * 100, digits = 1)
+soren_rel_eigen2 <- soren_rel_eigens[2]
+soren_rel_eigen2_percent <- round(soren_rel_eigen2 * 100, digits = 1)
+soren_axis1 <- paste("PCoA1:",soren_rel_eigen1_percent,"%")
+soren_axis2 <- paste("PCoA2:",soren_rel_eigen2_percent,"%")
 
-pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape = trophicstate)) +
-  xlab("PCoA1 [23.1%]") + ylab("PCoA2 [17.9%]") + #ggtitle("Bray-Curtis: Trophic State") +
+pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1 * -1, Axis.2 * -1, color = quadrant, shape = trophicstate)) +
+  xlab(soren_axis1) + ylab(soren_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
   geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
@@ -405,9 +416,12 @@ pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, sha
         ###LEGEND TOP RIGHT CORNER
         legend.position = "right"); pcoa_soren
 
-
-
-
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.2_NMDS_bc+soren.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.4,0.6))))
+print(pcoa_bray, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(pcoa_soren, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
 
 
 ############## NMDS NMDS NMDS NMDS NDMS
