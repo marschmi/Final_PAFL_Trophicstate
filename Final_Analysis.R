@@ -13,6 +13,7 @@ library("DESeq2")
 library(tidyr)
 library(dplyr)
 library(scales)
+library(pgirmess)
 
 ### Set the Working Directory
 setwd("~/Final_PAFL_Trophicstate")
@@ -717,27 +718,27 @@ adonis_sherm_DO <- adonis(sherm_BCdist ~ DO, data=sherm_environ, nperm = 999) # 
 ####################################################  ALPHA DIVERSITY  ####################################################
 ####################################################  ALPHA DIVERSITY  ####################################################
 # For alpha diversity we will RAREFY our phyloseq object.  Our raw-data phyloseq object was:
-raw_merged  # Raw Merged Samples, we have 14,378 OTUs
-raw_nowin <- subset_samples(raw_merged, names != "WINH" & names != "WINH3um")
-raw_nowin <- prune_taxa(taxa_sums(raw_nowin) > 0, raw_nowin)
+#raw_merged  # Raw Merged Samples, we have 14,378 OTUs
+#raw_nowin <- subset_samples(raw_merged, names != "WINH" & names != "WINH3um")
+#raw_nowin <- prune_taxa(taxa_sums(raw_nowin) > 0, raw_nowin)
 
 #Data Import for rarefied data 
-raw_nowin  
-min(sample_sums(raw_nowin))
+#raw_nowin  
+#min(sample_sums(raw_nowin))
 
 # Following code from Michelle's Butterflygut website: http://rstudio-pubs-static.s3.amazonaws.com/25722_9fc9bdc48f0d4f13b05fa61baeda57a0.html#alpha-diversity
 # Rarefy to 14937 reads with replacement 100 times to estimate species richness
 # Since we are rarefying to 14937 reads we need to remove the two samples with less than 1000 reads
-raredata14936 <- prune_samples(sample_sums(raw_nowin) > 14936, raw_nowin)
+#raredata14936 <- prune_samples(sample_sums(raw_nowin) > 14936, raw_nowin)
 
 # Initialize matrices to store richness and evenness estimates
-richness <- matrix(nrow = 41,ncol = 100)  # Store richness:  We have 41 samples 
-row.names(richness) <- sample_names(raredata14936)
-evenness <- matrix(nrow = 41,ncol = 100)  #Store evenness
-row.names(evenness) <- sample_names(raredata14936)
+#richness <- matrix(nrow = 41,ncol = 100)  # Store richness:  We have 41 samples 
+#row.names(richness) <- sample_names(raredata14936)
+#evenness <- matrix(nrow = 41,ncol = 100)  #Store evenness
+#row.names(evenness) <- sample_names(raredata14936)
 
 # We want to be reproducible - so let's set the seed.
-set.seed(3)
+#set.seed(3)
 
 # For 100 replications, rarefy the OTU table to 14936 reads and store the richness and evennes estimates in our 2 matrices we just created.
 #The default for the rarefy_even_depth command is to pick with replacement so I set it to false. Picking without replacement is more computationally intensive 
@@ -930,7 +931,21 @@ facet_prod_stats <- ggplot(prodalpha_stats, aes(x = troph_lim, y = Meantroph_lim
         legend.position="none"); facet_prod_stats
 #dev.off()
 
+richobs <- subset(prodalpha_stats, Test == "Observed Richness")
+simpseven <- subset(prodalpha_stats, Test == "Simpson's Evenness")
 
+######  Test for significance 
+#Observed richness =
+KW_richobs <- kruskal.test(Meantroph_lim ~ troph_lim, data = richobs)
+#Inverse Simpson
+KW_simps <- kruskal.test(Meantroph_lim ~ troph_lim, data = simpseven)
+
+### Which samples are significantly different from each other?
+KW_richobs_samps <- kruskalmc(richobs$Meantroph_lim, richobs$troph_lim)
+KW_simps_samps <- kruskalmc(richobs$Meantroph_lim, richobs$troph_lim)
+
+KW_richobs_samps2 <- subset(KW_richobs_samps$dif.com, difference == TRUE)
+KW_simps_samps2 <- subset(KW_simps_samps$dif.com, difference == TRUE)
 
 
 
