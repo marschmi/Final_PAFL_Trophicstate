@@ -942,7 +942,7 @@ KW_simps <- kruskal.test(Meantroph_lim ~ troph_lim, data = simpseven)
 
 ### Which samples are significantly different from each other?
 KW_richobs_samps <- kruskalmc(richobs$Meantroph_lim, richobs$troph_lim)
-KW_simps_samps <- kruskalmc(richobs$Meantroph_lim, richobs$troph_lim)
+KW_simps_samps <- kruskalmc(simpseven$Meantroph_lim, simpseven$troph_lim)
 
 KW_richobs_samps2 <- subset(KW_richobs_samps$dif.com, difference == TRUE)
 KW_simps_samps2 <- subset(KW_simps_samps$dif.com, difference == TRUE)
