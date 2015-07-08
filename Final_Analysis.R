@@ -1142,6 +1142,16 @@ beta_plot <- ggplot(ddply_beta, aes(x = troph_lim2, y = mean, color = troph_lim2
 #dev.off()
 
 
+######  Test for significance 
+#  Bray-Curtis 
+KW_bray_troph <- kruskal.test(mean ~ troph_lim2, data = ddply_beta)
+
+### Which samples are significantly different from each other?
+KW_bray_samps_troph <- kruskalmc(ddply_beta$mean, ddply_beta$troph_lim2)
+KW_bray_samps_troph_sigs <- subset(KW_bray_samps_troph$dif.com, difference == TRUE)
+
+
+
 ################# BRAY CURTIS DISTANCE FOR PRODUCTIVE VS UNPRODUCTIVE 
 ################# BRAY CURTIS DISTANCE FOR PRODUCTIVE VS UNPRODUCTIVE 
 ################# BRAY CURTIS DISTANCE FOR PRODUCTIVE VS UNPRODUCTIVE 
@@ -1195,6 +1205,13 @@ prodbeta_plot <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = tr
 #dev.off()
 
 
+######  Test for significance 
+#  Bray-Curtis 
+KW_bray <- kruskal.test(mean ~ troph_lim1, data = ddply_prodbeta)
+
+### Which samples are significantly different from each other?
+KW_bray_samps <- kruskalmc(ddply_prodbeta$mean, ddply_prodbeta$troph_lim1)
+KW_bray_samps_sigs <- subset(KW_bray_samps$dif.com, difference == TRUE)
 
 
 ####################################################  ALPHA + BETA COMBINED DIVERSITY  ####################################################
@@ -2570,4 +2587,15 @@ ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
                           strip.background = element_blank(),
                           legend.position="right")
 #dev.off()
+
+
+####  Test for Significance!
+PAFL_chisq <-matrix(c(2734,2620,2263,2263),nrow=2)
+PAFL_chisq_res <- chisq.test(PAFL_chisq, correct = FALSE)
+prod_chisq <-matrix(c(4289,1502,1826,1502),nrow=2)
+prod_chisq_res <- chisq.test(prod_chisq, correct = FALSE)
+limnion_chisq <-matrix(c(2347,1540,3730,1540),nrow=2)
+limnion_chisq_res <- chisq.test(limnion_chisq, correct = FALSE)
+shared_chisq <- matrix(c(2263,1502,1540),nrow=1)
+shared_chisq_res <- chisq.test(shared_chisq, correct = FALSE)
 
