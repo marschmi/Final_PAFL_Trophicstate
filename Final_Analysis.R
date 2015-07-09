@@ -252,7 +252,7 @@ mean_profile13 <- subset(mean_profile, depth < 13.1)
 mean_profile13b <- subset(mean_profile13, Variable != "SpC")
 
 ## AVERAGE PLOT!
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 32, height=30, units= "cm",pointsize= 18, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 32, height=30, units= "cm",pointsize= 18, res=500)
 ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +   
   facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
@@ -260,7 +260,7 @@ ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +
   scale_y_reverse(breaks=seq(0, 30, 2), lim = c(14,0), expand = c(0, 0)) + 
   geom_errorbarh(width=.1, aes(xmin = mean - se, xmax = mean + se)) +
   scale_color_manual(name = "", breaks = c("Productive", "Unproductive", "Mixed"), 
-                     labels = c("Productive", "Unproductive", "Mixed"), 
+                     labels = c("High-Nutrient", "Low-Nutrient", "Mixed"), 
                      values = c("deeppink","turquoise3", "blue")) +
   #scale_color_manual(name = "", breaks = c("Eutrophic", "Mesotrophic","Oligotrophic", "Mixed"), 
   #                   labels = c("Eutrophic", "Mesotrophic","Oligotrophic", "Mixed"), 
@@ -293,7 +293,7 @@ profile_all$lakename[profile_all$lakename == "BAS"] <- "Baseline"
 profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
 
 ## All LAKES
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.S1_AllLake_profiles.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
 ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
   facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
@@ -499,12 +499,12 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
 #multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
-jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.2_NMDS_bc+soren_prod.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.42,0.58))))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
-dev.off()
+#dev.off()
 
 
 
@@ -1199,6 +1199,19 @@ prod_beta$trophicstate1[prod_beta$trophicstate1 == "Mesotrophic"] <- "Productive
 prod_beta$trophicstate1[prod_beta$trophicstate1 == "Oligotrophic"] <- "Unproductive"
 
 
+####  Run the test on ALL the data that goes into the mean!
+hist(prod_beta$value, breaks = 30)  # Not normally distributed!!!
+prod_beta$value <- as.numeric(prod_beta$value)
+prod_beta$troph_lim1 <- as.factor(prod_beta$troph_lim1)
+## Significant???  YES!
+prodKW <- kruskal.test(prod_beta$value ~ prod_beta$troph_lim1) 
+### Which samples are significantly different from each other?
+KW_bray_samps <- kruskalmc(prod_beta$value ~ prod_beta$troph_lim1)
+KW_bray_samps_sigs <- subset(KW_bray_samps$dif.com, difference == TRUE)
+
+
+
+#############  Time to calculate the mean and standard deviation for all of them!
 ddply_prodbeta <- ddply(prod_beta, c("troph_lim1", "trophicstate1"), summarise, 
                         N = length(value),
                         mean = mean(value),
@@ -1234,6 +1247,10 @@ prodbeta_plot <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = tr
 
 
 ######  Test for significance 
+#oligo_bray <- subset(ddply_prodbeta, trophicstate1 == "Unproductive")
+#oligo_KW_bray <- kruskal.test(mean ~ troph_lim1, data = ddply_prodbeta)  #Still NOT significant!
+prod_bray <- subset(ddply_prodbeta, trophicstate1 == "Productive")
+prod_KW_bray <- kruskal.test(mean ~ troph_lim1, data = ddply_prodbeta)  #Still NOT significant!
 #  Bray-Curtis 
 KW_bray <- kruskal.test(mean ~ troph_lim1, data = ddply_prodbeta)
 
@@ -1242,11 +1259,18 @@ KW_bray_samps <- kruskalmc(ddply_prodbeta$mean, ddply_prodbeta$troph_lim1)
 KW_bray_samps_sigs <- subset(KW_bray_samps$dif.com, difference == TRUE)
 
 
+
 ####################################################  ALPHA + BETA COMBINED DIVERSITY  ####################################################
 ####################################################  ALPHA + BETA COMBINED DIVERSITY  ####################################################
 ####################################################  ALPHA + BETA COMBINED DIVERSITY  ####################################################
 prod_even <- subset(prodalpha_stats, Test == "Simpson's Evenness")
 prod_richobs <-subset(prodalpha_stats, Test == "Observed Richness") 
+
+prod_even$trophicstate <- as.character(prod_even$trophicstate)
+prod_even$trophicstate[prod_even$trophicstate == "Productive"] <-"High Nutrient"
+prod_even$trophicstate[prod_even$trophicstate == "Unproductive"] <-"Low Nutrient"
+
+prod_even$trophicstate <-factor(prod_even$trophicstate,levels=c("High Nutrient", "Low Nutrient", "Mixed"))
 
 prod_invsimps <- ggplot(prod_even, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5) +
   facet_grid(. ~ trophicstate, scales="free", space="free_x") + scale_y_continuous(breaks=seq(0, 0.10, 0.02), lim = c(0, 0.1)) +
@@ -1274,6 +1298,13 @@ prod_invsimps <- ggplot(prod_even, aes(x = troph_lim, y = Meantroph_lim, color =
         strip.background = element_rect(colour="black"),
         legend.position="none");prod_invsimps
 
+prod_richobs$trophicstate <- as.character(prod_richobs$trophicstate)
+prod_richobs$trophicstate[prod_richobs$trophicstate == "Productive"] <-"High Nutrient"
+prod_richobs$trophicstate[prod_richobs$trophicstate == "Unproductive"] <-"Low Nutrient"
+
+prod_richobs$trophicstate <-factor(prod_richobs$trophicstate,levels=c("High Nutrient", "Low Nutrient", "Mixed"))
+
+
 prod_obs <- ggplot(prod_richobs, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5) +
   facet_grid(. ~trophicstate, scales="free", space="free_x") + 
   geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
@@ -1298,10 +1329,15 @@ prod_obs <- ggplot(prod_richobs, aes(x = troph_lim, y = Meantroph_lim, color = t
         strip.background = element_blank(), strip.text = element_blank(),
         legend.position="none"); prod_obs
 
+ddply_prodbeta$trophicstate <- as.character(ddply_prodbeta$trophicstate)
+ddply_prodbeta$trophicstate[ddply_prodbeta$trophicstate == "Productive"] <-"High Nutrient"
+ddply_prodbeta$trophicstate[ddply_prodbeta$trophicstate == "Unproductive"] <-"Low Nutrient"
+
+ddply_prodbeta$trophicstate <-factor(ddply_prodbeta$trophicstate,levels=c("High Nutrient", "Low Nutrient", "Mixed"))
 
 prodbeta_plot2 <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
   #geom_text(label = "C", x = "Productive Epilimnion Particle", y = max(ddply_prodbeta$mean)) +
-  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) + 
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
                      values = c("deeppink", "deeppink", "deeppink", "deeppink",
@@ -1310,7 +1346,7 @@ prodbeta_plot2 <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = t
                             "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"),
                    labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
-  xlab("Habitat") + ylab("Bray Curtis Dissimilarity") + theme_bw() +  #scale_fill_brewer(palette="Paired") + 
+  xlab("Habitat") + ylab("Bray-Curtis Dissimilarity") + theme_bw() +  #scale_fill_brewer(palette="Paired") + 
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
   theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(angle=60, colour = "black", vjust=1, hjust = 1, size=14),
@@ -1322,13 +1358,13 @@ prodbeta_plot2 <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = t
         plot.margin = unit(c(-2.9, 3.95, 0.2, 0.5), "cm"),  #top, right, bottom, left   6.55
         legend.position="none"); prodbeta_plot2  
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3.jpeg", width= 20, height=25, units= "cm", pointsize= 14, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_alpha+beta_prod.jpeg", width= 20, height=25, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(3,1,height=c(0.3,0.35, 0.35))))
 print(prod_invsimps, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(prod_obs, vp=viewport(layout.pos.row=2,layout.pos.col=1))
 print(prodbeta_plot2, vp=viewport(layout.pos.row=3,layout.pos.col=1))
-#dev.off()
+# dev.off()
 
 
 
@@ -2862,4 +2898,312 @@ ggplot(bray, aes(x = troph_lim2, y = value, fill = troph_lim1)) + geom_boxplot()
         strip.background = element_blank(),
         legend.position="none")
 dev.off()
+
+
+
+
+
+####################################################  BETA DIVERSITY: SORENSEN & BRAY  ####################################################
+####################################################  BETA DIVERSITY: SORENSEN & BRAY  ####################################################
+####################################################  BETA DIVERSITY: SORENSEN & BRAY  ####################################################
+
+#SOREN Distance on Shared file = community composition
+nowin_merged <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
+nowin_merged <- prune_taxa(taxa_sums(nowin_merged) > 0, nowin_merged)
+nowinOTU <- otu_table(nowin_merged)
+nowinOTU_df <- data.frame(otu_table(nowin_merged))  
+norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
+soren.dist <- norm_soren  # soren Curtis dissimiliarity matrix for McMurdie & Holmes scaled, NO HYPO WINTERGREEN, samples
+
+#http://stackoverflow.com/questions/23474729/convert-object-of-class-dist-into-data-frame-in-r
+soren <- melt(as.matrix(soren.dist), varnames = c("samp1", "samp2"))
+soren <- subset(soren, value > 0)
+
+soren$lakenames1 <- substr(soren$samp1,1,3) # Create a new row called "lakenames" with first 3 letters of string
+soren$lakenames2 <- substr(soren$samp2,1,3) # Create a new row called "lakenames" with first 3 letters of string
+soren$limnion1 <- substr(soren$samp1, 4, 4) # Create a column called limnon with hypo or epi
+soren$limnion2 <- substr(soren$samp2, 4, 4) # Create a column called limnon with hypo or epi
+soren$filter1 <- substr(soren$samp1, 5, 7) 
+soren$filter2 <- substr(soren$samp2, 5, 7) 
+
+
+soren$lakenames1 <- as.character(soren$lakenames1)
+soren$lakenames1[soren$lakenames1 == "WIN"] <- "Wintergreen"
+soren$lakenames1[soren$lakenames1 == "SIX"] <- "Sixteen"
+soren$lakenames1[soren$lakenames1 == "SHE"] <- "Sherman"
+soren$lakenames1[soren$lakenames1 == "PAY"] <- "Payne"
+soren$lakenames1[soren$lakenames1 == "LON"] <- "LittleLong"
+soren$lakenames1[soren$lakenames1 == "LEE"] <- "Lee"
+soren$lakenames1[soren$lakenames1 == "GUL"] <- "Gull"
+soren$lakenames1[soren$lakenames1 == "BRI"] <- "Bristol"
+soren$lakenames1[soren$lakenames1 == "BAK"] <- "Baker"
+soren$lakenames1[soren$lakenames1 == "BAS"] <- "Baseline"
+soren$lakenames1[soren$lakenames1 == "BST"] <- "Bassett"
+
+soren$lakenames2 <- as.character(soren$lakenames2)
+soren$lakenames2[soren$lakenames2 == "WIN"] <- "Wintergreen"
+soren$lakenames2[soren$lakenames2 == "SIX"] <- "Sixteen"
+soren$lakenames2[soren$lakenames2 == "SHE"] <- "Sherman"
+soren$lakenames2[soren$lakenames2 == "PAY"] <- "Payne"
+soren$lakenames2[soren$lakenames2 == "LON"] <- "LittleLong"
+soren$lakenames2[soren$lakenames2 == "LEE"] <- "Lee"
+soren$lakenames2[soren$lakenames2 == "GUL"] <- "Gull"
+soren$lakenames2[soren$lakenames2 == "BRI"] <- "Bristol"
+soren$lakenames2[soren$lakenames2 == "BAK"] <- "Baker"
+soren$lakenames2[soren$lakenames2 == "BAS"] <- "Baseline"
+soren$lakenames2[soren$lakenames2 == "BST"] <- "Bassett"
+
+
+
+#Add Trophic State column by using the name of the lake
+soren <- data.table(soren)
+library(data.table)
+soren[, trophicstate1 := ifelse(lakenames1 %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
+                                ifelse(lakenames1 %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                       ifelse(lakenames1 %in% c("Sherman"), "Mixed",
+                                              ifelse(lakenames1 %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+soren[, trophicstate2 := ifelse(lakenames2 %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
+                                ifelse(lakenames2 %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                       ifelse(lakenames2 %in% c("Sherman"), "Mixed",
+                                              ifelse(lakenames2 %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+
+soren$limnion1[soren$limnion1 == "E"] <- "Epilimnion"
+soren$limnion1[soren$limnion1 == "H"] <- "Hypolimnion"
+soren$limnion2[soren$limnion2 == "E"] <- "Epilimnion"
+soren$limnion2[soren$limnion2 == "H"] <- "Hypolimnion"
+
+
+###  Pull out the SHERMAN LAKE SAMPLES
+soren$limnion1[soren$lakenames1 == "Sherman" & soren$limnion1 == "Epilimnion"] <- "Mixed"
+soren$limnion1[soren$lakenames1 == "Sherman" & soren$limnion1 == "Hypolimnion"] <- "Mixed"
+soren$limnion2[soren$lakenames2 == "Sherman" & soren$limnion2 == "Epilimnion"] <- "Mixed"
+soren$limnion2[soren$lakenames2 == "Sherman" & soren$limnion2 == "Hypolimnion"] <- "Mixed"
+
+
+soren$filter1[soren$filter1 == "3um"] <- "Particle"
+soren$filter1[soren$filter1 == ""] <- "Free"
+soren$filter2[soren$filter2 == "3um"] <- "Particle"
+soren$filter2[soren$filter2 == ""] <- "Free"
+
+#Add the combined lake layer
+soren$combined<-rep(NA,length(soren$limnion1))
+soren$combined[soren$limnion1=="Epilimnion"&soren$limnion2=="Epilimnion"]<-"Epilimnion"
+soren$combined[soren$limnion1=="Hypolimnion"&soren$limnion2=="Hypolimnion"]<-"Hypolimnion"
+soren$combined[soren$limnion1=="Hypolimnion"&soren$limnion2=="Epilimnion"]<-"EH"
+soren$combined[soren$limnion1=="Epilimnion"&soren$limnion2=="Hypolimnion"]<-"EH"
+
+soren$combined[soren$limnion1=="Mixed"&soren$limnion2=="Mixed"]<-"Mixed"
+soren$combined[soren$limnion1=="Mixed"&soren$limnion2=="Hypolimnion"]<-"Mixed Hypolimnion"
+soren$combined[soren$limnion1=="Hypolimnion"&soren$limnion2=="Mixed"]<-"Mixed Hypolimnion"
+soren$combined[soren$limnion1=="Epilimnion"&soren$limnion2=="Mixed"]<-"Mixed Epilimnion"
+soren$combined[soren$limnion1=="Mixed"&soren$limnion2=="Epilimnion"]<-"Mixed Epilimnion"
+
+
+##  Add the commbined filter.
+soren$filt_comb<-rep(NA,length(soren$filter1))
+soren$filt_comb[soren$filter1=="Free"&soren$filter2=="Free"]<-"Free"
+soren$filt_comb[soren$filter1=="Particle"&soren$filter2=="Particle"]<-"Particle"
+soren$filt_comb[soren$filter1=="Particle"&soren$filter2=="Free"]<-"PF"
+soren$filt_comb[soren$filter1=="Free"&soren$filter2=="Particle"]<-"PF"
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(soren$limnion1)){
+  soren$cat[i]<-paste(as.character(soren$filt_comb[i]),as.character(soren$combined[i]))}
+
+
+#  Add for trophicstate combintions
+soren$troph_comb<-rep(NA,length(soren$lakenames2))
+soren$troph_comb[soren$trophicstate1=="Eutrophic" & soren$trophicstate2=="Eutrophic"]<-"Eutrophic"
+soren$troph_comb[soren$trophicstate1=="Eutrophic" & soren$trophicstate2=="Mesotrophic"]<-"Eutrophic-Mesotrophic"
+soren$troph_comb[soren$trophicstate1=="Mesotrophic" & soren$trophicstate2=="Eutrophic"]<-"Eutrophic-Mesotrophic"
+soren$troph_comb[soren$trophicstate1=="Eutrophic" & soren$trophicstate2=="Oligotrophic"]<-"Eutrophic-Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Oligotrophic" & soren$trophicstate2=="Eutrophic"]<-"Eutrophic-Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Eutrophic" & soren$trophicstate2=="Mixed"]<-"Eutrophic-Mixed"
+soren$troph_comb[soren$trophicstate1=="Mixed" & soren$trophicstate2=="Eutrophic"]<-"Eutrophic-Mixed"
+
+soren$troph_comb[soren$trophicstate1=="Mesotrophic" & soren$trophicstate2=="Mesotrophic"]<-"Mesotrophic"
+soren$troph_comb[soren$trophicstate1=="Mesotrophic" & soren$trophicstate2=="Oligotrophic"]<-"Mesotrophic-Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Oligotrophic" & soren$trophicstate2=="Mesotrophic"]<-"Mesotrophic-Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Mesotrophic" & soren$trophicstate2=="Mixed"]<-"Mesotrophic-Mixed"
+soren$troph_comb[soren$trophicstate1=="Mixed" & soren$trophicstate2=="Mesotrophic"]<-"Mesotrophic-Mixed"
+
+soren$troph_comb[soren$trophicstate1=="Oligotrophic" & soren$trophicstate2=="Oligotrophic"]<-"Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Mixed" & soren$trophicstate2=="Oligotrophic"]<-"Oligotrophic-Mixed"
+soren$troph_comb[soren$trophicstate1=="Oligotrophic" & soren$trophicstate2=="Mixed"]<-"Oligotrophic-Mixed"
+
+soren$troph_comb[soren$trophicstate1=="Mixed" & soren$trophicstate2=="Mixed"]<-"Mixed"
+
+##  Add combined trophicstate, filter, and limnion 
+for(i in 1:length(soren$limnion1)){
+  soren$troph_lim1[i]<-paste(as.character(soren$trophicstate1[i]),
+                             as.character(soren$limnion1[i]),
+                             as.character(soren$filter1[i]))}
+for(i in 1:length(soren$limnion2)){
+  soren$troph_lim2[i]<-paste(as.character(soren$trophicstate2[i]),
+                             as.character(soren$limnion2[i]),
+                             as.character(soren$filter2[i]))}
+
+soren$samp1 <- as.character(soren$samp1)
+soren$samp2 <- as.character(soren$samp2)
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(soren$limnion1)){
+  soren$cat[i]<-paste(as.character(soren$filt_comb[i]),as.character(soren$combined[i]))}
+
+###  Subsetting out the samples that are in the same categories as each other
+soren_beta <- subset(soren, troph_lim1 == troph_lim2)
+
+### Put everything in the order we would like.
+soren_beta$trophicstate1 <-factor(soren_beta$trophicstate1,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+soren_beta$trophicstate2 <-factor(soren_beta$trophicstate2,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+soren_beta$troph_lim2 <-factor(soren_beta$troph_lim2,levels=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                                              "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                                              "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                                              "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+#### Subsetting out the mixed lake!
+nomix_soren_beta <- subset(soren_beta, trophicstate1 != "Mixed")
+nomix_soren_beta2 <- subset(nomix_soren_beta, trophicstate2 != "Mixed")
+
+
+#######  Creating geom_point plot for Beta Diverstiy.
+# STATS ON BETA
+ddply_soren_beta <- ddply(nomix_soren_beta2, c("troph_lim2", "trophicstate1", "filter1"), summarise, 
+                          N = length(value),
+                          mean = mean(value),
+                          sd   = sd(value),
+                          se   = sd / sqrt(N))
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3c_beta_TROPH_SD.jpeg", width= 25, height=15, units= "cm", pointsize= 14, res=500)
+soren_beta_plot <- ggplot(ddply_soren_beta, aes(x = troph_lim2, y = mean, color = troph_lim2)) + geom_point(size = 5) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                         "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                         "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink","orange","orange","orange","orange", 
+                                "turquoise3","turquoise3","turquoise3","turquoise3"))+
+  scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                            "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                            "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"),
+                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free")) + 
+  xlab("Habitat") + ylab("Sorensen Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+  theme(axis.title.x = element_text(face="bold", size=14),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position="none"); soren_beta_plot
+#dev.off()
+
+######  Test for significance 
+#  soren-Curtis 
+KW_soren_troph <- kruskal.test(mean ~ troph_lim2, data = ddply_beta)
+
+### Which samples are significantly different from each other?
+KW_soren_samps_troph <- kruskalmc(ddply_beta$mean, ddply_beta$troph_lim2)
+KW_soren_samps_troph_sigs <- subset(KW_soren_samps_troph$dif.com, difference == TRUE)
+
+
+prod_soren_beta <- nomix_soren_beta2
+unique(prod_soren_beta$troph_lim1)
+prod_soren_beta$troph_lim1[prod_soren_beta$troph_lim1 == "Eutrophic Epilimnion Free" | prod_soren_beta$troph_lim1 =="Mesotrophic Epilimnion Free"] <- "Productive Epilimnion Free"
+prod_soren_beta$troph_lim1[prod_soren_beta$troph_lim1 == "Eutrophic Epilimnion Particle" | prod_soren_beta$troph_lim1 =="Mesotrophic Epilimnion Particle"] <- "Productive Epilimnion Particle"
+prod_soren_beta$troph_lim1[prod_soren_beta$troph_lim1 == "Eutrophic Hypolimnion Free" | prod_soren_beta$troph_lim1 =="Mesotrophic Hypolimnion Free"] <- "Productive Hypolimnion Free"
+prod_soren_beta$troph_lim1[prod_soren_beta$troph_lim1 == "Eutrophic Hypolimnion Particle" | prod_soren_beta$troph_lim1 =="Mesotrophic Hypolimnion Particle"] <- "Productive Hypolimnion Particle"
+prod_soren_beta$troph_lim1[prod_soren_beta$troph_lim1 == "Oligotrophic Epilimnion Free"] <- "Unproductive Epilimnion Free"
+prod_soren_beta$troph_lim1[prod_soren_beta$troph_lim1 == "Oligotrophic Epilimnion Particle"] <- "Unproductive Epilimnion Particle"
+prod_soren_beta$troph_lim1[prod_soren_beta$troph_lim1 == "Oligotrophic Hypolimnion Free"] <- "Unproductive Hypolimnion Free"
+prod_soren_beta$troph_lim1[prod_soren_beta$troph_lim1 == "Oligotrophic Hypolimnion Particle"] <- "Unproductive Hypolimnion Particle"
+prod_soren_beta$trophicstate1 <- as.character(prod_soren_beta$trophicstate1)
+prod_soren_beta$trophicstate1[prod_soren_beta$trophicstate1 == "Eutrophic"] <- "High-Nutrient"
+prod_soren_beta$trophicstate1[prod_soren_beta$trophicstate1 == "Mesotrophic"] <- "High-Nutrient"
+prod_soren_beta$trophicstate1[prod_soren_beta$trophicstate1 == "Oligotrophic"] <- "Low-Nutrient"
+
+
+####  Run the test on ALL the data that goes into the mean!
+hist(prod_soren_beta$value, breaks = 30)  # Not normally distributed!!!
+prod_soren_beta$value <- as.numeric(prod_soren_beta$value)
+prod_soren_beta$troph_lim1 <- as.factor(prod_soren_beta$troph_lim1)
+## Significant???  YES!
+prodKW <- kruskal.test(prod_soren_beta$value ~ prod_soren_beta$troph_lim1) 
+### Which samples are significantly different from each other?
+KW_bray_samps <- kruskalmc(prod_soren_beta$value ~ prod_soren_beta$troph_lim1)
+KW_bray_samps_sigs <- subset(KW_bray_samps$dif.com, difference == TRUE)
+
+
+
+#############  Time to calculate the mean and standard deviation for all of them!
+ddply_prodbeta_soren <- ddply(prod_soren_beta, c("troph_lim1", "trophicstate1"), summarise, 
+                              N = length(value),
+                              mean = mean(value),
+                              sd   = sd(value),
+                              se   = sd / sqrt(N))
+
+ddply_prodbeta_soren$troph_lim1 <-factor(ddply_prodbeta_soren$troph_lim1,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                                  "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"))
+
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3c_beta_PROD_SD.jpeg", width= 25, height=15, units= "cm", pointsize= 14, res=500)
+soren_prodbeta_plot <- ggplot(ddply_prodbeta_soren, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"),
+                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free")) + 
+  xlab("Habitat") + ylab("Sorensen\nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.81)) + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+  theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), 
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.margin = unit(c(0.1, 0.1, 0.2, 0.1), "cm"), #top, right, bottom, left
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=16, face="bold"),  #Set the facet titles on x-axis 
+        strip.background = element_blank(),
+        legend.position="none");   soren_prodbeta_plot
+#dev.off()
+
+ddply_prodbeta_EDIT <- ddply_prodbeta
+
+prod_beta_plot <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+  #geom_text(label = "C", x = "Productive Epilimnion Particle", y = max(ddply_prodbeta$mean)) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) + 
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"),
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
+  xlab("Habitat") + ylab("Bray-Curtis \nDissimilarity") + theme_bw() +  #scale_fill_brewer(palette="Paired") + 
+  facet_grid(. ~ trophicstate, scale = "free", space = "free") +
+  scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.81)) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=60, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        axis.ticks.x = element_blank(),
+        plot.margin = unit(c(-0.8, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        strip.background = element_blank(), strip.text = element_blank(),
+        legend.position="none");prod_beta_plot
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta.jpeg", width= 20, height=18, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(2,1,height=c(0.42,0.58))))
+print(soren_prodbeta_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(prod_beta_plot, vp=viewport(layout.pos.row=2,layout.pos.col=1))
+#dev.off()
+
 
