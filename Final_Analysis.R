@@ -14,6 +14,7 @@ library(tidyr)
 library(dplyr)
 library(scales)
 library(pgirmess)
+library(multcomp)
 
 ### Set the Working Directory
 setwd("~/Final_PAFL_Trophicstate")
@@ -3130,10 +3131,10 @@ hist(prod_soren_beta$value, breaks = 30)  # Not normally distributed!!!
 prod_soren_beta$value <- as.numeric(prod_soren_beta$value)
 prod_soren_beta$troph_lim1 <- as.factor(prod_soren_beta$troph_lim1)
 ## Significant???  YES!
-prodKW <- kruskal.test(prod_soren_beta$value ~ prod_soren_beta$troph_lim1) 
+soren_prodKW <- kruskal.test(prod_soren_beta$value ~ prod_soren_beta$troph_lim1) 
 ### Which samples are significantly different from each other?
-KW_bray_samps <- kruskalmc(prod_soren_beta$value ~ prod_soren_beta$troph_lim1)
-KW_bray_samps_sigs <- subset(KW_bray_samps$dif.com, difference == TRUE)
+KW_soren_samps <- kruskalmc(prod_soren_beta$value ~ prod_soren_beta$troph_lim1)
+KW_soren_samps_sigs <- subset(KW_soren_samps$dif.com, difference == TRUE)
 
 
 
