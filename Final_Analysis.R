@@ -3126,6 +3126,41 @@ prod_soren_beta$trophicstate1[prod_soren_beta$trophicstate1 == "Mesotrophic"] <-
 prod_soren_beta$trophicstate1[prod_soren_beta$trophicstate1 == "Oligotrophic"] <- "Low-Nutrient"
 
 
+
+####################################################################  STATS TIME!  SORENSEN
+####################################################################  STATS TIME!  SORENSEN
+####################################################################  STATS TIME!  SORENSEN
+####  Run the test on ALL the data that goes into the mean!  #### Check it out here:  https://aquaticr.wordpress.com/2012/12/18/multiple-comparison-test-for-non-parametric-data/
+hist(prod_soren_beta$value, breaks = 30)  # Not normally distributed!!!
+prod_soren_beta$value <- as.numeric(prod_soren_beta$value)
+prod_soren_beta$troph_lim1 <- as.factor(prod_soren_beta$troph_lim1)
+## Do the KW test
+soren_prod_KW <- kruskal.test(prod_soren_beta$value ~ prod_soren_beta$troph_lim1) # Kruskal Wallis test on sorensen!
+print(soren_prod_KW)  # show Kruskal Wallis result
+### Which samples are significantly different from each other?  Significant???  YES! WOOOHOOOOOOO!
+soren_prod_KW_MC <- kruskalmc(prod_soren_beta$value ~ prod_soren_beta$troph_lim1)  ## Defaults to P < 0.05
+print(soren_prod_KW_MC)
+### Time to figure out letters to represent significance in a plot!
+soren_test <- soren_prod_KW_MC$dif.com$difference # select logical vector
+names(soren_test) <- row.names(soren_prod_KW_MC$dif.com) # add comparison names
+# create a list with "homogenous groups" coded by letter
+soren_letters <- multcompLetters(soren_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)
+
+
+####################################################################  STATS TIME!  BRAY CURTIS
+####################################################################  STATS TIME!  BRAY CURTIS
+####################################################################  STATS TIME!  BRAY CURTIS
+####  Run the test on ALL the data that goes into the mean!
+hist(prod_beta$value, breaks = 30)  # Not normally distributed!!!
+prod_beta$value <- as.numeric(prod_beta$value)
+prod_beta$troph_lim1 <- as.factor(prod_beta$troph_lim1)
+## Significant???  YES!
+prodKW <- kruskal.test(prod_beta$value ~ prod_beta$troph_lim1) 
+### Which samples are significantly different from each other?
+KW_bray_samps <- kruskalmc(prod_beta$value ~ prod_beta$troph_lim1)
+KW_bray_samps_sigs <- subset(KW_bray_samps$dif.com, difference == TRUE)
+
+
 ####  Run the test on ALL the data that goes into the mean!
 hist(prod_soren_beta$value, breaks = 30)  # Not normally distributed!!!
 prod_soren_beta$value <- as.numeric(prod_soren_beta$value)
