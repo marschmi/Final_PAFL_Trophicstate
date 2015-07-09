@@ -3144,7 +3144,55 @@ print(soren_prod_KW_MC)
 soren_test <- soren_prod_KW_MC$dif.com$difference # select logical vector
 names(soren_test) <- row.names(soren_prod_KW_MC$dif.com) # add comparison names
 # create a list with "homogenous groups" coded by letter
-soren_letters <- multcompLetters(soren_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)
+soren_letters <- multcompLetters(soren_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)#['Letters']
+###  Let's extract the values from the multcompLetters object
+soren_sigs_dataframe <-  data.frame(as.vector(names(soren_letters$Letters)), as.vector(soren_letters$Letters))
+colnames(soren_sigs_dataframe) <- c("troph_lim1", "siglabel")
+soren_try <- merge(ddply_prodbeta_soren, soren_sigs_dataframe)
+
+
+
+ggplot(soren_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.02)), size =6, fontface = "bold") +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"),
+                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free")) + 
+  xlab("Habitat") + ylab("Sorensen\nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.81)) + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+  theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), 
+        axis.text.x = element_text(angle=60, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.margin = unit(c(0.1, 0.1, 0.2, 0.1), "cm"), #top, right, bottom, left
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=16, face="bold"),  #Set the facet titles on x-axis 
+        strip.background = element_blank(),
+        legend.position="none");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ####################################################################  STATS TIME!  BRAY CURTIS
@@ -3154,22 +3202,58 @@ soren_letters <- multcompLetters(soren_test, compare="<", threshold=0.05, Letter
 hist(prod_beta$value, breaks = 30)  # Not normally distributed!!!
 prod_beta$value <- as.numeric(prod_beta$value)
 prod_beta$troph_lim1 <- as.factor(prod_beta$troph_lim1)
-## Significant???  YES!
-prodKW <- kruskal.test(prod_beta$value ~ prod_beta$troph_lim1) 
-### Which samples are significantly different from each other?
-KW_bray_samps <- kruskalmc(prod_beta$value ~ prod_beta$troph_lim1)
-KW_bray_samps_sigs <- subset(KW_bray_samps$dif.com, difference == TRUE)
+prod_bray_beta <- prod_beta
+## Do the KW test
+bray_prod_KW <- kruskal.test(prod_bray_beta$value ~ prod_bray_beta$troph_lim1) # Kruskal Wallis test on braysen!
+print(bray_prod_KW)  # show Kruskal Wallis result
+### Which samples are significantly different from each other?  Significant???  YES! WOOOHOOOOOOO!
+bray_prod_KW_MC <- kruskalmc(prod_bray_beta$value ~ prod_bray_beta$troph_lim1)  ## Defaults to P < 0.05
+print(bray_prod_KW_MC)
+### Time to figure out letters to represent significance in a plot!
+bray_test <- bray_prod_KW_MC$dif.com$difference # select logical vector
+names(bray_test) <- row.names(bray_prod_KW_MC$dif.com) # add comparison names
+# create a list with "homogenous groups" coded by letter
+bray_letters <- multcompLetters(bray_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)#['Letters']
+###  Let's extract the values from the multcompLetters object
+bray_sigs_dataframe <-  data.frame(as.vector(names(bray_letters$Letters)), as.vector(bray_letters$Letters))
+colnames(bray_sigs_dataframe) <- c("troph_lim1", "siglabel")
+bray_try <- merge(ddply_prodbeta, bray_sigs_dataframe)
 
 
-####  Run the test on ALL the data that goes into the mean!
-hist(prod_soren_beta$value, breaks = 30)  # Not normally distributed!!!
-prod_soren_beta$value <- as.numeric(prod_soren_beta$value)
-prod_soren_beta$troph_lim1 <- as.factor(prod_soren_beta$troph_lim1)
-## Significant???  YES!
-soren_prodKW <- kruskal.test(prod_soren_beta$value ~ prod_soren_beta$troph_lim1) 
-### Which samples are significantly different from each other?
-KW_soren_samps <- kruskalmc(prod_soren_beta$value ~ prod_soren_beta$troph_lim1)
-KW_soren_samps_sigs <- subset(KW_soren_samps$dif.com, difference == TRUE)
+ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.02)), size =6, fontface = "bold") +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"),
+                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free")) + 
+  xlab("Habitat") + ylab("Sorensen\nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.83)) + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+  theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), 
+        axis.text.x = element_text(angle=60, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.margin = unit(c(0.1, 0.1, 0.2, 0.1), "cm"), #top, right, bottom, left
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=16, face="bold"),  #Set the facet titles on x-axis 
+        strip.background = element_blank(),
+        legend.position="none");
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3185,7 +3269,8 @@ ddply_prodbeta_soren$troph_lim1 <-factor(ddply_prodbeta_soren$troph_lim1,levels=
 
 
 #jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3c_beta_PROD_SD.jpeg", width= 25, height=15, units= "cm", pointsize= 14, res=500)
-soren_prodbeta_plot <- ggplot(ddply_prodbeta_soren, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+soren_prodbeta_plot <- ggplot(soren_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.04)), size =5) +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
@@ -3196,7 +3281,7 @@ soren_prodbeta_plot <- ggplot(ddply_prodbeta_soren, aes(x = troph_lim1, y = mean
                    labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
                             "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free")) + 
   xlab("Habitat") + ylab("Sorensen\nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
-  scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.81)) + 
+  scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.83)) + 
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
   theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), 
         axis.text.x = element_blank(),
@@ -3209,10 +3294,10 @@ soren_prodbeta_plot <- ggplot(ddply_prodbeta_soren, aes(x = troph_lim1, y = mean
         legend.position="none");   soren_prodbeta_plot
 #dev.off()
 
-ddply_prodbeta_EDIT <- ddply_prodbeta
 
-prod_beta_plot <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
-  #geom_text(label = "C", x = "Productive Epilimnion Particle", y = max(ddply_prodbeta$mean)) +
+
+prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.03)), size = 5) +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) + 
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
@@ -3224,22 +3309,22 @@ prod_beta_plot <- ggplot(ddply_prodbeta, aes(x = troph_lim1, y = mean, color = t
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
   xlab("Habitat") + ylab("Bray-Curtis \nDissimilarity") + theme_bw() +  #scale_fill_brewer(palette="Paired") + 
   facet_grid(. ~ trophicstate, scale = "free", space = "free") +
-  scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.81)) + 
+  scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.84)) + 
   theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(angle=60, colour = "black", vjust=1, hjust = 1, size=14),
         axis.text.y = element_text(colour = "black", size=14),
         axis.title.y = element_text(face="bold", size=16),
         plot.title = element_text(face="bold", size = 20),
-        axis.ticks.x = element_blank(),
+        #axis.ticks.x = element_blank(),
         plot.margin = unit(c(-0.8, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         strip.background = element_blank(), strip.text = element_blank(),
         legend.position="none");prod_beta_plot
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta.jpeg", width= 20, height=18, units= "cm", pointsize= 14, res=500)
+jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 20, height=18, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.42,0.58))))
 print(soren_prodbeta_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(prod_beta_plot, vp=viewport(layout.pos.row=2,layout.pos.col=1))
-#dev.off()
+dev.off()
 
 
