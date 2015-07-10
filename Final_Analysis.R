@@ -2477,7 +2477,7 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = g
                      3, 9, 3, 13, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.6))),
-                             textGrob("Productive", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("High-Nutrient", gp = gpar(fontsize = 14, col = "black"))),
                      2, 4, 2, 13, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
@@ -2489,14 +2489,14 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = g
                      3, 22, 3, 25, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gray(0.6))),
-                             textGrob("Unproductive", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("Low-Nutrient", gp = gpar(fontsize = 14, col = "black"))),
                      2, 15, 2, 25, name = paste(runif(2)))
 
 # add margins
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.S2_Abundance_top15_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
 # draw it
 grid.newpage()
 grid.draw(z)
@@ -2801,13 +2801,13 @@ otusums$Type <- factor(otusums$Type, levels = c("Both","Free-Living Only", "Part
 label.df <- data.frame(Group = c("Productive \n vs. Unproductive", "Epilimnion \n vs. Hypolimnion"),
                        Value = c(8600, 8000))
 
-jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_DetectedOTUs_rarefied.jpeg", width= 25, height=19, units= "cm", pointsize= 10, res=250)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_DetectedOTUs_rarefied.jpeg", width= 25, height=19, units= "cm", pointsize= 10, res=250)
 ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free") + #geom_text(x = 2, y = 8750, label = "***") +
   xlab("Sample Type ") + ylab("Number of Deteceted UniqueOTUs") + 
   geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 6000, 1000), lim = c(0, 6000)) + 
-  guides(fill = guide_legend(keywidth = 2, keyheight = 2)) + 
+  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
   scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Both"),
                     breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Both"),
                     values = c( "goldenrod1", "firebrick1", "turquoise3", "green4","palevioletred1","cornflowerblue", "gray39")) +
@@ -2822,8 +2822,8 @@ ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
                           legend.text = element_text(size = 12),
                           strip.background = element_blank(),
                           legend.position="right")
-dev.off()
-
+#dev.off()
+#
 
 ####  Test for Significance!
 PAFL_chisq <-matrix(c(2734,2620,2263,2263),nrow=2)
