@@ -1706,7 +1706,7 @@ mf_labeller <- function(var, value){
   if (var=="Comparison") { 
     value[value=="PA vs. FL"] <- "Particle-Associated \n vs. \nFree-Living"
     value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. \nEpilimnion"
-    value[value=="Prod vs. Unprod"]   <- "Productive \n vs.\nUnproductive"
+    value[value=="Prod vs. Unprod"]   <- "High-Nutrient \n vs.\nLow-Nutrient"
   }
   return(value)
 }
@@ -1772,22 +1772,22 @@ abund_plot <- ggplot(abund, aes(y=PercentPhy , x=Phylum))  +
 #################################################################################
 dfrat$Habitat <- as.character(dfrat$Habitat)
 dfrat$Habitat[dfrat$Habitat == " Mixed"] <- "Mixed"
-dfrat$Habitat[dfrat$Habitat == " Top Productive"] <- "Epilimnion Productive"
-dfrat$Habitat[dfrat$Habitat == " Top Unproductive"] <- "Epilimnion Unproductive"
-dfrat$Habitat[dfrat$Habitat == " Bottom Productive"] <- "Hypolimnion Productive"
-dfrat$Habitat[dfrat$Habitat == " Bottom Unproductive"] <- "Hypolimnion Unproductive"
-dfrat$Habitat[dfrat$Habitat == " PA Productive"] <- "Productive \nParticle-Associated"
-dfrat$Habitat[dfrat$Habitat == " PA Unproductive"] <- "Unproductive \nParticle-Associated"
-dfrat$Habitat[dfrat$Habitat == " FL Productive"] <- "Productive \nFree-Living"
-dfrat$Habitat[dfrat$Habitat == " FL Unproductive"] <- "Unproductive \nFree-Living"
+dfrat$Habitat[dfrat$Habitat == " Top Productive"] <- "Epilimnion \nHigh-Nutrient"
+dfrat$Habitat[dfrat$Habitat == " Top Unproductive"] <- "Epilimnion \nLow-Nutrient"
+dfrat$Habitat[dfrat$Habitat == " Bottom Productive"] <- "Hypolimnion \nHigh-Nutrient"
+dfrat$Habitat[dfrat$Habitat == " Bottom Unproductive"] <- "Hypolimnion \nLow-Nutrient"
+dfrat$Habitat[dfrat$Habitat == " PA Productive"] <- "High-Nutrient \nParticle-Associated"
+dfrat$Habitat[dfrat$Habitat == " PA Unproductive"] <- "Low-Nutrient \nParticle-Associated"
+dfrat$Habitat[dfrat$Habitat == " FL Productive"] <- "High-Nutrient \nFree-Living"
+dfrat$Habitat[dfrat$Habitat == " FL Unproductive"] <- "Low-Nutrient \nFree-Living"
 dfrat$Habitat[dfrat$Habitat == " PA Top"] <- "Particle-Associated \nEpilimnion"
 dfrat$Habitat[dfrat$Habitat == " FL Top"] <- "Free-Living \nEpilimnion"
 dfrat$Habitat[dfrat$Habitat == " FL Bottom"] <- "Free-Living \nHypolimnion"
 dfrat$Habitat[dfrat$Habitat == " PA Bottom"] <- "Particle-Associated \nHypolimnion"
 
-dfrat$Habitat <- factor(dfrat$Habitat,levels = c("Epilimnion Productive", "Hypolimnion Productive", "Mixed", "Epilimnion Unproductive", "Hypolimnion Unproductive",
+dfrat$Habitat <- factor(dfrat$Habitat,levels = c("Epilimnion \nHigh-Nutrient", "Hypolimnion \nHigh-Nutrient", "Mixed", "Epilimnion \nLow-Nutrient", "Hypolimnion \nLow-Nutrient",
                                                  "Particle-Associated \nHypolimnion", "Free-Living \nEpilimnion", "Free-Living \nHypolimnion", 
-                                                 "Productive \nParticle-Associated", "Productive \nFree-Living", "Unproductive \nParticle-Associated", "Unproductive \nFree-Living"))
+                                                 "High-Nutrient \nParticle-Associated", "High-Nutrient \nFree-Living", "Low-Nutrient \nParticle-Associated", "Low-Nutrient \nFree-Living"))
 
 #jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.4_heat_only.jpeg", width= 30, height=35, units= "cm", pointsize= 8, res=250)
 heat <- ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
@@ -1829,7 +1829,7 @@ relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coor
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),
         strip.background = element_rect(colour="black", fill = "black"),
-        plot.margin = unit(c(2, 2, 1.65, -1.25), "cm"), #top, right, bottom, left
+        plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
         #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
         legend.position="none"); #relabun_plot
 
@@ -1838,7 +1838,7 @@ relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coor
 #multiplot(relabun_plot, heat2, cols = 2)
 
 #http://stackoverflow.com/questions/20817094/how-to-control-width-of-multiple-plots-in-ggplot2
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.4_heat+abund.jpeg", width= 35, height=35, units= "cm", pointsize= 8, res=250)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.4_heat+abund.jpeg", width= 40, height=35, units= "cm", pointsize= 8, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -2005,7 +2005,7 @@ mf_labeller <- function(var, value){
   if (var=="Comparison") { 
     value[value=="PA vs. FL"] <- "Particle-Associated \n vs. \n Free-Living"
     value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. \nEpilimnion"
-    value[value=="Prod vs. Unprod"]   <- "Productive \n vs. \nUnproductive"
+    value[value=="Prod vs. Unprod"]   <- "High-Nutrient \n vs. \nLow-Nutrient"
   }
   return(value)
 }
@@ -2031,6 +2031,33 @@ ggplot(no_unclass_genus, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldCha
         strip.text.x = element_text(size=16, face = "bold", colour = "black"),
         strip.background = element_blank());  
 #dev.off()
+
+phy_otu <- otu_ratios 
+phy_otu$Phylum <- factor(phy_otu$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Chlamydiae", "Epsilonproteobacteria", "TA18", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))
+phy_otu$Phylum = with(phy_otu, factor(Phylum, levels = rev(levels(Phylum)))) 
+
+
+ggplot(phy_otu, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-Ratio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 2, barheight = 10)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
+  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
+  xlab("Habitat") + ylab("Phylum") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_blank(), #text(face="bold", size=16),
+        legend.title = element_text(face="bold", size=12),
+        legend.text = element_text(size = 12),
+        legend.position = c(0.9, 0.1), #c(0.1, 0.93),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
+        strip.text.x = element_text(size=16, face = "bold", colour = "black"),
+        strip.background = element_blank());  
+
 
 
 
@@ -2108,15 +2135,15 @@ for(i in 1:length(pvu_phylumlist)){
   num_sigOTUs <- length(unique(df_prod$Species))
   res_prod[i,1] <- pvu_phylumlist[i] #put the name of the phylum in the table
   res_prod[i,2] <- num_sigOTUs #put the number of sig OTUs in the table. 
-  res_prod[i,3] <- "Productive"
+  res_prod[i,3] <- "High-Nutrient"
   ## UNPRODUCTIVE
   df_oligo <- subset(pvu_oligo, Phylum == pvu_phylumlist[i]) #free phylum i
   num_sigOTUs <- length(unique(df_oligo$Species))
   res_oligo[i,1] <- pvu_phylumlist[i] #put the name of the phylum in the table.
   res_oligo[i,2] <- num_sigOTUs * -1 #put the number of sig OTUs in the table. 
-  res_oligo[i,3] <- "Unproductive"
+  res_oligo[i,3] <- "Low-Nutrient"
   PVU_OTUresults <- rbind(res_prod,res_oligo)
-  PVU_OTUresults$Comparison <- "Productive \n vs. \n Unproductive"
+  PVU_OTUresults$Comparison <- "High-Nutrient \n vs. \n Low-Nutrient"
 }
 
 
@@ -2159,10 +2186,10 @@ for(i in 1:length(tvb_phylumlist)){
 allOTU_results <- rbind(TVB_OTUresults, PAFL_OTUresults, PVU_OTUresults)
 
 allOTU_results$Preference <- factor(allOTU_results$Preference,
-                                    levels = c("Particle-Associated","Free-Living","Productive","Unproductive","Hypolimnion","Epilimnion")) 
+                                    levels = c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion")) 
 
 allOTU_results$Comparison <- factor(allOTU_results$Comparison,
-                                    levels = c("Particle-Associated \nvs. \nFree-Living", "Productive \n vs. \n Unproductive","Hypolimnion \n vs. \n Epilimnion")) 
+                                    levels = c("Particle-Associated \nvs. \nFree-Living", "High-Nutrient \n vs. \n Low-Nutrient","Hypolimnion \n vs. \n Epilimnion")) 
 
 allOTU_results$Phylum <- factor(allOTU_results$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
                                                                  "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
@@ -2178,24 +2205,27 @@ summed_20 <- allOTU_results[allOTU_results$Phylum %in% OTUtop20, ]
 summed_20$Phylum = with(summed_20, factor(Phylum, levels = rev(levels(Phylum))))
 
 ### This plot is flipped!
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/summed_otus_top17.jpeg",  width= 25, height=35, units= "cm", pointsize= 8, res=250)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/summed_otus_top17.jpeg",  width= 30, height=25, units= "cm", pointsize= 8, res=250)
 summed <- ggplot(summed_20, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
-  geom_bar(stat="identity", position="identity") + coord_flip() + ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
   theme_gray() +# scale_y_continuous(breaks=seq(-200, 200, 25)) +
   facet_grid(. ~ Comparison, scales = "free_y", labeller = mf_labeller) + theme_bw() +
-  ylab("Number of Significant OTUs") +  xlab("Phylum") + 
+  ylab("Total Number of Significant OTUs") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                     values = c("firebrick1", "goldenrod1",  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
+  guides(fill = guide_legend(keywidth = 2, keyheight = 2)) + 
   theme(axis.title.x = element_text(face="bold", size=16),
-        axis.text.x = element_text(colour = "black", size=12),
-        axis.text.y = element_text(colour = "black", size=12),
+        axis.text.x = element_text(colour = "black", size=14),
+        axis.text.y = element_text(colour = "black", size=14),
         axis.title.y = element_text(face="bold", size=16),
         plot.title = element_text(face="bold", size = 20),
         legend.title = element_blank(),
         legend.text = element_text(size = 12),
         strip.text.y = element_blank(),
-        strip.text.x = element_text(size = 12, face = "bold", colour = "black"),
+        strip.text.x = element_text(size = 14, face = "bold", colour = "black"),
         strip.background = element_blank(),
-        legend.position="none"); summed
+        legend.position="right"); summed
 #dev.off()
 
 
@@ -2657,7 +2687,7 @@ PAFL_otu <- data.frame(matrix(NA, nrow=6, ncol=3))
 dim(PAFL_otu)
 # Change Variable Names
 names(PAFL_otu) <- c("SampleType","Type", "NumOTUs")
-PAFL_otu$SampleType <- c("Particle", "Particle", "Particle", "Free", "Free", "Free")
+PAFL_otu$SampleType <- c("Particle-Associated", "Particle-Associated", "Particle-Associated", "Free-Living", "Free-Living", "Free-Living")
 PAFL_otu$Type <- c("Total", "Particle-Associated Only", "Both", "Total", "Free-Living Only", "Both")
 PAFL_otu$NumOTUs <- c(part_total, part_only, overlap, free_total, free_only, overlap)
 PAFL_otu2 <- subset(PAFL_otu, Type != "Total")
@@ -2749,37 +2779,39 @@ prod_otu <- data.frame(matrix(NA, nrow=6, ncol=3))
 dim(prod_otu)
 # Change Variable Names
 names(prod_otu) <- c("SampleType","Type", "NumOTUs")
-prod_otu$SampleType <- c("High Nutrient", "High Nutrient", "High Nutrient", "Low Nutrient", "Low Nutrient", "Low Nutrient")
-prod_otu$Type <- c("Total", "High Nutrient Only", "Both", "Total", "Low Nutrient Only", "Both")
+prod_otu$SampleType <- c("High-Nutrient", "High-Nutrient", "High-Nutrient", "Low-Nutrient", "Low-Nutrient", "Low-Nutrient")
+prod_otu$Type <- c("Total", "High-Nutrient Only", "Both", "Total", "Low-Nutrient Only", "Both")
 prod_otu$NumOTUs <- c(prod_total, prod_only, Prod_overlap, unprod_total, unprod_only, Prod_overlap)
 prod_otu2 <- subset(prod_otu, Type != "Total")
 #Fisher's test:  p = 0.0001
 
 
 ###  PUT IT ALL TOGETHER! 
-PAFL_otu2$Comparison <- "Particle-Associated \n vs. Free-Living"
-TB_otu2$Comparison <- "Epilimnion \n vs. Hypolimnion"
-prod_otu2$Comparison <- "High  vs. Low \nNutrient"
+PAFL_otu2$Comparison <- "Particle-Associated \n vs. \nFree-Living"
+TB_otu2$Comparison <- "Epilimnion \n vs. \nHypolimnion"
+prod_otu2$Comparison <- "High-Nutrient\n  vs. \nLow-Nutrient"
 otusums <- rbind(PAFL_otu2, TB_otu2, prod_otu2)
 
-otusums$Comparison <- factor(otusums$Comparison,levels = c("Particle-Associated \n vs. Free-Living", "High  vs. Low \nNutrient", "Epilimnion \n vs. Hypolimnion"))
-otusums$SampleType <- factor(otusums$SampleType,levels = c("Free", "Particle", "Low Nutrient", "High Nutrient", "Epilimnion", "Hypolimnion"))
-otusums$Type <- factor(otusums$Type, levels = c("Both","Free-Living Only", "Particle-Associated Only", "Low Nutrient Only", "High Nutrient Only", "Epilimnion Only", "Hypolimnion Only"))
+otusums$Comparison <- factor(otusums$Comparison,levels = c("Particle-Associated \n vs. \nFree-Living", "High-Nutrient\n  vs. \nLow-Nutrient", "Epilimnion \n vs. \nHypolimnion"))
+otusums$SampleType <- factor(otusums$SampleType,levels = c("Free-Living", "Particle-Associated", "Low-Nutrient", "High-Nutrient", "Epilimnion", "Hypolimnion"))
+otusums$Type <- factor(otusums$Type, levels = c("Both","Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only"))
 #otusums$Type <- factor(otusums$Type, levels = rev(levels(otusums$Type)))
 
 
 label.df <- data.frame(Group = c("Productive \n vs. Unproductive", "Epilimnion \n vs. Hypolimnion"),
                        Value = c(8600, 8000))
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.5_DetectedOTUs_rarefied.jpeg", width= 23, height=18, units= "cm", pointsize= 10, res=250)
+jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_DetectedOTUs_rarefied.jpeg", width= 25, height=19, units= "cm", pointsize= 10, res=250)
 ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free") + #geom_text(x = 2, y = 8750, label = "***") +
   xlab("Sample Type ") + ylab("Number of Deteceted UniqueOTUs") + 
   geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 6000, 1000), lim = c(0, 6000)) + 
-  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low Nutrient Only", "High Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Both"),
-                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low Nutrient Only", "High Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Both"),
-                    values = c("orange", "red", "darkgreen", "limegreen", "deepskyblue", "blue4", "gray39")) +
+  guides(fill = guide_legend(keywidth = 2, keyheight = 2)) + 
+  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Both"),
+                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Both"),
+                    values = c( "goldenrod1", "firebrick1", "turquoise3", "green4","palevioletred1","cornflowerblue", "gray39")) +
+                    #values = c("orange", "red", "darkgreen", "limegreen", "deepskyblue", "blue4", "gray39")) +
   theme_classic() + theme(axis.title.x = element_text(face="bold", size=16),
                           axis.text.x = element_text(angle=20, vjust = 1, hjust = 1, colour = "black", size=14),
                           axis.text.y = element_text(colour = "black", size=14),
@@ -2790,7 +2822,7 @@ ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
                           legend.text = element_text(size = 12),
                           strip.background = element_blank(),
                           legend.position="right")
-#dev.off()
+dev.off()
 
 
 ####  Test for Significance!
