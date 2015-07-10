@@ -1092,17 +1092,17 @@ plot_richobs_sigs <- ggplot(richobs_try, aes(x = troph_lim, y = Meantroph_lim, c
 ########## FINAL PLOT!
 plot_even_sigs2 <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.02), lim = c(0.01,0.093)) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
-        plot.margin = unit(c(0.1, 0.1, 0.1, 0.2), "cm")) #top, right, bottom, left)
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.23), "cm")) #top, right, bottom, left)
 
 plot_richobs_sigs2 <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400, 1200, 200), lim = c(300,1300)) +
   theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.1), "cm")) #top, right, bottom, left)
 
-jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.48,0.52))))
 print(plot_even_sigs2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(plot_richobs_sigs2, vp=viewport(layout.pos.row=2,layout.pos.col=1))
-dev.off()
+#dev.off()
 
 
 
