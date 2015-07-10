@@ -960,21 +960,161 @@ facet_prod_stats <- ggplot(prodalpha_stats, aes(x = troph_lim, y = Meantroph_lim
         legend.position="none"); facet_prod_stats
 #dev.off()
 
-richobs <- subset(prodalpha_stats, Test == "Observed Richness")
-simpseven <- subset(prodalpha_stats, Test == "Simpson's Evenness")
+prod_even <- subset(prodalpha_stats, Test == "Simpson's Evenness")
+prod_richobs <-subset(prodalpha_stats, Test == "Observed Richness") 
 
-######  Test for significance 
-#Observed richness =
-KW_richobs <- kruskal.test(Meantroph_lim ~ troph_lim, data = richobs)
-#Inverse Simpson
-KW_simps <- kruskal.test(Meantroph_lim ~ troph_lim, data = simpseven)
+prod_even$trophicstate <- as.character(prod_even$trophicstate)
+prod_even$trophicstate[prod_even$trophicstate == "Productive"] <-"High-Nutrient"
+prod_even$trophicstate[prod_even$trophicstate == "Unproductive"] <-"Low-Nutrient"
 
-### Which samples are significantly different from each other?
-KW_richobs_samps <- kruskalmc(richobs$Meantroph_lim, richobs$troph_lim)
-KW_simps_samps <- kruskalmc(simpseven$Meantroph_lim, simpseven$troph_lim)
+prod_even$trophicstate <-factor(prod_even$trophicstate,levels=c("High-Nutrient", "Low-Nutrient", "Mixed"))
 
-KW_richobs_samps2 <- subset(KW_richobs_samps$dif.com, difference == TRUE)
-KW_simps_samps2 <- subset(KW_simps_samps$dif.com, difference == TRUE)
+
+####################################################################  STATS TIME!  Simpson's Meausre of Evenness
+####################################################################  STATS TIME!  Simpson's Meausre of Evenness
+####################################################################  STATS TIME!  Simpson's Meausre of Evenness
+####  Run the test on ALL the data that goes into the mean!  #### Check it out here:  https://aquaticr.wordpress.com/2012/12/18/multiple-comparison-test-for-non-parametric-data/
+hist(prod_even$mean, breaks = 40)  # Not normally distributed!!!
+prod_even$mean <- as.numeric(prod_even$mean)
+prod_even$troph_lim1 <- as.factor(prod_even$troph_lim)
+## Do the KW test
+even_prod_KW <- kruskal.test(prod_even$mean ~ prod_even$troph_lim) # Kruskal Wallis test on evensen!
+print(even_prod_KW)  # show Kruskal Wallis result
+### Which samples are significantly different from each other?  Significant???  YES! WOOOHOOOOOOO!
+even_prod_KW_MC <- kruskalmc(prod_even$mean ~ prod_even$troph_lim)  ## Defaults to P < 0.05
+print(even_prod_KW_MC)
+### Time to figure out letters to represent significance in a plot!
+even_test <- even_prod_KW_MC$dif.com$difference # select logical vector
+names(even_test) <- row.names(even_prod_KW_MC$dif.com) # add comparison names
+# create a list with "homogenous groups" coded by letter
+even_letters <- multcompLetters(even_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)#['Letters']
+###  Let's extract the values from the multcompLetters object
+even_sigs_dataframe <-  data.frame(as.vector(names(even_letters$Letters)), as.vector(even_letters$Letters))
+colnames(even_sigs_dataframe) <- c("troph_lim", "siglabel")
+even_try <- merge(prod_even, even_sigs_dataframe, by = "troph_lim")
+
+#geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.03)), size = 5) +
+
+
+plot_even_sigs <- ggplot(even_try, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
+  facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
+  geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 0.006)), size = 5) +
+  geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
+  ggtitle("Within-Sample Diversity") + theme_bw() +   xlab("Habitat") + ylab("Simpson's Evenness") + 
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle-Associated", "Free-Living")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=16, face="bold"),
+        strip.text.y = element_blank(),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none"); plot_even_sigs
+
+
+prod_richobs <-subset(prodalpha_stats, Test == "Observed Richness") 
+
+prod_richobs$trophicstate <- as.character(prod_richobs$trophicstate)
+prod_richobs$trophicstate[prod_richobs$trophicstate == "Productive"] <-"High-Nutrient"
+prod_richobs$trophicstate[prod_richobs$trophicstate == "Unproductive"] <-"Low-Nutrient"
+
+prod_richobs$trophicstate <-factor(prod_richobs$trophicstate,levels=c("High-Nutrient", "Low-Nutrient", "Mixed"))
+
+
+####################################################################  STATS TIME!  Simpson's Meausre of Evenness
+####################################################################  STATS TIME!  Simpson's Meausre of Evenness
+####################################################################  STATS TIME!  Simpson's Meausre of Evenness
+####  Run the test on ALL the data that goes into the mean!  #### Check it out here:  https://aquaticr.wordpress.com/2012/12/18/multiple-comparison-test-for-non-parametric-data/
+hist(prod_richobs$mean, breaks = 40)  # Not normally distributed!!!
+prod_richobs$mean <- as.numeric(prod_richobs$mean)
+prod_richobs$troph_lim1 <- as.factor(prod_richobs$troph_lim)
+## Do the KW test
+richobs_prod_KW <- kruskal.test(prod_richobs$mean ~ prod_richobs$troph_lim) # Kruskal Wallis test on Observed Richness!
+print(richobs_prod_KW)  # show Kruskal Wallis result
+### Which samples are significantly different from each other?  Significant???  YES! WOOOHOOOOOOO!
+richobs_prod_KW_MC <- kruskalmc(prod_richobs$mean ~ prod_richobs$troph_lim)  ## Defaults to P < 0.05
+print(richobs_prod_KW_MC)
+### Time to figure out letters to represent significance in a plot!
+richobs_test <- richobs_prod_KW_MC$dif.com$difference # select logical vector
+names(richobs_test) <- row.names(richobs_prod_KW_MC$dif.com) # add comparison names
+# create a list with "homogenous groups" coded by letter
+richobs_letters <- multcompLetters(richobs_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)#['Letters']
+###  Let's extract the values from the multcompLetters object
+richobs_sigs_dataframe <-  data.frame(as.vector(names(richobs_letters$Letters)), as.vector(richobs_letters$Letters))
+colnames(richobs_sigs_dataframe) <- c("troph_lim", "siglabel")
+richobs_try <- merge(prod_richobs, richobs_sigs_dataframe, by = "troph_lim")
+
+
+plot_richobs_sigs <- ggplot(richobs_try, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
+  facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
+  geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 50)), size = 5) +
+  geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
+  theme_bw() +   xlab("Habitat") + ylab("Observed Richness") + 
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle-\nAssociated", "Free-\nLiving")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=16, face="bold"),
+        strip.text.y = element_blank(),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none"); plot_richobs_sigs
+
+
+
+
+########## FINAL PLOT!
+plot_even_sigs2 <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.02), lim = c(0.01,0.093)) +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.2), "cm")) #top, right, bottom, left)
+
+plot_richobs_sigs2 <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400, 1200, 200), lim = c(300,1300)) +
+  theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.1), "cm")) #top, right, bottom, left)
+
+jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(2,1,height=c(0.48,0.52))))
+print(plot_even_sigs2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(plot_richobs_sigs2, vp=viewport(layout.pos.row=2,layout.pos.col=1))
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1272,6 +1412,7 @@ prod_even$trophicstate[prod_even$trophicstate == "Productive"] <-"High Nutrient"
 prod_even$trophicstate[prod_even$trophicstate == "Unproductive"] <-"Low Nutrient"
 
 prod_even$trophicstate <-factor(prod_even$trophicstate,levels=c("High Nutrient", "Low Nutrient", "Mixed"))
+
 
 prod_invsimps <- ggplot(prod_even, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5) +
   facet_grid(. ~ trophicstate, scales="free", space="free_x") + scale_y_continuous(breaks=seq(0, 0.10, 0.02), lim = c(0, 0.1)) +
@@ -3177,24 +3318,6 @@ ggplot(soren_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_poin
         legend.position="none");
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ####################################################################  STATS TIME!  BRAY CURTIS
 ####################################################################  STATS TIME!  BRAY CURTIS
 ####################################################################  STATS TIME!  BRAY CURTIS
@@ -3320,11 +3443,11 @@ prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_l
         strip.background = element_blank(), strip.text = element_blank(),
         legend.position="none");prod_beta_plot
 
-jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 20, height=18, units= "cm", pointsize= 14, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 20, height=18, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.42,0.58))))
 print(soren_prodbeta_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(prod_beta_plot, vp=viewport(layout.pos.row=2,layout.pos.col=1))
-dev.off()
+#dev.off()
 
 
