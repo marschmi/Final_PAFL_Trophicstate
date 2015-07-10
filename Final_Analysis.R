@@ -438,7 +438,7 @@ nmds_bray$ProdLevel[nmds_bray$trophicstate == "Oligotrophic"] <- "Unproductive"
 nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
 nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape = ProdLevel)) +
-  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") +
+  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") + 
   geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
   annotate("text", label = "A", x = (min(nmds_bray$MDS1*10) + 0.05), y = (max(nmds_bray$MDS2*10) -0.02), face = "bold",size = 10, colour = "black") +
   annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*10) -0.2), y = (max(nmds_bray$MDS2*10) -0.02), size = 6, colour = "black") +
@@ -448,9 +448,7 @@ nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape 
   scale_shape_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
                      labels = c("High", "Low"),
                      values = c(15, 17)) +
-  #scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
-  #                  labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
-  #                   values = c(15, 19, 17)) +
+  scale_y_continuous(breaks=seq(-0.6, 0.6, 0.3), lim = c(-0.6,0.7)) +
   theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
         axis.title.x = element_text(face="bold", size=16),
@@ -475,7 +473,7 @@ nmds_soren$ProdLevel[nmds_soren$trophicstate == "Oligotrophic"] <- "Unproductive
 nmds_soren$quadrant <- factor(nmds_soren$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
 nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = ProdLevel)) +
-  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Sorensen Dissimilarity") +
+  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Sørensen Dissimilarity") +
   geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
   annotate("text", label = "B", x = (min(nmds_soren$MDS1) + 0.05), y = (max(nmds_soren$MDS2) -0.02), face = "bold",size = 10, colour = "black") +
   annotate("text", label = "Stress = 0.14", x = (max(nmds_soren$MDS1) -0.18), y = (max(nmds_soren$MDS2) -0.01), size = 6, colour = "black") +
@@ -1000,7 +998,7 @@ plot_even_sigs <- ggplot(even_try, aes(x = troph_lim, y = Meantroph_lim, color =
   facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
   geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 0.006)), size = 5) +
   geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
-  ggtitle("Within-Sample Diversity") + theme_bw() +   xlab("Habitat") + ylab("Simpson's Evenness") + 
+   theme_bw() +   xlab("Habitat") + ylab("Simpson's Evenness") + #ggtitle("Within-Sample Diversity") +
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
                                          "Mixed Mixed Particle", "Mixed Mixed Free"), 
@@ -1060,7 +1058,7 @@ richobs_try <- merge(prod_richobs, richobs_sigs_dataframe, by = "troph_lim")
 
 plot_richobs_sigs <- ggplot(richobs_try, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
   facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
-  geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 50)), size = 5) +
+  geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 75)), size = 5) +
   geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
   theme_bw() +   xlab("Habitat") + ylab("Observed Richness") + 
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
@@ -1099,7 +1097,7 @@ plot_richobs_sigs2 <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400, 120
 
 #jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(2,1,height=c(0.48,0.52))))
+pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_even_sigs2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(plot_richobs_sigs2, vp=viewport(layout.pos.row=2,layout.pos.col=1))
 #dev.off()
@@ -3403,7 +3401,7 @@ soren_prodbeta_plot <- ggplot(soren_try, aes(x = troph_lim1, y = mean, color = t
                             "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"),
                    labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
                             "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free")) + 
-  xlab("Habitat") + ylab("Sorensen\nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  xlab("Habitat") + ylab("Sørensen\nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
   scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.83)) + 
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
   theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), 
@@ -3434,20 +3432,20 @@ prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_l
   facet_grid(. ~ trophicstate, scale = "free", space = "free") +
   scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.84)) + 
   theme(axis.title.x = element_text(face="bold", size=16),
-        axis.text.x = element_text(angle=60, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
         axis.text.y = element_text(colour = "black", size=14),
         axis.title.y = element_text(face="bold", size=16),
         plot.title = element_text(face="bold", size = 20),
         #axis.ticks.x = element_blank(),
-        plot.margin = unit(c(-0.8, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        plot.margin = unit(c(-0.9, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         strip.background = element_blank(), strip.text = element_blank(),
         legend.position="none");prod_beta_plot
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 20, height=18, units= "cm", pointsize= 14, res=500)
+jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 26, height=22, units= "cm", pointsize= 14, res=500)
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(2,1,height=c(0.42,0.58))))
+pushViewport(viewport(layout=grid.layout(2,1,height=c(0.46,0.54))))
 print(soren_prodbeta_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(prod_beta_plot, vp=viewport(layout.pos.row=2,layout.pos.col=1))
-#dev.off()
+dev.off()
 
 
