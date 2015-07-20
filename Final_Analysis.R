@@ -14,7 +14,7 @@ library(tidyr)
 library(dplyr)
 library(scales)
 library(pgirmess)
-library(multcomp)
+library(multcompView)
 
 ### Set the Working Directory
 setwd("~/Final_PAFL_Trophicstate")
@@ -1937,33 +1937,33 @@ prodoligo_otu <- multiplot(topFL_plot, botFL_plot, topPA_plot, botPA_plot, cols 
 
 
 #PA VS FL:  
-#Surface productive
+#Surface Productive
 pafl1 <- subset(de_topProd, select = c(Phylum, Genus, Species, log2FoldChange, padj))
-pafl1$Habitat <- "PA vs. FL: Epilimnion Productive"
-#Surface unproductive
+pafl1$Habitat <- "PA vs. FL: Epilimnion \nHigh-Nutrient"
+#Surface Low-Nutrient
 pafl2 <- subset(de_botProd, select = c(Phylum, Genus, Species, log2FoldChange, padj))
-pafl2$Habitat <- "PA vs. FL: Epilimnion Unproductive"
-#Bottom Productive
+pafl2$Habitat <- "PA vs. FL: Epilimnion \nLow-Nutrient"
+#Bottom High-Nutrient
 pafl3 <- subset(de_topUNProd, select = c(Phylum, Genus, Species, log2FoldChange, padj))
-pafl3$Habitat <- "PA vs. FL: Hypolimnion Productive"
-#Bottom Unproductive
+pafl3$Habitat <- "PA vs. FL: Hypolimnion \nHigh-Nutrient"
+#Bottom Low-Nutrient
 pafl4 <- subset(de_botUNProd, select = c(Phylum, Genus, Species, log2FoldChange, padj))
-pafl4$Habitat <- "PA vs. FL: Hypolimnion Unproductive"
+pafl4$Habitat <- "PA vs. FL: Hypolimnion \nLow-Nutrient"
 
 
 
 ###Top vs Bottom:  
 otu_topbot1 <- subset(de_prodPA, select = c(Phylum, Genus, Species, log2FoldChange, padj))
-otu_topbot1$Habitat <- "Top vs. Bottom: Productive \n Particle-Associated"
-# Particle-Associated UNproductive
+otu_topbot1$Habitat <- "Top vs. Bottom: High-Nutrient \n Particle-Associated"
+# Particle-Associated Low-Nutrient
 otu_topbot2 <- subset(de_unprodPA, select = c(Phylum, Genus, Species, log2FoldChange, padj))
-otu_topbot2$Habitat <- "Top vs. Bottom: Unproductive \n Particle-Associated"
-# Free-Living Productive 
+otu_topbot2$Habitat <- "Top vs. Bottom: Low-Nutrient \n Particle-Associated"
+# Free-Living High-Nutrient 
 otu_topbot3 <- subset(de_prodFL, select = c(Phylum, Genus, Species, log2FoldChange, padj))
-otu_topbot3$Habitat <- "Top vs. Bottom: Productive \n Free-Living"
-# Free-Living UNproductive
+otu_topbot3$Habitat <- "Top vs. Bottom: High-Nutrient \n Free-Living"
+# Free-Living Low-Nutrient
 otu_topbot4 <- subset(de_unprodFL, select = c(Phylum, Genus, Species, log2FoldChange, padj))
-otu_topbot4$Habitat <- "Top vs. Bottom: Unproductive \n Free-Living"
+otu_topbot4$Habitat <- "Top vs. Bottom: Low-Nutrient \n Free-Living"
 
 
 
@@ -2009,28 +2009,7 @@ mf_labeller <- function(var, value){
   return(value)
 }
 
-no_unclass_genus <- subset(otu_ratios, Genus != "unclassified")
-
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/genus_heat.jpeg", width= 30, height=60, units= "cm", pointsize= 8, res=250)
-## GENUS LEVEL HEAT PLOT
-ggplot(no_unclass_genus, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
-  scale_fill_gradient2(name = "Odds-Ratio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 18)) + #scale_y_reverse() + 
-  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
-  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
-  xlab("Habitat") + ylab("Genus") + 
-  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
-  theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
-        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
-        axis.title.x = element_blank(), #text(face="bold", size=16),
-        legend.title = element_text(face="bold", size=12),
-        legend.text = element_text(size = 12),
-        legend.position = c(0.1, 0.93), #"left",
-        axis.title.y = element_text(face="bold", size=16),
-        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
-        strip.text.x = element_text(size=16, face = "bold", colour = "black"),
-        strip.background = element_blank());  
-#dev.off()
-
+#no_unclass_genus <- subset(otu_ratios, Genus != "unclassified")
 phy_otu <- otu_ratios 
 phy_otu$Phylum <- factor(phy_otu$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
                                                "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
@@ -2040,22 +2019,82 @@ phy_otu$Phylum <- factor(phy_otu$Phylum,levels = c("Bacteroidetes", "Cyanobacter
 phy_otu$Phylum = with(phy_otu, factor(Phylum, levels = rev(levels(Phylum)))) 
 
 
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S5_Phylum_atOTUlevel_heat.jpeg", width= 35, height=35, units= "cm", pointsize= 8, res=500)
 ggplot(phy_otu, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
-  scale_fill_gradient2(name = "Odds-Ratio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 2, barheight = 10)) + #scale_y_reverse() + 
+  scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
   #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
   xlab("Habitat") + ylab("Phylum") + 
   facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
   theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
-        axis.title.x = element_blank(), #text(face="bold", size=16),
+        axis.title.x = element_text(face="bold", size=16),
         legend.title = element_text(face="bold", size=12),
         legend.text = element_text(size = 12),
-        legend.position = c(0.9, 0.1), #c(0.1, 0.93),
+        legend.position = c(0.96, 0.12), #c(0.1, 0.93),
+        axis.title.y = element_text(face="bold", size=16),
+        #plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
+        strip.text.x = element_text(size=16, face = "bold", colour = "black"),
+        strip.background = element_blank());  
+#dev.off()
+
+########  GENUS LEVEL PLOT ORGANIZED BY PHYLUM
+## GENUS LEVEL HEAT PLOT
+sub_abund <- subset(abund, select = c("Phylum", "PercentPhy"))
+oturats_abund <- merge(otu_ratios, sub_abund, by = "Phylum")
+ordered_otu_ratios <- arrange(oturats_abund, desc(PercentPhy)) 
+
+ordered_otu_ratios$Genus <- factor(ordered_otu_ratios$Genus,levels = c("vadinBC27_wastewater-sludge_group", "unclassified", "Pseudarcicella", "Solitalea", "Haliscomenobacter", "Ferruginibacter",
+                                                   "Candidatus_Aquirestis", "Paludibacter", "Flavobacterium", "Sediminibacterium", "Fluviicola", "Pedobacter",
+                                                   "Algoriphagus", "Owenweeksia", "Emticicia", "Chitinophaga", "Planktothrix","Synechococcus", "Snowella", "Anabaena",
+                                                   "Pseudanabaena", "Luteolibacter","Opitutus","Candidatus_Methylacidiphilum", "LD28_freshwater_group","Iodobacter","Nitrosospira",
+                                                   "Sterolibacterium","Dechloromonas","Sulfuritalea","Candidatus_Accumulibacter","PRD01a011B","Sideroxydans","MWH-UniP1_aquatic_group",
+                                                   "Polynucleobacter","GKS98_freshwater_group",
+                                                   "Candidatus_Branchiomonas","Candidatus_Planktophila","hgcI_clade","Candidatus_Microthrix","CL500-29_marine_group","Mycobacterium",
+                                                   "Candidatus_Aquiluna","Candidatus_Limnoluna","Planctomyces","Pirellula","Candidatus_Anammoximicrobium","Candidatus_Nostocoida",
+                                                   "CL500-3","Pir4_lineage","Roseospirillum","Magnetospirillum","Brevundimonas","Porphyrobacter", "Haematobacter",
+                                                   "Roseomonas","Rhizomicrobium","Rickettsia","OM27_clade","Desulfobacula",
+                                                   "Desulfobulbus","Syntrophus","Peredibacter","Desulfomonile","Desulfocapsa","Desulfatirhabdium","Geobacter",
+                                                   "Desulfovibrio","Phaselicystis","Sorangium","Lamprocystis","Pseudospirillum",
+                                                   "Thiodictyon","Thiocystis","Candidatus_Competibacter","Coxiella","Methylocaldum","Rheinheimera",
+                                                   "Methylobacter","Crenothrix","Oscillochloris","Anaerolinea","Chloronema","Victivallis",
+                                                   "Chlorobium","Ignavibacterium","Armatimonas","Fastidiosipila","Fonticella","Incertae_Sedis",
+                                                   "Anaerofustis","marine_group","Geothrix","Treponema","Leptospira","Spirochaeta",
+                                                   "Brevinema","Sulfurospirillum","Sulfurimonas","possible_genus_03","Gemmatimonas","Candidatus_Latescibacter","SC103"))
+ordered_otu_ratios$Genus = with(ordered_otu_ratios, factor(Genus, levels = rev(levels(Genus)))) 
+
+sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.jpeg", width= 40, height=60, units= "cm", pointsize= 8, res=500)
+ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
+  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
+  xlab("Habitat") + ylab("Genus") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        legend.title = element_text(face="bold", size=12),
+        legend.text = element_text(size = 12),
+        legend.position = c(0.96, 0.06), #c(0.1, 0.93),
         axis.title.y = element_text(face="bold", size=16),
         plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
         strip.text.x = element_text(size=16, face = "bold", colour = "black"),
         strip.background = element_blank());  
+#dev.off()
+
+
+
+
+
+
+
+
+
+
+
 
 
 
