@@ -254,6 +254,7 @@ mean_profile13b <- subset(mean_profile13, Variable != "SpC")
 
 ## AVERAGE PLOT!
 #jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 32, height=30, units= "cm",pointsize= 18, res=500)
+jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 25, height=22, units= "cm",pointsize= 18, res=500)
 ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +   
   facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
@@ -263,20 +264,17 @@ ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +
   scale_color_manual(name = "", breaks = c("Productive", "Unproductive", "Mixed"), 
                      labels = c("High-Nutrient", "Low-Nutrient", "Mixed"), 
                      values = c("deeppink","turquoise3", "blue")) +
-  #scale_color_manual(name = "", breaks = c("Eutrophic", "Mesotrophic","Oligotrophic", "Mixed"), 
-  #                   labels = c("Eutrophic", "Mesotrophic","Oligotrophic", "Mixed"), 
-  #                   values = c("deeppink", "orange","turquoise3", "blue")) +
-  theme(axis.title.x = element_text(face="bold", size=14),
+  theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(colour = "black",size=14),
         axis.text.y = element_text(colour = "black", size=14),
         axis.title.y = element_text(face="bold", size=16),
         legend.title = element_text(size=12, face="bold"),
-        legend.text = element_text(size = 14),
+        legend.text = element_text(size = 12),
         strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
         strip.background = element_blank(),
-        legend.position = c(0.1, 0.93));
+        legend.position = c(0.1, 0.9));
         #legend.position = c(0.81, 0.08));
-#dev.off()
+dev.off()
 
 # ALL LAKES 
 profile_all <- profile %>%  gather(Variable, Value, 4:7)
@@ -440,7 +438,7 @@ nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "F
 nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape = ProdLevel)) +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") + 
   geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
-  annotate("text", label = "A", x = (min(nmds_bray$MDS1*10) + 0.05), y = (max(nmds_bray$MDS2*10) -0.02), face = "bold",size = 10, colour = "black") +
+  annotate("text", label = "B", x = (min(nmds_bray$MDS1*10) + 0.05), y = (max(nmds_bray$MDS2*10) -0.02), face = "bold",size = 10, colour = "black") +
   annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*10) -0.2), y = (max(nmds_bray$MDS2*10) -0.02), size = 6, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
@@ -448,6 +446,7 @@ nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape 
   scale_shape_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
                      labels = c("High", "Low"),
                      values = c(15, 17)) +
+  guides(shape = guide_legend(order=1), color = guide_legend(order=2)) +
   scale_y_continuous(breaks=seq(-0.6, 0.6, 0.3), lim = c(-0.6,0.7)) +
   theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
@@ -457,7 +456,7 @@ nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape 
         legend.text = element_text(size = 12),
         plot.title = element_text(size = 16, face="bold"),
         ###LEGEND TOP RIGHT CORNER
-        legend.position = "none");  nmds_bc_quad
+        legend.position = "right");  nmds_bc_quad
 
 
 # UNWEIGHTED
@@ -475,7 +474,7 @@ nmds_soren$quadrant <- factor(nmds_soren$quadrant,levels = c("Free Epilimnion", 
 nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = ProdLevel)) +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Sørensen Dissimilarity") +
   geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
-  annotate("text", label = "B", x = (min(nmds_soren$MDS1) + 0.05), y = (max(nmds_soren$MDS2) -0.02), face = "bold",size = 10, colour = "black") +
+  annotate("text", label = "A", x = (min(nmds_soren$MDS1) + 0.05), y = (max(nmds_soren$MDS2) -0.02), face = "bold",size = 10, colour = "black") +
   annotate("text", label = "Stress = 0.14", x = (max(nmds_soren$MDS1) -0.18), y = (max(nmds_soren$MDS2) -0.01), size = 6, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
@@ -492,17 +491,17 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
         legend.text = element_text(size = 12),
         plot.title = element_text(size = 16, face="bold"),
         ###LEGEND TOP RIGHT CORNER
-        legend.position = "right");  nmds_soren_quad
+        legend.position = "none");  nmds_soren_quad
 
 
 #multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod2.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.42,0.58))))
-print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
-print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
 
 
@@ -2367,7 +2366,7 @@ print(average, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 ##################################################################################### ABUNDANCE PLOTS 
 ##################################################################################### ABUNDANCE PLOTS 
 ##################################################################################### ABUNDANCE PLOTS 
-### Check lines 1211 for how sub_phy_melt_totals was created:
+### Check lines 1736 for how sub_phy_melt_totals was created:
 ### Calculate the mean relative abundance based on ProdLevel + Quadrant for each PHYLUM 
 sub_phy_melt_totals_nosherwin <- subset(sub_phy_melt_totals, Sample != "SHEE" & Sample != "SHEE3um" & Sample !="SHEH" & Sample != "SHEH3um")
 prod_quad_phylum_stats <- ddply(sub_phy_melt_totals_nosherwin, c("ProdLevel","quadrant", "Phylum"), summarise, 
@@ -2390,6 +2389,7 @@ top15phy <- prod_quad_phylum_stats[prod_quad_phylum_stats$Phylum %in% phy_order[
 top15phy$Phylum <- factor(top15phy$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
                                                      "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi","Acidobacteria",         
                                                      "Spirochaetae", "Candidate_division_OD1",  "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "TA18", "Epsilonproteobacteria", "Chlamydiae"))
+
 
 top15phy$quadrant <- factor(top15phy$quadrant,levels = c("Free Epilimnion", "Particle Epilimnion", "Free Hypolimnion", "Particle Hypolimnion"))
 
@@ -2515,12 +2515,11 @@ grid.draw(z)
 
 
 ###  MIDDLE 19 PHYLA 
-mid20phy <- prod_quad_phylum_stats[prod_quad_phylum_stats$Phylum %in% phy_order[16:35], ]
+mid20phy <- prod_quad_phylum_stats[prod_quad_phylum_stats$Phylum %in% phy_order[16:33], ]
 
 mid20phy$Phylum <- factor(mid20phy$Phylum,levels = c("Acidobacteria", "Spirochaetae",  "Candidate_division_OD1", "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", 
                                                      "TM6", "TA18", "Epsilonproteobacteria", "Chlamydiae",  "Fibrobacteres", "Candidate_division_SR1",
                                                      "Candidate_division_BRC1", "BD1-5",  "Candidate_division_WS3", "Tenericutes", "Elusimicrobia","Gemmatimonadetes", "WCHB1-60", "Fusobacteria"))
-
 
 #### ADDING NO SPACES FOR FREE LIVING and ADDING 2 SPACE FOR PARICLE ASSOCIATED AT THE END
 mid20phy$quadrant <- as.character(mid20phy$quadrant)
@@ -2554,7 +2553,7 @@ mid20phy_plot <- ggplot(mid20phy, aes(y=mean_abundance , x=Phylum, fill=Phylum))
   guides(fill = guide_legend(reverse=TRUE)) + ggtitle("") + 
   geom_bar(stat="identity", position=position_dodge()) + #theme_classic() +
   geom_bar(stat="identity", position=position_dodge(), colour = "black", show_guide = FALSE) +
-  facet_wrap(~ prod_quad, ncol = 8) + xlab("Middle 20 Most Abundant Phyla") +
+  facet_wrap(~ prod_quad, ncol = 8) + xlab("Middle 18 Most Abundant Phyla") +
   scale_fill_manual(values = phy.colors.whew,name="Phylum") + 
   geom_errorbar(aes(ymin = mean_abundance -se, ymax = mean_abundance +se), width = 0.25, color = "black") + 
   ylab("Mean Percent Relative Abundance (%)") + coord_flip() + theme_bw() + 
@@ -2569,7 +2568,7 @@ mid20phy_plot <- ggplot(mid20phy, aes(y=mean_abundance , x=Phylum, fill=Phylum))
         legend.title = element_text(size=12, face="bold"),
         legend.text = element_text(size = 12),
         strip.background = element_rect(fill="grey77", color = NA),
-        legend.position="right"); #mid20phy_plot
+        legend.position="right"); mid20phy_plot
 #dev.off()
 
 
@@ -2592,7 +2591,7 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = g
                      3, 9, 3, 13, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.6))),
-                             textGrob("Productive", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("High-Nutrient", gp = gpar(fontsize = 14, col = "black"))),
                      2, 4, 2, 13, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
@@ -2604,14 +2603,14 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = g
                      3, 22, 3, 25, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gray(0.6))),
-                             textGrob("Unproductive", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("Low-Nutrient", gp = gpar(fontsize = 14, col = "black"))),
                      2, 15, 2, 25, name = paste(runif(2)))
 
 # add margins
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.S3_Abundance_mid20_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
 # draw it
 grid.newpage()
 grid.draw(z)
@@ -3473,11 +3472,11 @@ prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_l
         strip.background = element_blank(), strip.text = element_blank(),
         legend.position="none");prod_beta_plot
 
-jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 26, height=22, units= "cm", pointsize= 14, res=500)
+#@jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 26, height=22, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.46,0.54))))
 print(soren_prodbeta_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(prod_beta_plot, vp=viewport(layout.pos.row=2,layout.pos.col=1))
-dev.off()
+#dev.off()
 
 
