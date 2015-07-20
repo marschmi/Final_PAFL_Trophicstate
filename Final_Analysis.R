@@ -2089,6 +2089,30 @@ ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2Fold
 
 
 
+ordered_otu_ratios$GenOTU <- paste(as.character(ordered_otu_ratios$Genus),as.character(ordered_otu_ratios$Species))
+
+
+sub_ordered_oturats$GenOTU <- paste(as.character(sub_ordered_oturats$Genus),as.character(sub_ordered_oturats$Species))
+
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.jpeg", width= 40, height=60, units= "cm", pointsize= 8, res=500)
+ggplot(sub_ordered_oturats, aes(Habitat, GenOTU)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
+  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
+  xlab("Habitat") + ylab("Genus + OTU") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        legend.title = element_text(face="bold", size=12),
+        legend.text = element_text(size = 12),
+        legend.position = c(0.96, 0.06), #c(0.1, 0.93),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
+        strip.text.x = element_text(size=16, face = "bold", colour = "black"),
+        strip.background = element_blank());  
+#dev.off()
 
 
 
