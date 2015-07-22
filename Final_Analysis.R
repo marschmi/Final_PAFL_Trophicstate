@@ -1114,12 +1114,12 @@ plot_richobs_sigs_FLIP <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400,
 plot_even_sigs_FLIP <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.02), lim = c(0.01,0.093)) +
   theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.23), "cm")) #top, right, bottom, left)
 
-jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_richobs_sigs_FLIP, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(plot_even_sigs_FLIP, vp=viewport(layout.pos.row=2,layout.pos.col=1))
-dev.off()
+#dev.off()
 
 
 
@@ -1297,7 +1297,7 @@ ddply_beta <- ddply(nomix_beta2, c("troph_lim2", "trophicstate1", "filter1"), su
                     sd   = sd(value),
                     se   = sd / sqrt(N))
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.3c_beta_TROPH_SD.jpeg", width= 25, height=15, units= "cm", pointsize= 14, res=500)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/beta_TROPH_SD.jpeg", width= 30, height=18, units= "cm", pointsize= 14, res=500)
 beta_plot <- ggplot(ddply_beta, aes(x = troph_lim2, y = mean, color = troph_lim2)) + geom_point(size = 5) +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
   scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
@@ -1308,18 +1308,19 @@ beta_plot <- ggplot(ddply_beta, aes(x = troph_lim2, y = mean, color = troph_lim2
   scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
                             "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
                             "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"),
-                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
-                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
-                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free")) + 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
   xlab("Habitat") + ylab("Bray Curtis Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
-  theme(axis.title.x = element_text(face="bold", size=14),
+  theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
         axis.text.y = element_text(colour = "black", size=14),
         axis.title.y = element_text(face="bold", size=16),
         plot.title = element_text(face="bold", size = 20),
-        strip.text.x = element_text(size=12, face = "bold", colour = "black"),
+        strip.text.x = element_text(size=16, face = "bold", colour = "black"),
         strip.background = element_blank(),
+        plot.margin = unit(c(0.2, 0.2, 0.2, 0.5), "cm"), #top, right, bottom, left)
         legend.position="none"); beta_plot
 #dev.off()
 
