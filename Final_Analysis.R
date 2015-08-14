@@ -440,7 +440,7 @@ nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*10, MDS2*10, color = quadrant, shape 
   geom_point(size= 6, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 2) +
   annotate("text", label = "B", x = (min(nmds_bray$MDS1*10) + 0.05), y = (max(nmds_bray$MDS2*10) -0.02), face = "bold",size = 10, colour = "black") +
   annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*10) -0.2), y = (max(nmds_bray$MDS2*10) -0.02), size = 6, colour = "black") +
-  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+  scale_color_manual(name = "Filter Fraction and Lake Layer", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
                      values = c("darkgreen", "mediumblue", "purple3", "green", "deepskyblue", "orchid1")) +
   scale_shape_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
@@ -497,9 +497,9 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
 #multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod2.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod.tiff", width= 45, height=18, units= "cm", pointsize= 14, res=500)
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(1,2,width=c(0.42,0.58))))
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.41,0.59))))
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
@@ -530,17 +530,17 @@ for(i in 1:length(environ$limnion)){
 ##  Calculate the BC dissimilarity and the Sorensen Dissimilarity
 nosherwinOTU <- otu_table(nosherwin_merged)  # This is our OTU table that we will use for Adonis
 set.seed(3)
-BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+#BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
 
-#df_nosherwinOTU <- data.frame(nosherwinOTU)
-#otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-#BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+df_nosherwinOTU <- data.frame(nosherwinOTU)
+otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for BCdist (BC vs sorensen???)
 ##  Are you sure?!  
 
 # #Run an ADONIS test!
-adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +trophicstate+ DO+temp + pH, data=environ) # R2 = 0.36245
+adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +ProdLevel+ DO+temp + pH, data=environ) # R2 = 0.36245
 adonis_PAFL_hab <- adonis(BCdist ~ habitat, data=environ) # R2 = 0.36245
 
 adonis_PAFL_quad <- adonis(BCdist~quadrant,data=environ) #  R2 = 
@@ -557,7 +557,7 @@ adonis_PAFL_pH <- adonis(BCdist~ pH,data=environ) # R2 =
 part <- subset_samples(nosherwin_merged, filter == "Particle")
 set.seed(3)
 partOTU <- otu_table(part)
-part_BC <- vegdist(partOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+#part_BC <- vegdist(partOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
 
 #df_partOTU <- data.frame(partOTU)
 #part_soren <- vegdist(df_partOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
@@ -568,7 +568,7 @@ part_BC <- vegdist(partOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
 
 part_env <- subset(environ, filter == "Particle")  #Load Environmental Data
 
-part_adon_mult<- adonis(part_BC ~ limnion+trophicstate+ DO + temp + pH, data=part_env) #R2 = 
+part_adon_mult<- adonis(part_BC ~ limnion+ProdLevel+ DO + temp + pH, data=part_env) #R2 = 
 part_adon_limn <- adonis(part_BC ~ limnion, data=part_env) # R2 = 
 part_adon_troph <- adonis(part_BC ~ trophicstate, data=part_env) # R2 =  
 part_adon_prod <- adonis(part_BC ~ ProdLevel, data=part_env) # R2 =  
@@ -582,18 +582,18 @@ part_adon_pH <- adonis(part_BC ~ pH, data=part_env) # R2 = 0.086
 free <- subset_samples(nosherwin_merged, filter == "Free")
 set.seed(3)
 freeOTU <- otu_table(free)
-#free_BC <- vegdist(freeOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+free_BC <- vegdist(freeOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
 
-df_freeOTU <- data.frame(freeOTU)
-free_soren <- vegdist(df_freeOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-free_BC <- free_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+#df_freeOTU <- data.frame(freeOTU)
+#free_soren <- vegdist(df_freeOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#free_BC <- free_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for free_BC (BC vs sorensen???)
 ##  Are you sure?! 
 
 free_env <- subset(environ, filter == "Free")  #Load Environmental Data
 
-free_adon_mult<- adonis(free_BC ~ limnion+trophicstate+ DO + temp + pH, data=free_env) #R2 = 
+free_adon_mult<- adonis(free_BC ~ limnion+ProdLevel+ DO + temp + pH, data=free_env) #R2 = 
 free_adon_limn <- adonis(free_BC ~ limnion, data=free_env) # R2 = 
 free_adon_troph <- adonis(free_BC ~ trophicstate, data=free_env) # R2 =  
 free_adon_prod <- adonis(free_BC ~ ProdLevel, data=free_env) # R2 =  
@@ -607,18 +607,18 @@ free_adon_pH <- adonis(free_BC ~ pH, data=free_env) # R2 = 0.086
 epi <- subset_samples(nosherwin_merged, limnion == "Epilimnion")
 set.seed(3)
 epiOTU <- otu_table(epi)
-#epi_BC <- vegdist(epiOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+epi_BC <- vegdist(epiOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
 
-df_epiOTU <- data.frame(epiOTU)
-epi_soren <- vegdist(df_epiOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-epi_BC <- epi_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+#df_epiOTU <- data.frame(epiOTU)
+#epi_soren <- vegdist(df_epiOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#epi_BC <- epi_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for epi_BC (BC vs sorensen???)
 ##  Are you sure?! 
 
 epi_env <- subset(environ, limnion == "Epilimnion")  #Load Environmental Data
 
-epi_adon_mult<- adonis(epi_BC ~ filter+trophicstate+ DO + temp + pH, data=epi_env) #R2 = 
+epi_adon_mult<- adonis(epi_BC ~ filter+ProdLevel+ DO + temp + pH, data=epi_env) #R2 = 
 epi_adon_filt <- adonis(epi_BC ~ filter, data=epi_env) # R2 = 
 epi_adon_quad <- adonis(epi_BC ~ quadrant, data=epi_env) # R2 = 
 epi_adon_troph <- adonis(epi_BC ~ trophicstate, data=epi_env) # R2 =  
@@ -632,18 +632,18 @@ epi_adon_pH <- adonis(epi_BC ~ pH, data=epi_env) # R2 = 0.086
 hypo <- subset_samples(nosherwin_merged, limnion == "Hypolimnion")
 hypoOTU <- otu_table(hypo)
 set.seed(3)
-#hypo_BC <- vegdist(hypoOTU, method = "bray", binary = FALSE) # BRAY CURTIS!
+hypo_BC <- vegdist(hypoOTU, method = "bray", binary = FALSE) # BRAY CURTIS!
 
-df_hypoOTU <- data.frame(hypoOTU)
-hypo_soren <- vegdist(df_hypoOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-hypo_BC <- hypo_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+#df_hypoOTU <- data.frame(hypoOTU)
+#hypo_soren <- vegdist(df_hypoOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#hypo_BC <- hypo_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for hypo_BC (BC vs sorensen???)
 ##  Are you sure?! 
 
 hypo_env <- subset(environ, limnion == "Hypolimnion") #Load Environmental Data
 
-hypo_adon_mult <- adonis(hypo_BC ~ filter+trophicstate+DO + temp + pH, data=hypo_env) # R2 = 
+hypo_adon_mult <- adonis(hypo_BC ~ filter+ProdLevel+DO + temp + pH, data=hypo_env) # R2 = 
 hypo_adon_filt <- adonis(hypo_BC ~ filter, data=hypo_env) # R2 = 
 hypo_adon_quad <- adonis(hypo_BC ~ quadrant, data=hypo_env) # R2 = 
 hypo_adon_troph <- adonis(hypo_BC ~ trophicstate, data=hypo_env) # R2 = 
@@ -657,11 +657,11 @@ hypo_adon_pH <- adonis(hypo_BC ~ pH, data=hypo_env) # R2 =
 oligo <- subset_samples(nosherwin_merged, trophicstate == "Oligotrophic") 
 oligoOTU <- otu_table(oligo)
 set.seed(3)
-oligo_BC <- vegdist(oligoOTU, method = "bray", binary = FALSE) # BRAY CURTIS!
+#oligo_BC <- vegdist(oligoOTU, method = "bray", binary = FALSE) # BRAY CURTIS!
 
-#df_oligoOTU <- data.frame(oligoOTU)
-#oligo_soren <- vegdist(df_oligoOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-#oligo_BC <- oligo_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+df_oligoOTU <- data.frame(oligoOTU)
+oligo_soren <- vegdist(df_oligoOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+oligo_BC <- oligo_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for oligo_BC (BC vs sorensen???)
 ##  Are you sure?! 
@@ -681,11 +681,11 @@ oligo_adon_pH <- adonis(oligo_BC ~ pH, data=oligo_env) # R2 =
 prod <- subset_samples(nosherwin_merged, ProdLevel == "Productive")
 prodOTU <- otu_table(prod)
 set.seed(3)
-prod_BC <- vegdist(prodOTU, method = "bray", binary = FALSE) # BRAY CURTIS DISTANCE
+#prod_BC <- vegdist(prodOTU, method = "bray", binary = FALSE) # BRAY CURTIS DISTANCE
 
-#df_prodOTU <- data.frame(prodOTU)
-#prod_soren <- vegdist(df_prodOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-#prod_BC <- prod_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+df_prodOTU <- data.frame(prodOTU)
+prod_soren <- vegdist(df_prodOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+prod_BC <- prod_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for prod_BC (BC vs sorensen???)
 ##  Are you sure?! 
@@ -1099,7 +1099,7 @@ plot_even_sigs2 <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.
 plot_richobs_sigs2 <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400, 1200, 200), lim = c(300,1300)) +
   theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.1), "cm")) #top, right, bottom, left)
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_even_sigs2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1119,7 +1119,7 @@ plot_richobs_sigs_FLIP <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400,
 plot_even_sigs_FLIP <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.02), lim = c(0.01,0.093)) +
   theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.23), "cm")) #top, right, bottom, left)
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_richobs_sigs_FLIP, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1859,7 +1859,7 @@ relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coor
 #multiplot(relabun_plot, heat2, cols = 2)
 
 #http://stackoverflow.com/questions/20817094/how-to-control-width-of-multiple-plots-in-ggplot2
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.4_heat+abund.jpeg", width= 40, height=35, units= "cm", pointsize= 8, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_heat+abund.jpeg", width= 40, height=35, units= "cm", pointsize= 8, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -2885,7 +2885,7 @@ otusums$Type <- factor(otusums$Type, levels = c("Both","Free-Living Only", "Part
 label.df <- data.frame(Group = c("Productive \n vs. Unproductive", "Epilimnion \n vs. Hypolimnion"),
                        Value = c(8600, 8000))
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_DetectedOTUs_rarefied.jpeg", width= 25, height=19, units= "cm", pointsize= 10, res=250)
+tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_DetectedOTUs_rarefied.tiff", width= 25, height=19, units= "cm", pointsize= 10, res=250)
 ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free") + #geom_text(x = 2, y = 8750, label = "***") +
   xlab("Sample Type ") + ylab("Number of Deteceted UniqueOTUs") + 
@@ -2906,7 +2906,7 @@ ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
                           legend.text = element_text(size = 12),
                           strip.background = element_blank(),
                           legend.position="right")
-#dev.off()
+dev.off()
 #
 
 ####  Test for Significance!
@@ -3545,7 +3545,7 @@ prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_l
                    labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
   xlab("Habitat") + ylab("Bray-Curtis \nDissimilarity") + theme_bw() +  #scale_fill_brewer(palette="Paired") + 
-  facet_grid(. ~ trophicstate, scale = "free", space = "free") +
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
   scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.84)) + 
   theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
@@ -3557,7 +3557,7 @@ prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_l
         strip.background = element_blank(), strip.text = element_blank(),
         legend.position="none");prod_beta_plot
 
-#@jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 26, height=22, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.4_BC+soren_beta_SIGS.tiff", width= 26, height=22, units= "cm", pointsize= 14, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.46,0.54))))
 print(soren_prodbeta_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
