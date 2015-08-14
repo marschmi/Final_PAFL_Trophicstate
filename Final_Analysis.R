@@ -522,22 +522,27 @@ environ <- data.frame(environ)
 ## TO MAKE QUADRANT
 for(i in 1:length(environ$limnion)){
   environ$quadrant[i]<-paste(as.character(environ$filter[i]),as.character(environ$limnion[i]))}
+## TO MAKE HABITAT
+for(i in 1:length(environ$limnion)){
+  environ$habitat[i]<-paste(as.character(environ$ProdLevel[i]),as.character(environ$filter[i]),as.character(environ$limnion[i]))}
 
 
 ##  Calculate the BC dissimilarity and the Sorensen Dissimilarity
 nosherwinOTU <- otu_table(nosherwin_merged)  # This is our OTU table that we will use for Adonis
 set.seed(3)
-#BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
 
-df_nosherwinOTU <- data.frame(nosherwinOTU)
-otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+#df_nosherwinOTU <- data.frame(nosherwinOTU)
+#otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for BCdist (BC vs sorensen???)
 ##  Are you sure?!  
 
 # #Run an ADONIS test!
 adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +trophicstate+ DO+temp + pH, data=environ) # R2 = 0.36245
+adonis_PAFL_hab <- adonis(BCdist ~ habitat, data=environ) # R2 = 0.36245
+
 adonis_PAFL_quad <- adonis(BCdist~quadrant,data=environ) #  R2 = 
 adonis_PAFL_filt <- adonis(BCdist~filter,data=environ)  #R2 = 
 adonis_PAFL_limnion <- adonis(BCdist~limnion,data=environ) #R2 = 
