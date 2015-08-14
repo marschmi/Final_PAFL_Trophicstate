@@ -254,7 +254,7 @@ mean_profile13b <- subset(mean_profile13, Variable != "SpC")
 
 ## AVERAGE PLOT!
 #jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 32, height=30, units= "cm",pointsize= 18, res=500)
-jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 25, height=22, units= "cm",pointsize= 18, res=500)
+##jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 25, height=22, units= "cm",pointsize= 18, res=500)
 ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +   
   facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
@@ -274,7 +274,7 @@ ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +
         strip.background = element_blank(),
         legend.position = c(0.1, 0.9));
         #legend.position = c(0.81, 0.08));
-dev.off()
+#dev.off()
 
 # ALL LAKES 
 profile_all <- profile %>%  gather(Variable, Value, 4:7)
@@ -290,26 +290,33 @@ profile_all$lakename[profile_all$lakename == "BRI"] <- "Bristol"
 profile_all$lakename[profile_all$lakename == "BAK"] <- "Baker"
 profile_all$lakename[profile_all$lakename == "BAS"] <- "Baseline"
 profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
+profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
+profile_all$trophicstate[profile_all$trophicstate == "Productive"] <- "High-Nutrient"
+profile_all$trophicstate[profile_all$trophicstate == "Unproductive"] <- "Low-Nutrient"
+profile_all$trophicstate[profile_all$trophicstate == "Mixed"] <- "High-Nutrient"
+
+
+profile_all <- subset(profile_all, Variable != "SpC")
 
 ## All LAKES
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.tiff", width= 30, height=40, units= "cm",pointsize= 18, res=500)
 ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
-  facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
   theme_bw() +  geom_point(size=4, alpha = 0.8) + geom_hline(h=0) +
-  scale_y_reverse(breaks=seq(0, 30, 5), lim = c(30,0), expand = c(0, 0)) + 
+  scale_y_reverse(breaks=seq(0, 30, 4), expand = c(0, 0)) + #breaks=seq(0, 30, 5), lim = c(30,0), expand = c(0, 0)
   scale_color_manual(name = "Lake Name", 
                      labels = c("Baker", "Baseline", "Bassett", "Bristol", "Gull", "Lee", "Little Long", "Payne", "Sherman", "Sixteen", "Wintergreen"), 
                      values = c("blue", "red", "black", "forestgreen","violet","limegreen", "purple", "orange", "maroon1", "turquoise3", "thistle4")) +
+  facet_grid(trophicstate ~ Variable, scales = "free", labeller = profile_labeller, space = "free_y") +  
   theme(axis.title.x = element_text(face="bold", size=14),
         axis.text.x = element_text(colour = "black",size=14),
         axis.text.y = element_text(colour = "black", size=14),
         axis.title.y = element_text(face="bold", size=16),
         legend.title = element_text(size=12, face="bold"),
         legend.text = element_text(size = 12),
-        strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
+        strip.text = element_text(size = 16, face = "bold", colour = "black"),
         strip.background = element_blank(),
-        legend.position=c(0.81, 0.215));
+        legend.position=c(0.925, 0.16));
 #dev.off()
 
 
@@ -1296,27 +1303,53 @@ nomix_beta2 <- subset(nomix_beta, trophicstate2 != "Mixed")
 
 #######  Creating geom_point plot for Beta Diverstiy.
 # STATS ON BETA
-ddply_beta <- ddply(nomix_beta2, c("troph_lim2", "trophicstate1", "filter1"), summarise, 
+ddply_beta <- ddply(nomix_beta2, c("troph_lim1", "trophicstate1", "filter1"), summarise, 
                     N = length(value),
                     mean = mean(value),
                     sd   = sd(value),
                     se   = sd / sqrt(N))
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/beta_TROPH_SD.jpeg", width= 30, height=18, units= "cm", pointsize= 14, res=500)
-beta_plot <- ggplot(ddply_beta, aes(x = troph_lim2, y = mean, color = troph_lim2)) + geom_point(size = 5) +
+
+
+####  Run the test on ALL the data that goes into the mean!
+hist(nomix_beta2$value, breaks = 30)  # Not normally distributed!!!
+nomix_beta2$value <- as.numeric(nomix_beta2$value)
+nomix_beta2$troph_lim1 <- as.factor(nomix_beta2$troph_lim1)
+nomix_bray_beta <- nomix_beta2
+## Do the KW test
+bray_nomix_KW <- kruskal.test(nomix_bray_beta$value ~ nomix_bray_beta$troph_lim1) # Kruskal Wallis test on braysen!
+print(bray_nomix_KW)  # show Kruskal Wallis result
+### Which samples are significantly different from each other?  Significant???  YES! WOOOHOOOOOOO!
+bray_nomix_KW_MC <- kruskalmc(nomix_bray_beta$value ~ nomix_bray_beta$troph_lim1)  ## Defaults to P < 0.05
+print(bray_nomix_KW_MC)
+### Time to figure out letters to represent significance in a plot!
+nomix_bray_test <- bray_nomix_KW_MC$dif.com$difference # select logical vector
+names(nomix_bray_test) <- row.names(bray_nomix_KW_MC$dif.com) # add comparison names
+# create a list with "homogenous groups" coded by letter
+nomix_bray_letters <- multcompLetters(nomix_bray_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)#['Letters']
+###  Let's extract the values from the multcompLetters object
+nomix_bray_sigs_dataframe <-  data.frame(as.vector(names(nomix_bray_letters$Letters)), as.vector(nomix_bray_letters$Letters))
+colnames(nomix_bray_sigs_dataframe) <- c("troph_lim1", "siglabel")
+nomix_bray_try <- merge(ddply_beta, nomix_bray_sigs_dataframe, by = "troph_lim1")
+
+
+
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S5_beta_TROPH_SD.tiff", width= 35, height= 20, units= "cm", pointsize= 14, res=500)
+beta_plot <- ggplot(nomix_bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.03)), size = 5) +
   scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
-                                        "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
-                                        "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"), 
-                    values = c("deeppink", "deeppink", "deeppink", "deeppink","orange","orange","orange","orange", 
-                               "turquoise3","turquoise3","turquoise3","turquoise3"))+
+                                         "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                         "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"), 
+                     values = c("firebrick", "firebrick", "firebrick", "firebrick","darkorange","darkorange","darkorange","darkorange", 
+                                "cornflowerblue","cornflowerblue","cornflowerblue","cornflowerblue"))+
   scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
                             "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
                             "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"),
                    labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
-  xlab("Habitat") + ylab("Bray Curtis Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  xlab("Habitat") + ylab("Bray-Curtis Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
   theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
@@ -1328,6 +1361,7 @@ beta_plot <- ggplot(ddply_beta, aes(x = troph_lim2, y = mean, color = troph_lim2
         plot.margin = unit(c(0.2, 0.2, 0.2, 0.5), "cm"), #top, right, bottom, left)
         legend.position="none"); beta_plot
 #dev.off()
+
 
 
 ######  Test for significance 
@@ -1859,7 +1893,7 @@ relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coor
 #multiplot(relabun_plot, heat2, cols = 2)
 
 #http://stackoverflow.com/questions/20817094/how-to-control-width-of-multiple-plots-in-ggplot2
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_heat+abund.jpeg", width= 40, height=35, units= "cm", pointsize= 8, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_heat+abund.tiff", width= 40, height=35, units= "cm", pointsize= 8, res=500)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -2088,7 +2122,7 @@ ordered_otu_ratios$Genus = with(ordered_otu_ratios, factor(Genus, levels = rev(l
 
 sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.jpeg", width= 40, height=60, units= "cm", pointsize= 8, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.tiff", width= 40, height=60, units= "cm", pointsize= 8, res=500)
 ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
   scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
@@ -2289,7 +2323,7 @@ summed_20 <- allOTU_results[allOTU_results$Phylum %in% OTUtop20, ]
 summed_20$Phylum = with(summed_20, factor(Phylum, levels = rev(levels(Phylum))))
 
 ### This plot is flipped!
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/summed_otus_top17.jpeg",  width= 30, height=25, units= "cm", pointsize= 8, res=250)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.6_summed_otus_top17.tiff",  width= 30, height=25, units= "cm", pointsize= 8, res=500)
 summed <- ggplot(summed_20, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
@@ -2581,7 +2615,7 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gra
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=500)
 # draw it
 grid.newpage()
 grid.draw(z)
@@ -2695,7 +2729,7 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gra
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
-#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=500)
 # draw it
 grid.newpage()
 grid.draw(z)
