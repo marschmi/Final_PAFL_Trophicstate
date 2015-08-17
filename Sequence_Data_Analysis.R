@@ -2512,7 +2512,7 @@ sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
 
 
 #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.tiff", width= 40, height=60, units= "cm", pointsize= 8, res=200)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S5_genus_heat.tiff", width= 40, height=60, units= "cm", pointsize= 8, res=200)
 ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
   scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
@@ -2832,7 +2832,7 @@ z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
 #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
 # draw it
 grid.newpage()
 grid.draw(z)
@@ -2933,7 +2933,7 @@ z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
 #####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_Abundance_mid20_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
 # draw it
 grid.newpage()
 grid.draw(z)
