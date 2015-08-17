@@ -1,3 +1,4 @@
+###  PLEASE CAREFULLY READ LINES 20-34 TO RUN THE FOLLOWING CODE.
 #Load libraries
 library(phyloseq)
 library(ggplot2)
@@ -17,11 +18,10 @@ library(pgirmess)
 library(multcompView)
 
 ### Set the Working Directory  
-###  Within the "Final_PAFL_Trophicstate" directory there should be the following 2 subdirectories:
+###  Within the "Final_PAFL_Trophicstate" directory there should be the following 2 sub-directories:
         #   1.  "raw_data":  includes 5 files:  taxonomy table, OTU table, "metadata", "duplicate_metadata.txt", "AllLakes_depthprofile.csv" 
         #   2.  "alpha_data":  includes 2 files:  "InvSimpson100" and "ObservedRichness100"
 setwd("~/Final_PAFL_Trophicstate")
-
 
 ### Source written functions in the file Functions.PAFL.R that is housed withing the "Final_PAFL_Trophicstate"
 source("Functions_PAFL.R")
