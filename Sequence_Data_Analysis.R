@@ -27,10 +27,10 @@ setwd("~/Final_PAFL_Trophicstate")
 source("Functions_PAFL.R")
 
 ## Figure 1: See line 631                Figure S1: See line 236
-## Figure 2: See line 827                Figure S2: See line 2834
-## Figure 3: See line 1051               Figure S3: See line 2935
-## Figure 4: See line 2001               Figure S4: See line 2514
-## Figure 5: See line 2301               Figure S5: See line 1491 
+## Figure 2: See line 827                Figure S2: See line 1491
+## Figure 3: See line 1051               Figure S3: See line 2834  
+## Figure 4: See line 2001               Figure S4: See line 2935 
+## Figure 5: See line 2301               Figure S5: See line 2514  
 ## Figure 6: See line 2677
 
 
@@ -1488,8 +1488,8 @@ colnames(nomix_bray_sigs_dataframe) <- c("troph_lim1", "siglabel")
 nomix_bray_try <- merge(ddply_beta, nomix_bray_sigs_dataframe, by = "troph_lim1")
 
 
-#####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S5_beta_TROPH_SD.tiff", width= 35, height= 20, units= "cm", pointsize= 14, res=200)
+#####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_beta_TROPH_SD.tiff", width= 35, height= 20, units= "cm", pointsize= 14, res=200)
 beta_plot <- ggplot(nomix_bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
   geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.03)), size = 5) +
@@ -2511,7 +2511,7 @@ ordered_otu_ratios$Genus = with(ordered_otu_ratios, factor(Genus, levels = rev(l
 sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
 
 
-#####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4
+#####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.tiff", width= 40, height=60, units= "cm", pointsize= 8, res=200)
 ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
   scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
@@ -2700,9 +2700,9 @@ summed <- ggplot(summed_20, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) +
 #dev.off()
 
 
-##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S2 and FIGURE S3
-##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S2 and FIGURE S3
-##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S2 and FIGURE S3
+##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
+##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
+##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
 ### Check lines 2261 for how sub_phy_melt_totals was created:
 ### Calculate the mean relative abundance based on ProdLevel + Quadrant for each PHYLUM 
 sub_phy_melt_totals_nosherwin <- subset(sub_phy_melt_totals, Sample != "SHEE" & Sample != "SHEE3um" & Sample !="SHEH" & Sample != "SHEH3um")
@@ -2831,7 +2831,7 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gra
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
-#####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2
+#####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
 # draw it
 grid.newpage()
@@ -2932,7 +2932,7 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gra
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
-#####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3
+#####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4  #####  Plotting FIGURE S4
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
 # draw it
 grid.newpage()
