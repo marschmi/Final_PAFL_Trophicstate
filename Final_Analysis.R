@@ -299,7 +299,7 @@ profile_all$trophicstate[profile_all$trophicstate == "Mixed"] <- "High-Nutrient"
 profile_all <- subset(profile_all, Variable != "SpC")
 
 ## All LAKES
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.tiff", width= 30, height=40, units= "cm",pointsize= 18, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.tiff", width= 30, height=40, units= "cm",pointsize= 18, res=200)
 ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
   theme_bw() +  geom_point(size=4, alpha = 0.8) + geom_hline(h=0) +
@@ -504,7 +504,7 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
 #multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod.tiff", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod_small.tiff", width= 45, height=18, units= "cm", pointsize= 14, res=300, compression = "lzw")
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.41,0.59))))
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1106,7 +1106,7 @@ plot_even_sigs2 <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.
 plot_richobs_sigs2 <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400, 1200, 200), lim = c(300,1300)) +
   theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.1), "cm")) #top, right, bottom, left)
 
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=200)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_even_sigs2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1126,7 +1126,7 @@ plot_richobs_sigs_FLIP <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400,
 plot_even_sigs_FLIP <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.02), lim = c(0.01,0.093)) +
   theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.23), "cm")) #top, right, bottom, left)
 
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=200)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_richobs_sigs_FLIP, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1334,7 +1334,7 @@ nomix_bray_try <- merge(ddply_beta, nomix_bray_sigs_dataframe, by = "troph_lim1"
 
 
 
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S5_beta_TROPH_SD.tiff", width= 35, height= 20, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S5_beta_TROPH_SD.tiff", width= 35, height= 20, units= "cm", pointsize= 14, res=200)
 beta_plot <- ggplot(nomix_bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
   geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.03)), size = 5) +
@@ -1893,7 +1893,7 @@ relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coor
 #multiplot(relabun_plot, heat2, cols = 2)
 
 #http://stackoverflow.com/questions/20817094/how-to-control-width-of-multiple-plots-in-ggplot2
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_heat+abund.tiff", width= 40, height=35, units= "cm", pointsize= 8, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_heat+abund.tiff", width= 40, height=35, units= "cm", pointsize= 8, res=200)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -2122,7 +2122,7 @@ ordered_otu_ratios$Genus = with(ordered_otu_ratios, factor(Genus, levels = rev(l
 
 sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
 
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.tiff", width= 40, height=60, units= "cm", pointsize= 8, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.tiff", width= 40, height=60, units= "cm", pointsize= 8, res=200)
 ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
   scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
@@ -2323,7 +2323,7 @@ summed_20 <- allOTU_results[allOTU_results$Phylum %in% OTUtop20, ]
 summed_20$Phylum = with(summed_20, factor(Phylum, levels = rev(levels(Phylum))))
 
 ### This plot is flipped!
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.6_summed_otus_top17.tiff",  width= 30, height=25, units= "cm", pointsize= 8, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.6_summed_otus_top17.tiff",  width= 30, height=25, units= "cm", pointsize= 8, res=200)
 summed <- ggplot(summed_20, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
@@ -2615,7 +2615,7 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gra
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
 # draw it
 grid.newpage()
 grid.draw(z)
@@ -2729,7 +2729,7 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gra
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
 # draw it
 grid.newpage()
 grid.draw(z)
@@ -2919,7 +2919,7 @@ otusums$Type <- factor(otusums$Type, levels = c("Both","Free-Living Only", "Part
 label.df <- data.frame(Group = c("Productive \n vs. Unproductive", "Epilimnion \n vs. Hypolimnion"),
                        Value = c(8600, 8000))
 
-tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_DetectedOTUs_rarefied.tiff", width= 25, height=19, units= "cm", pointsize= 10, res=250)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_DetectedOTUs_rarefied.tiff", width= 25, height=19, units= "cm", pointsize= 10, res=200)
 ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free") + #geom_text(x = 2, y = 8750, label = "***") +
   xlab("Sample Type ") + ylab("Number of Deteceted UniqueOTUs") + 
@@ -2940,7 +2940,7 @@ ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
                           legend.text = element_text(size = 12),
                           strip.background = element_blank(),
                           legend.position="right")
-dev.off()
+#dev.off()
 #
 
 ####  Test for Significance!
@@ -3591,7 +3591,7 @@ prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_l
         strip.background = element_blank(), strip.text = element_blank(),
         legend.position="none");prod_beta_plot
 
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.4_BC+soren_beta_SIGS.tiff", width= 26, height=22, units= "cm", pointsize= 14, res=500)
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.4_BC+soren_beta_SIGS.tiff", width= 26, height=22, units= "cm", pointsize= 14, res=200)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.46,0.54))))
 print(soren_prodbeta_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
