@@ -254,7 +254,11 @@ mean_profile13b <- subset(mean_profile13, Variable != "SpC")
 
 ## AVERAGE PLOT!
 #jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 32, height=30, units= "cm",pointsize= 18, res=500)
+<<<<<<< HEAD
 ##jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 25, height=22, units= "cm",pointsize= 18, res=500)
+=======
+jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_Average_PROD_profiles_13m_SE_NOspc.jpeg", width= 25, height=22, units= "cm",pointsize= 18, res=500)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +   
   facet_grid(. ~ Variable, scales = "free", labeller = profile_labeller) +  
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
@@ -274,7 +278,7 @@ ggplot(mean_profile13b, aes(x=mean, y = depth, color = trophicstate)) +
         strip.background = element_blank(),
         legend.position = c(0.1, 0.9));
         #legend.position = c(0.81, 0.08));
-#dev.off()
+dev.off()
 
 # ALL LAKES 
 profile_all <- profile %>%  gather(Variable, Value, 4:7)
@@ -299,7 +303,11 @@ profile_all$trophicstate[profile_all$trophicstate == "Mixed"] <- "High-Nutrient"
 profile_all <- subset(profile_all, Variable != "SpC")
 
 ## All LAKES
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.tiff", width= 30, height=40, units= "cm",pointsize= 18, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.jpeg", width= 40, height=30, units= "cm",pointsize= 18, res=500)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
   geom_path(size=2, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
   theme_bw() +  geom_point(size=4, alpha = 0.8) + geom_hline(h=0) +
@@ -504,9 +512,15 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
 #multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod_small.tiff", width= 45, height=18, units= "cm", pointsize= 14, res=300, compression = "lzw")
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.41,0.59))))
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.3_NMDS_bc+soren_prod2.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.42,0.58))))
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
@@ -537,17 +551,21 @@ for(i in 1:length(environ$limnion)){
 ##  Calculate the BC dissimilarity and the Sorensen Dissimilarity
 nosherwinOTU <- otu_table(nosherwin_merged)  # This is our OTU table that we will use for Adonis
 set.seed(3)
-#BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
 
-df_nosherwinOTU <- data.frame(nosherwinOTU)
-otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+#df_nosherwinOTU <- data.frame(nosherwinOTU)
+#otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for BCdist (BC vs sorensen???)
 ##  Are you sure?!  
 
 # #Run an ADONIS test!
+<<<<<<< HEAD
 adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +ProdLevel+ DO+temp + pH, data=environ) # R2 = 0.36245
+=======
+adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +trophicstate+ DO+temp + pH, data=environ) # R2 = 0.36245
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 adonis_PAFL_hab <- adonis(BCdist ~ habitat, data=environ) # R2 = 0.36245
 
 adonis_PAFL_quad <- adonis(BCdist~quadrant,data=environ) #  R2 = 
@@ -1106,7 +1124,11 @@ plot_even_sigs2 <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.
 plot_richobs_sigs2 <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400, 1200, 200), lim = c(300,1300)) +
   theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.1), "cm")) #top, right, bottom, left)
 
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_even_sigs2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1126,7 +1148,11 @@ plot_richobs_sigs_FLIP <- plot_richobs_sigs + scale_y_continuous(breaks=seq(400,
 plot_even_sigs_FLIP <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09, 0.02), lim = c(0.01,0.093)) +
   theme(strip.text.x = element_blank(), plot.margin = unit(c(-0.8, 0.1, 0.2, 0.23), "cm")) #top, right, bottom, left)
 
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_alpha_SIGS.jpeg", width= 30, height=22, units= "cm", pointsize= 14, res=500)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_richobs_sigs_FLIP, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1309,6 +1335,7 @@ ddply_beta <- ddply(nomix_beta2, c("troph_lim1", "trophicstate1", "filter1"), su
                     sd   = sd(value),
                     se   = sd / sqrt(N))
 
+<<<<<<< HEAD
 
 
 ####  Run the test on ALL the data that goes into the mean!
@@ -1336,6 +1363,10 @@ nomix_bray_try <- merge(ddply_beta, nomix_bray_sigs_dataframe, by = "troph_lim1"
 
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S5_beta_TROPH_SD.tiff", width= 35, height= 20, units= "cm", pointsize= 14, res=200)
 beta_plot <- ggplot(nomix_bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 5) +
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/beta_TROPH_SD.jpeg", width= 30, height=18, units= "cm", pointsize= 14, res=500)
+beta_plot <- ggplot(ddply_beta, aes(x = troph_lim2, y = mean, color = troph_lim2)) + geom_point(size = 5) +
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
   geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.03)), size = 5) +
   scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
@@ -1349,7 +1380,11 @@ beta_plot <- ggplot(nomix_bray_try, aes(x = troph_lim1, y = mean, color = troph_
                    labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
+<<<<<<< HEAD
   xlab("Habitat") + ylab("Bray-Curtis Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+=======
+  xlab("Habitat") + ylab("Bray Curtis Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
   theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
@@ -1893,7 +1928,11 @@ relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coor
 #multiplot(relabun_plot, heat2, cols = 2)
 
 #http://stackoverflow.com/questions/20817094/how-to-control-width-of-multiple-plots-in-ggplot2
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_heat+abund.tiff", width= 40, height=35, units= "cm", pointsize= 8, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.4_heat+abund.jpeg", width= 40, height=35, units= "cm", pointsize= 8, res=500)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -2122,7 +2161,11 @@ ordered_otu_ratios$Genus = with(ordered_otu_ratios, factor(Genus, levels = rev(l
 
 sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
 
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.tiff", width= 40, height=60, units= "cm", pointsize= 8, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.jpeg", width= 40, height=60, units= "cm", pointsize= 8, res=500)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
   scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
@@ -2132,6 +2175,8 @@ ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2Fold
   theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
         axis.title.x = element_text(face="bold", size=16),
+<<<<<<< HEAD
+=======
         legend.title = element_text(face="bold", size=12),
         legend.text = element_text(size = 12),
         legend.position = c(0.96, 0.06), #c(0.1, 0.93),
@@ -2161,6 +2206,7 @@ ggplot(sub_ordered_oturats, aes(Habitat, GenOTU)) + geom_tile(aes(fill = log2Fol
   theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
         axis.title.x = element_text(face="bold", size=16),
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
         legend.title = element_text(face="bold", size=12),
         legend.text = element_text(size = 12),
         legend.position = c(0.96, 0.06), #c(0.1, 0.93),
@@ -2174,6 +2220,38 @@ ggplot(sub_ordered_oturats, aes(Habitat, GenOTU)) + geom_tile(aes(fill = log2Fol
 
 
 
+<<<<<<< HEAD
+ordered_otu_ratios$GenOTU <- paste(as.character(ordered_otu_ratios$Genus),as.character(ordered_otu_ratios$Species))
+
+
+sub_ordered_oturats$GenOTU <- paste(as.character(sub_ordered_oturats$Genus),as.character(sub_ordered_oturats$Species))
+
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S4_genus_heat.jpeg", width= 40, height=60, units= "cm", pointsize= 8, res=500)
+ggplot(sub_ordered_oturats, aes(Habitat, GenOTU)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
+  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
+  xlab("Habitat") + ylab("Genus + OTU") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        legend.title = element_text(face="bold", size=12),
+        legend.text = element_text(size = 12),
+        legend.position = c(0.96, 0.06), #c(0.1, 0.93),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
+        strip.text.x = element_text(size=16, face = "bold", colour = "black"),
+        strip.background = element_blank());  
+#dev.off()
+
+
+
+
+
+=======
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 
 
 
@@ -2323,7 +2401,11 @@ summed_20 <- allOTU_results[allOTU_results$Phylum %in% OTUtop20, ]
 summed_20$Phylum = with(summed_20, factor(Phylum, levels = rev(levels(Phylum))))
 
 ### This plot is flipped!
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.6_summed_otus_top17.tiff",  width= 30, height=25, units= "cm", pointsize= 8, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/summed_otus_top17.jpeg",  width= 30, height=25, units= "cm", pointsize= 8, res=250)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 summed <- ggplot(summed_20, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
@@ -2615,7 +2697,11 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gra
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S2_Abundance_top15_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 # draw it
 grid.newpage()
 grid.draw(z)
@@ -2729,7 +2815,11 @@ z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gra
 z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_mid20_gtable.jpeg", width= 40, height=25, units= "cm", pointsize= 10, res=250)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 # draw it
 grid.newpage()
 grid.draw(z)
@@ -2919,7 +3009,11 @@ otusums$Type <- factor(otusums$Type, levels = c("Both","Free-Living Only", "Part
 label.df <- data.frame(Group = c("Productive \n vs. Unproductive", "Epilimnion \n vs. Hypolimnion"),
                        Value = c(8600, 8000))
 
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.2_DetectedOTUs_rarefied.tiff", width= 25, height=19, units= "cm", pointsize= 10, res=200)
+=======
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_DetectedOTUs_rarefied.jpeg", width= 25, height=19, units= "cm", pointsize= 10, res=250)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 ggplot(otusums, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free") + #geom_text(x = 2, y = 8750, label = "***") +
   xlab("Sample Type ") + ylab("Number of Deteceted UniqueOTUs") + 
@@ -3579,7 +3673,11 @@ prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_l
                    labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
   xlab("Habitat") + ylab("Bray-Curtis \nDissimilarity") + theme_bw() +  #scale_fill_brewer(palette="Paired") + 
+<<<<<<< HEAD
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+=======
+  facet_grid(. ~ trophicstate, scale = "free", space = "free") +
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
   scale_y_continuous(breaks=seq(0.4, 0.8, 0.1), lim = c(0.4, 0.84)) + 
   theme(axis.title.x = element_text(face="bold", size=16),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
@@ -3591,7 +3689,11 @@ prod_beta_plot <- ggplot(bray_try, aes(x = troph_lim1, y = mean, color = troph_l
         strip.background = element_blank(), strip.text = element_blank(),
         legend.position="none");prod_beta_plot
 
+<<<<<<< HEAD
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.4_BC+soren_beta_SIGS.tiff", width= 26, height=22, units= "cm", pointsize= 14, res=200)
+=======
+#@jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/BC+soren_beta_SIGS.jpeg", width= 26, height=22, units= "cm", pointsize= 14, res=500)
+>>>>>>> d990560551e0f57e2f77e9e4ebd10b99c57e4059
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.46,0.54))))
 print(soren_prodbeta_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
