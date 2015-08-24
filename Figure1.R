@@ -238,13 +238,13 @@ plot_richobs_sigs <- ggplot(richobs_try, aes(x = troph_lim, y = Meantroph_lim, c
         strip.text.y = element_blank(),
         strip.background = element_blank(),
         legend.position="none",
-        plot.margin = unit(c(0.1, 0.1, 0.1, 0.14), "cm")); plot_richobs_sigs  #top, right, bottom, left)
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.13), "cm")); plot_richobs_sigs  #top, right, bottom, left)
 
 
 
 #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=200)
-pdf(file="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS_bigger.pdf", width= 10, height=8)
+pdf(file="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS_bigger2.pdf", width= 9, height=7)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_richobs_sigs, vp=viewport(layout.pos.row=1,layout.pos.col=1))
