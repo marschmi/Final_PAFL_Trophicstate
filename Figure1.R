@@ -149,7 +149,7 @@ even_try <- merge(prod_even, even_sigs_dataframe, by = "troph_lim")
 
 plot_even_sigs <- ggplot(even_try, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
   facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
-  geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 0.006)), size = 3) +
+  geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 0.006)), size = 5) +
   geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
   theme_bw() +   xlab("Habitat") + ylab("Simpson's Evenness") + #ggtitle("Within-Sample Diversity") +
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
@@ -164,10 +164,10 @@ plot_even_sigs <- ggplot(even_try, aes(x = troph_lim, y = Meantroph_lim, color =
                             "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
                             "Particle-Associated", "Free-Living")) + 
   scale_y_continuous(breaks=seq(0.01, 0.09, 0.02), lim = c(0.01,0.093)) +
-  theme(axis.title.x = element_text(face="bold", size=12),
-        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=10),
-        axis.text.y = element_text(colour = "black", size=10),
-        axis.title.y = element_text(face="bold", size=12),
+  theme(axis.title.x = element_text(face="bold", size=14),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=12),
+        axis.text.y = element_text(colour = "black", size=12),
+        axis.title.y = element_text(face="bold", size=14),
         plot.title = element_blank(),
         strip.text.x = element_blank(),
         strip.text.y = element_blank(),
@@ -214,7 +214,7 @@ richobs_try <- merge(prod_richobs, richobs_sigs_dataframe, by = "troph_lim")
 
 plot_richobs_sigs <- ggplot(richobs_try, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
   facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
-  geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 75)), size = 3) +
+  geom_text(aes(label = siglabel, x = troph_lim, y = ((Meantroph_lim+SDtroph_lim) + 75)), size = 5) +
   geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
   theme_bw() +   xlab("Habitat") + ylab("Observed Richness") + 
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
@@ -231,10 +231,10 @@ plot_richobs_sigs <- ggplot(richobs_try, aes(x = troph_lim, y = Meantroph_lim, c
   scale_y_continuous(breaks=seq(400, 1200, 200), lim = c(300,1300)) +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-        axis.text.y = element_text(colour = "black", size=10),
-        axis.title.y = element_text(face="bold", size=12),
+        axis.text.y = element_text(colour = "black", size=12),
+        axis.title.y = element_text(face="bold", size=14),
         plot.title = element_blank(),
-        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.x = element_text(size=13, face="bold"),
         strip.text.y = element_blank(),
         strip.background = element_blank(),
         legend.position="none",
@@ -244,7 +244,7 @@ plot_richobs_sigs <- ggplot(richobs_try, aes(x = troph_lim, y = Meantroph_lim, c
 
 #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=200)
-pdf(file="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.pdf", width= 7, height=5)
+pdf(file="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS_bigger.pdf", width= 10, height=8)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_richobs_sigs, vp=viewport(layout.pos.row=1,layout.pos.col=1))
