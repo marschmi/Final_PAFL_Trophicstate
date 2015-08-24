@@ -630,11 +630,12 @@ plot_even_sigs_FLIP <- plot_even_sigs + scale_y_continuous(breaks=seq(0.01, 0.09
 
 #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=200)
+pdf(file="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.pdf", width= 4, height=3)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_richobs_sigs_FLIP, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(plot_even_sigs_FLIP, vp=viewport(layout.pos.row=2,layout.pos.col=1))
-#dev.off()
+dev.off()
 
 
 
