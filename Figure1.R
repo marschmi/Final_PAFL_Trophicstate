@@ -238,16 +238,28 @@ plot_richobs_sigs <- ggplot(richobs_try, aes(x = troph_lim, y = Meantroph_lim, c
         strip.text.y = element_blank(),
         strip.background = element_blank(),
         legend.position="none",
+        #aspect.ratio
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.13), "cm")); plot_richobs_sigs  #top, right, bottom, left)
 
 
 
 #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1  #####  Plotting FIGURE 1
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS.tiff", width= 30, height=22, units= "cm", pointsize= 14, res=200)
-pdf(file="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS_bigger2.pdf", width= 9, height=7)
+#jpeg(filename="~/Final_PAFL_Trophicstate/Final_Figures/ryan.jpeg", width= 10, height=7, units= "cm", pointsize= 8, res=300)
+#pdf(file="~/Final_PAFL_Trophicstate/Final_Figures/Fig.1_alpha_SIGS_bigger2.pdf", width= 9, height=7)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.45,0.55))))
 print(plot_richobs_sigs, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(plot_even_sigs, vp=viewport(layout.pos.row=2,layout.pos.col=1))
-dev.off()
+#dev.off()
+
+#ggdraw() +
+#  draw_plot(plot_richobs_sigs, 0, .5, 1, .5) +
+#  draw_plot(plot_even_sigs, 0, 0.5, 0.5, 1.5) +
+#  draw_plot_label(c("A", "B"), c(0, 0), c(1, 0.5), size = 15)
+
+
+
+
+
+
 
