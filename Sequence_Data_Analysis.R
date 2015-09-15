@@ -2291,6 +2291,67 @@ print(relabun_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
 
 
+#### Subsetting out the top 14 phyla. 
+phy14 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+           "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes")
+phy14_dfrat <- subset(dfrat, Phylum %in% phy14)
+phy14_dfrat <- subset(phy14_dfrat, Habitat != "Mixed")
+
+phy14_dfrat$Phylum <- factor(phy14_dfrat$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
+                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes"))
+
+phy14_dfrat$Phylum = with(phy14_dfrat, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
+
+
+phy_heat <- ggplot(phy14_dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-Ratio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 1, barheight = 4)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + 
+  ylab("Phylum") + xlab("Habitat") + 
+  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
+  #scale_y_discrete(limits=phys) + xlab("Habitat") + ylab("Phylum") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+        axis.text.x = element_text(colour = "black", size=8, angle = 30, hjust = 1, vjust = 1),  #Set the x-axis labels
+        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+        legend.title = element_text(size=7, face="bold"),  #Set the legend title 
+        legend.text = element_text(size = 7),
+        strip.text.x = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+        strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+        legend.position = c(0.92, 0.75),#"left",
+        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
+        strip.text.x = element_text(size=14, face = "bold", colour = "black"),
+        strip.background = element_blank()); phy_heat
+ggsave(phy_heat, filename = "~/Final_PAFL_Trophicstate/phy14_heat.pdf", height = 4, width = 6.5, dpi = 300)
+
+
+#######  Making the abundance plot!
+phy14_abund <- subset(abund, Phylum %in% phy14)
+phy14_abund$Phylum <- factor(phy14_abund$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
+                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes"))
+
+phy14_abund$Phylum = with(phy14_abund, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
+
+
+phy14_relabnd <- ggplot(phy14_abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
+  ylab("Mean Percent \n Relative Abundance") + coord_flip() + theme_bw() + 
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
+  scale_y_continuous(expand= c(0,0), limits = c(0,25)) +
+  theme(axis.title.x = element_text(face="bold", size=10),
+        axis.text.x = element_text(angle=0, colour = "black", size=8),
+        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+        strip.background = element_rect(colour="black", fill = "black"),
+        #plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
+        #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
+        legend.position="none"); 
+ggsave(phy14_relabnd, filename = "~/Final_PAFL_Trophicstate/phy14_abundance.pdf", height = 3.5, width = 3, dpi = 300)
+
+
+
+
+
 ####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 6 and Figure S5
 ####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 6 and Figure S5
 ####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 6 and Figure S5
@@ -2681,6 +2742,40 @@ summed <- ggplot(summed_20, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) +
         strip.background = element_blank(),
         legend.position="right"); summed
 #dev.off()
+
+
+####  Top 14!!!
+otu14 <- allOTU_results[allOTU_results$Phylum %in% phy14, ]
+otu14 <- subset(allOTU_results, Phylum %in% phy14)
+otu14$Phylum = with(otu14, factor(Phylum, levels = rev(levels(Phylum))))
+
+otu14$Phylum <- factor(otu14$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
+                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes"))
+
+otu14$Phylum = with(otu14, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
+
+otu14_plot <- ggplot(otu14, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() +# scale_y_continuous(breaks=seq(-200, 200, 25)) +
+  facet_grid(. ~ Comparison, scales = "free_y", labeller = mf_labeller) + theme_bw() +
+  ylab("Total Number of Significant OTUs") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    #labels = c("Particle-\nAssociated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    values = c("firebrick1", "goldenrod1",  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
+  guides(fill = guide_legend(keywidth = 0.8, keyheight = 0.8)) + 
+  theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+        axis.text.x = element_text(colour = "black", size=8, angle = 30, hjust = 1, vjust = 1),  #Set the x-axis labels
+        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+        legend.title = element_text(size=8, face="bold"),  #Set the legend title 
+        legend.text = element_text(size = 8),
+        strip.text.x = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+        strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+        legend.position = "right",
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"),
+        strip.background = element_blank()); 
+ggsave(otu14_plot, filename = "~/Final_PAFL_Trophicstate/otu14_summed.pdf", height = 4, width = 6.5, dpi = 300)
 
 
 ##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
