@@ -979,6 +979,13 @@ print(pcoa_soren, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 ############## NMDS NMDS NMDS NMDS NDMS
 set.seed(3)
 nmds_bray <- metaMDS(nowinOTU, distance="bray")  #, autotransform = FALSE
+
+nmds_bray4 <- metaMDS(nowinOTU, distance="bray", k = 4)  #, autotransform = FALSE
+
+plot(nmds_bray4, choices = c(1,3))
+
+
+
 nmds_bray <- data.frame(nmds_bray$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
 nmds_bray$names<-row.names(nmds_bray) #new names column
 nmds_bray <- makeCategories_dups(nmds_bray) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
@@ -1516,6 +1523,122 @@ beta_plot <- ggplot(nomix_bray_try, aes(x = troph_lim1, y = mean, color = troph_
         plot.margin = unit(c(0.2, 0.2, 0.2, 0.5), "cm"), #top, right, bottom, left)
         legend.position="none"); beta_plot
 #dev.off()
+
+
+
+###################################  NSF DDIG PLOT!
+ddig_bray_try <- nomix_bray_try
+ddig_bray_try$trophicstate1 <- as.character(ddig_bray_try$trophicstate1)
+ddig_bray_try$trophicstate1[ddig_bray_try$trophicstate1 == "Eutrophic"] <- "High-Nutrient"
+ddig_bray_try$trophicstate1[ddig_bray_try$trophicstate1 == "Mesotrophic"] <- "Mid-Nutrient"
+ddig_bray_try$trophicstate1[ddig_bray_try$trophicstate1 == "Oligotrophic"] <- "Low-Nutrient"
+ddig_bray_try$trophicstate1 <-factor(ddig_bray_try$trophicstate1,levels=c("High-Nutrient", "Mid-Nutrient", "Low-Nutrient"))
+
+
+DDIG_betaplot <-  ggplot(ddig_bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 3) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.035)), size = 3) +
+  scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                         "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                         "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"), 
+                     values = c("firebrick", "firebrick", "firebrick", "firebrick","darkorange","darkorange","darkorange","darkorange", 
+                                "cornflowerblue","cornflowerblue","cornflowerblue","cornflowerblue"))+
+  scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                            "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                            "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"),
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
+  xlab("Habitat") + ylab("Bray-Curtis Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+      axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+      axis.text.x = element_text(colour = "black", size=8, angle = 30, hjust = 1, vjust = 1),  #Set the x-axis labels
+      axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+      legend.title = element_text(size=7, face="bold"),  #Set the legend title 
+      legend.text = element_text(size = 7),
+      strip.text.x = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+      strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+      legend.position = "none",#"left",
+      plot.margin = unit(c(0.1, 1, 0.1, 0.1), "cm"),
+      strip.text.x = element_text(size=14, face = "bold", colour = "black"),
+      strip.background = element_blank()); DDIG_betaplot
+ggsave(DDIG_betaplot, filename = "~/Final_PAFL_Trophicstate/bray-trophic.pdf", height = 3, width = 6.5, dpi = 300)
+
+
+
+##  MORE DDIG -- SUBSET OUT ONLY THE LOW NUTRIENT LAKES: 
+oligo_beta <- subset(nomix_beta2, trophicstate1 == "Oligotrophic")
+####  Run the test on ALL the data that goes into the mean!
+hist(oligo_beta$value, breaks = 60)  # Not normally distributed!!!
+oligo_beta$value <- as.numeric(oligo_beta$value)
+oligo_beta$troph_lim1 <- as.factor(oligo_beta$troph_lim1)
+oligo_beta_bray <- oligo_beta
+## Do the KW test
+oligo_KW <- kruskal.test(oligo_beta_bray$value ~ oligo_beta_bray$troph_lim1) # Kruskal Wallis test on braysen!
+print(oligo_KW)  # show Kruskal Wallis result
+### Which samples are significantly different from each other?  Significant???  YES! WOOOHOOOOOOO!
+oligo_KW_MC <- kruskalmc(oligo_beta_bray$value ~ oligo_beta_bray$troph_lim1)  ## Defaults to P < 0.05
+oligo_KW_MC <- subset(oligo_KW_MC$dif.com, difference != "NA")
+print(oligo_KW_MC)
+### Time to figure out letters to represent significance in a plot!
+oligo_KW_test <- oligo_KW_MC$difference # select logical vector
+names(oligo_KW_test) <- row.names(oligo_KW_MC) # add comparison names
+# create a list with "homogenous groups" coded by letter
+oligo_KW_letters <- multcompLetters(oligo_KW_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)#['Letters']
+###  Let's extract the values from the multcompLetters object
+oligo_bray_sigs_dataframe <-  data.frame(as.vector(names(oligo_KW_letters$Letters)), as.vector(oligo_KW_letters$Letters))
+colnames(oligo_bray_sigs_dataframe) <- c("troph_lim1", "siglabel")
+## Make oligotrophic df with ddply
+oligo_ddply <- subset(ddply_beta, trophicstate1 == "Oligotrophic")
+oligo_bray_try <- merge(oligo_ddply, oligo_bray_sigs_dataframe, by = "troph_lim1")
+
+
+oligo_bray_try$trophicstate1 <- as.character(oligo_bray_try$trophicstate1)
+oligo_bray_try$trophicstate1[oligo_bray_try$trophicstate1 == "Eutrophic"] <- "High-Nutrient"
+oligo_bray_try$trophicstate1[oligo_bray_try$trophicstate1 == "Mesotrophic"] <- "Mid-Nutrient"
+oligo_bray_try$trophicstate1[oligo_bray_try$trophicstate1 == "Oligotrophic"] <- "Low-Nutrient"
+oligo_bray_try$trophicstate1 <-factor(oligo_bray_try$trophicstate1,levels=c("High-Nutrient", "Mid-Nutrient", "Low-Nutrient"))
+nlabel <- c("n=12", "n=6", "n=12", "n=12")
+oligo_bray_try$nlabel <- nlabel
+
+oligo_beta_plot <-  ggplot(oligo_bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 3) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
+  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.035)), size = 2) +
+  geom_text(aes(label = nlabel, x = troph_lim1, y = ((mean+sd) + 0.065)), size = 2) +
+  scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                         "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                         "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"), 
+                     values = c("firebrick", "firebrick", "firebrick", "firebrick","darkorange","darkorange","darkorange","darkorange", 
+                                "cornflowerblue","cornflowerblue","cornflowerblue","cornflowerblue"))+
+  scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                            "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                            "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"),
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
+  xlab("Habitat") + ylab("Bray-Curtis Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+  theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+        axis.text.x = element_text(colour = "black", size=8, angle = 30, hjust = 1, vjust = 1),  #Set the x-axis labels
+        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+        legend.title = element_text(size=7, face="bold"),  #Set the legend title 
+        legend.text = element_text(size = 7),
+        strip.text.x = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+        strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+        legend.position = "none",#"left",
+        plot.margin = unit(c(0.1, 1, 0.1, 0.1), "cm"),
+        strip.text.x = element_text(size=14, face = "bold", colour = "black"),
+        strip.background = element_blank()); oligo_beta_plot
+ggsave(oligo_beta_plot, filename = "~/Final_PAFL_Trophicstate/bray-oligo.pdf", height = 3, width = 3, dpi = 300)
+
+
+
+
+
+
+
 
 
 
