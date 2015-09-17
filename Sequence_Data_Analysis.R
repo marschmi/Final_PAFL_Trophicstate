@@ -1604,8 +1604,8 @@ oligo_bray_try$nlabel <- nlabel
 
 oligo_beta_plot <-  ggplot(oligo_bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 3) +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
-  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.035)), size = 2) +
-  geom_text(aes(label = nlabel, x = troph_lim1, y = ((mean+sd) + 0.065)), size = 2) +
+  geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.035)), size = 3) +
+  geom_text(aes(label = nlabel, x = troph_lim1, y = ((mean+sd) + 0.065)), size = 3) +
   scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
                                          "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
                                          "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"), 
@@ -2868,6 +2868,9 @@ summed <- ggplot(summed_20, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) +
 
 
 ####  Top 14!!!
+phy14 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+           "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes")
+
 otu14 <- allOTU_results[allOTU_results$Phylum %in% phy14, ]
 otu14 <- subset(allOTU_results, Phylum %in% phy14)
 otu14$Phylum = with(otu14, factor(Phylum, levels = rev(levels(Phylum))))
@@ -2875,19 +2878,23 @@ otu14$Phylum = with(otu14, factor(Phylum, levels = rev(levels(Phylum))))
 otu14$Phylum <- factor(otu14$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
                                                             "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes"))
 
-otu14$Phylum = with(otu14, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
+#otu14$Phylum = with(otu14, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
 
-otu14_plot <- ggplot(otu14, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
-  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
+###  PLOT ONLY THE PA AND FL!
+otu14_PAFL <- subset(otu14, Comparison == "Particle-Associated \nvs. \nFree-Living")
+otu14_PAFL <- droplevels(otu14_PAFL) # This function drops extra factors from the vector 
+
+
+otu14_plot <- ggplot(otu14_PAFL, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + #coord_flip() + #ggtitle("Summed OTUs") +
+  #ggtitle("Number of Total Significant OTUs per Phylum in each Filter Fraction") + 
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
-  theme_gray() +# scale_y_continuous(breaks=seq(-200, 200, 25)) +
-  facet_grid(. ~ Comparison, scales = "free_y", labeller = mf_labeller) + theme_bw() +
-  ylab("Total Number of Significant OTUs") +  xlab("Phylum") + 
-  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
-                    #labels = c("Particle-\nAssociated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
-                    values = c("firebrick1", "goldenrod1",  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
+  ylab("Number of Significant OTUs") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living"), #,"Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    values = c("firebrick1", "goldenrod1")) + #,  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
   guides(fill = guide_legend(keywidth = 0.8, keyheight = 0.8)) + 
-  theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+  theme(plot.title = element_text(face="bold", size=12),
+        axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
         axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
         axis.text.x = element_text(colour = "black", size=8, angle = 30, hjust = 1, vjust = 1),  #Set the x-axis labels
         axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
@@ -2895,10 +2902,10 @@ otu14_plot <- ggplot(otu14, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) +
         legend.text = element_text(size = 8),
         strip.text.x = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
         strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
-        legend.position = "right",
+        legend.position = c(0.8, 0.18),
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"),
-        strip.background = element_blank()); 
-ggsave(otu14_plot, filename = "~/Final_PAFL_Trophicstate/otu14_summed.pdf", height = 4, width = 6.5, dpi = 300)
+        strip.background = element_blank()); otu14_plot
+ggsave(otu14_plot, filename = "~/Final_PAFL_Trophicstate/otu14_summed_PA.pdf", height = 3, width = 4, dpi = 300)
 
 
 ##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
