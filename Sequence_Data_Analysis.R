@@ -933,6 +933,60 @@ pcoa_bray <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape
         ###LEGEND TOP RIGHT CORNER
         legend.position = "none"); pcoa_bray
 
+### FOR DDIG!
+bray_nomix <- subset(bray_pcoa4, limnion != "Mixed")
+bray_pcoa5 <- bray_nomix
+bray_pcoa5$trophicstate[bray_pcoa5$trophicstate == "Mesotrophic"] <- "Eutrophic"
+bray_pcoa5$blah <- paste(bray_pcoa5$trophicstate, bray_pcoa5$quadrant)
+
+bray_pcoa5$blah <- factor(bray_pcoa5$blah,levels = c("Eutrophic Free Epilimnion",  "Eutrophic Particle Epilimnion", "Eutrophic Free Hypolimnion", "Eutrophic Particle Hypolimnion", 
+                                                     "Oligotrophic Free Epilimnion", "Oligotrophic Particle Epilimnion", "Oligotrophic Free Hypolimnion", "Oligotrophic Particle Hypolimnion"))
+
+
+
+pcoa_ddig <- ggplot(bray_pcoa5, aes(Axis.1, Axis.2 * -1, fill = quadrant, shape = quadrant)) +
+  xlab(bray_axis1) + ylab(bray_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 3, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
+  scale_fill_manual(name = "", 
+                     breaks=c("Free Epilimnion",  "Free Hypolimnion", "Particle Epilimnion", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion",  "Particle-Associated Hypolimnion"), 
+                     values = c("goldenrod1", "goldenrod1", "firebrick1", "firebrick1")) +
+  scale_shape_manual(name = "", 
+                     breaks=c("Free Epilimnion",  "Free Hypolimnion", "Particle Epilimnion", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion",  "Particle-Associated Hypolimnion"), 
+                     values = c(22, 25, 22, 25)) +
+  theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+              axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+              axis.text.x = element_text(colour = "black", size=8),  #Set the x-axis labels
+              axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+              legend.title = element_text(size=7, face="bold"),  #Set the legend title 
+              legend.text = element_text(size = 7),
+              plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), 
+              legend.position = "right"); pcoa_ddig
+
+ggsave(pcoa_ddig, filename = "~/Final_PAFL_Trophicstate/ddig_pcoa.pdf", height = 3, width = 5, dpi = 300)
+
+
+### To be able to combine them all into one legend!
+
+#scale_fill_manual(name = "Habitat", breaks=c("Eutrophic Free Epilimnion",  "Eutrophic Particle Epilimnion", "Eutrophic Free Hypolimnion", "Eutrophic Particle Hypolimnion", 
+##                                             "Oligotrophic Free Epilimnion", "Oligotrophic Particle Epilimnion", "Oligotrophic Free Hypolimnion", "Oligotrophic Particle Hypolimnion"),
+#                   labels = c("High-Nutrient Free-Living Epilimnion",  "High-Nutrient Particle-Associated Epilimnion", "High-Nutrient Free-Living Hypolimnion", "High-Nutrient Particle-Associated Hypolimnion", 
+#                              "Oligotrophic Free-Living Epilimnion", "Oligotrophic Particle-Associated Epilimnion", "Oligotrophic Free-Living Hypolimnion", "Oligotrophic Particle-Associated Hypolimnion"),
+#                   values = c("goldenrod1", "firebrick1", "goldenrod3", "firebrick", "goldenrod1", "firebrick1", "goldenrod3", "firebrick")) +
+#scale_shape_manual(name = "Habitat", breaks=c("Eutrophic Free Epilimnion",  "Eutrophic Particle Epilimnion", "Eutrophic Free Hypolimnion", "Eutrophic Particle Hypolimnion", 
+#                                              "Oligotrophic Free Epilimnion", "Oligotrophic Particle Epilimnion", "Oligotrophic Free Hypolimnion", "Oligotrophic Particle Hypolimnion"),
+#                   labels = c("High-Nutrient Free-Living Epilimnion",  "High-Nutrient Particle-Associated Epilimnion", "High-Nutrient Free-Living Hypolimnion", "High-Nutrient Particle-Associated Hypolimnion", 
+#                              "Oligotrophic Free-Living Epilimnion", "Oligotrophic Particle-Associated Epilimnion", "Oligotrophic Free-Living Hypolimnion", "Oligotrophic Particle-Associated Hypolimnion"),
+#                   values = c(22, 22, 22, 22, 25, 25, 25, 25)) +
+#scale_color_manual(name = "Habitat", breaks=c("Eutrophic Free Epilimnion",  "Eutrophic Particle Epilimnion", "Eutrophic Free Hypolimnion", "Eutrophic Particle Hypolimnion", 
+#                                             "Oligotrophic Free Epilimnion", "Oligotrophic Particle Epilimnion", "Oligotrophic Free Hypolimnion", "Oligotrophic Particle Hypolimnion"),
+#                  labels = c("High-Nutrient Free-Living Epilimnion",  "High-Nutrient Particle-Associated Epilimnion", "High-Nutrient Free-Living Hypolimnion", "High-Nutrient Particle-Associated Hypolimnion", 
+#                             "Oligotrophic Free-Living Epilimnion", "Oligotrophic Particle-Associated Epilimnion", "Oligotrophic Free-Living Hypolimnion", "Oligotrophic Particle-Associated Hypolimnion"),
+#                  values = c("goldenrod1", "firebrick1", "goldenrod3", "firebrick", "goldenrod1", "firebrick1", "goldenrod3", "firebrick")) +
+
+
+
 ##########  SORENSEN'S DISSIMILARITY
 soren_pcoa <- pcoa(norm_soren)
 soren_pcoa2 <- soren_pcoa$vectors
@@ -1090,11 +1144,11 @@ for(i in 1:length(environ$limnion)){
 ##  Calculate the BC dissimilarity and the Sorensen Dissimilarity
 nosherwinOTU <- otu_table(nosherwin_merged)  # This is our OTU table that we will use for Adonis
 set.seed(3)
-#BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
 
-df_nosherwinOTU <- data.frame(nosherwinOTU)
-otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
-BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+#df_nosherwinOTU <- data.frame(nosherwinOTU)
+#otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
 
 ##  Do you have the right object for BCdist (BC vs sorensen???)
 ##  Are you sure?!  
@@ -1112,6 +1166,8 @@ adonis_PAFL_prod <- adonis(BCdist~ProdLevel, data = environ) # R2 =
 adonis_PAFL_temp <- adonis(BCdist~ temp,data=environ) # R2 = 
 adonis_PAFL_pH <- adonis(BCdist~ pH,data=environ) # R2 = 
 
+
+adonis(BCdist~filter+limnion,data=environ) 
 
 # Particle-Associated!
 part <- subset_samples(nosherwin_merged, filter == "Particle")
@@ -1602,21 +1658,17 @@ oligo_bray_try$trophicstate1 <-factor(oligo_bray_try$trophicstate1,levels=c("Hig
 nlabel <- c("n=12", "n=6", "n=12", "n=12")
 oligo_bray_try$nlabel <- nlabel
 
+oligo_bray_try$troph_lim1 <-factor(oligo_bray_try$troph_lim1,levels=c("Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Free", "Oligotrophic Epilimnion Particle", "Oligotrophic Hypolimnion Particle"))
+
+
 oligo_beta_plot <-  ggplot(oligo_bray_try, aes(x = troph_lim1, y = mean, color = troph_lim1)) + geom_point(size = 3) +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
   geom_text(aes(label = siglabel, x = troph_lim1, y = ((mean+sd) + 0.035)), size = 3) +
   geom_text(aes(label = nlabel, x = troph_lim1, y = ((mean+sd) + 0.065)), size = 3) +
-  scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
-                                         "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
-                                         "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"), 
-                     values = c("firebrick", "firebrick", "firebrick", "firebrick","darkorange","darkorange","darkorange","darkorange", 
-                                "cornflowerblue","cornflowerblue","cornflowerblue","cornflowerblue"))+
-  scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
-                            "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
-                            "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free"),
-                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
-                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
-                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living")) + 
+  scale_color_manual(name = "", limits=c("Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Free", "Oligotrophic Epilimnion Particle", "Oligotrophic Hypolimnion Particle"), 
+                     values = c("goldenrod1", "goldenrod1", "firebrick1","firebrick1"))+
+  scale_x_discrete(breaks=c("Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Free", "Oligotrophic Epilimnion Particle", "Oligotrophic Hypolimnion Particle"), 
+                   labels=c("Free-Living \nEpilimnion", "Free-Living \nHypolimnion", "Particle-Associated \nEpilimnion", "Particle-Associated \nHypolimnion")) + 
   xlab("Habitat") + ylab("Bray-Curtis Dissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
   theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
@@ -1631,7 +1683,7 @@ oligo_beta_plot <-  ggplot(oligo_bray_try, aes(x = troph_lim1, y = mean, color =
         plot.margin = unit(c(0.1, 1, 0.1, 0.1), "cm"),
         strip.text.x = element_text(size=14, face = "bold", colour = "black"),
         strip.background = element_blank()); oligo_beta_plot
-ggsave(oligo_beta_plot, filename = "~/Final_PAFL_Trophicstate/bray-oligo.pdf", height = 3, width = 3, dpi = 300)
+ggsave(oligo_beta_plot, filename = "~/Final_PAFL_Trophicstate/bray-oligo2.pdf", height = 3, width = 3, dpi = 300)
 
 
 
@@ -2449,9 +2501,11 @@ ggsave(phy_heat, filename = "~/Final_PAFL_Trophicstate/phy14_heat.pdf", height =
 
 
 #######  Making the abundance plot!
-phy14_abund <- subset(abund, Phylum %in% phy14)
+newphy <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria","Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi","Armatimonadetes")
+
+phy14_abund <- subset(abund, Phylum %in% newphy)
 phy14_abund$Phylum <- factor(phy14_abund$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
-                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes"))
+                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi","Armatimonadetes"))  #"Lentisphaerae", "Chlorobi",  "Firmicutes"
 
 phy14_abund$Phylum = with(phy14_abund, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
 
@@ -2471,7 +2525,20 @@ phy14_relabnd <- ggplot(phy14_abund, aes(y=PercentPhy , x=Phylum)) + #coord_cart
         legend.position="none"); 
 ggsave(phy14_relabnd, filename = "~/Final_PAFL_Trophicstate/phy14_abundance.pdf", height = 3.5, width = 3, dpi = 300)
 
-
+horizontal_phy14 <-ggplot(phy14_abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
+  ylab("Mean Percent \n Relative Abundance") + theme_bw() + 
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
+  scale_y_continuous(expand= c(0,0), limits = c(0,25)) +
+  theme(axis.title.x = element_text(face="bold", size=10),
+        axis.text.x = element_text(angle=30, colour = "black", size=8, vjust = 1, hjust = 1),
+        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+        strip.background = element_rect(colour="black", fill = "black"),
+        #plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
+        #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
+        legend.position="none"); horizontal_phy14
+ggsave(horizontal_phy14, filename = "~/Final_PAFL_Trophicstate/phylum_abundance.pdf", height = 3, width = 4, dpi = 300)
 
 
 
@@ -2902,7 +2969,7 @@ otu14_plot <- ggplot(otu14_PAFL, aes(y=NumSigOTUs, x=Phylum, fill=Preference)) +
         legend.text = element_text(size = 8),
         strip.text.x = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
         strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
-        legend.position = c(0.8, 0.18),
+        legend.position = c(0.88, 0.18),
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"),
         strip.background = element_blank()); otu14_plot
 ggsave(otu14_plot, filename = "~/Final_PAFL_Trophicstate/otu14_summed_PA.pdf", height = 3, width = 4, dpi = 300)
