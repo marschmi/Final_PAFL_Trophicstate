@@ -7,19 +7,23 @@ output: html_document
 
 ```{r knitr_global_options, eval = TRUE, echo = FALSE}
 # Set the global options
-knitr::opts_chunk$set(echo=FALSE, eval = TRUE, fig.width=6, fig.height=5, fig.align = 'center', warning=FALSE, message=FALSE, include=TRUE)
+knitr::opts_chunk$set(echo=FALSE, eval = TRUE, fig.width=6, fig.height=5, fig.align = 'center', warning=FALSE, message=FALSE)
 # Set the seed
 ## runif(1, 0, 10^8) # Run this command once and plug it into the set.seed() function
 set.seed(15879966)
 ```
 
-```{r load libraries and packages, echo=TRUE}
+```{r load libraries and packages}
 # Load packages
-necessary_packages <-  c("phyloseq", "ggplot2", "ape", "vegan", "plyr", "scales", "grid", "reshape2", "data.table","DESeq2", "dplyr","tidyr", "sciplot","scales", "pgirmess","multcompView")
+necessary_packages <-  c("phyloseq", "ggplot2", "ape", "vegan", "plyr", "scales", "grid", "reshape2", "data.table","DESeq2", "dplyr","tidyr", "sciplot","scales", "pgirmess","multcompView", "pander")
 # Install the packages that we need
-lapply(necessary_packages, install.packages, character.only = TRUE)
+#lapply(necessary_packages, install.packages, character.only = TRUE)
 # Now load the packages into our session
 lapply(necessary_packages, library, character.only = TRUE)
+
+# Make sure to have most updated version of phyloseq
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("phyloseq")
 
 ### Set the Working Directory  
 ###  Within the "Final_PAFL_Trophicstate" directory there should be the following 2 sub-directories:
@@ -29,19 +33,465 @@ setwd("~/Final_PAFL_Trophicstate")
 
 ### Source written functions in the file Functions_PAFL.R that is housed within the "Final_PAFL_Trophicstate"
 source("Functions_PAFL.R")
+```
 
 
+```{r set colors and theme}
+### Set our theme for our plots down the road
+set_ggtheme <- theme_set(theme_bw() + 
+                           theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
+                                 strip.text.x = element_text(size=10, face="bold"),  #Set the facet titles on x-axis 
+                                 strip.text.y = element_text(size=10, face="bold"),  #Set the facet titles on x-axis 
+                                 strip.background = element_blank(),  #Set the facet background to no background
+                                 axis.title.x = element_text(face="bold", size=12),  #Set the x-axis title
+                                 axis.title.y = element_text(face="bold", size=12),  #Set the y-axis title
+                                 axis.text.x = element_text(colour = "black", size=8),  #Set the x-axis labels
+                                 axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+                                 legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                                 legend.text = element_text(size = 8),  #Set the legend text
+                                 legend.position="right"))  #Default the legend position to the right
+
+#set phylum plotting colors
+phylum.colors <- c(Acidobacteria = "grey26", Actinobacteria = "royalblue", Alphaproteobacteria = "plum2", Armatimonadetes = "red", Bacteroidetes = "darkorange",
+                   "BD1-5" = "chartreuse", Betaproteobacteria = "slateblue2", Caldiserica = "black","Candidate_division_BRC1" = "violetred4",
+                   "Candidate_division_JS1" = "aquamarine1",
+                   "Candidate_division_OD1" = "#6DDE88", "Candidate_division_OP3" = "hotpink", "Candidate_division_OP8" = "goldenrod1", "Candidate_division_OP11" = "chocolate4",
+                   "Candidate_division_SR1" = "tan3", "Candidate_division_TM7" = "skyblue1", "Candidate_division_WS3" = "magenta",
+                   Chlamydiae="violet", Chlorobi="cyan2", Chloroflexi="darkgreen", Cyanobacteria = "chartreuse3", 
+                   Deferribacteres = "slateblue3", "Deinococcus-Thermus" = "violetred", Dictyoglomi = "cornsilk4", Deltaproteobacteria = "deepskyblue", 
+                   Elusimicrobia = "yellow3", Epsilonproteobacteria = "lightskyblue", Fibrobacteres = "darkred", Firmicutes = "blue4", FGL7S = "palevioletred1",
+                   Fusobacteria = "slateblue1", Gammaproteobacteria = "steelblue4", Gemmatimonadetes="black", GOUTA4 = "plum1", "Hyd24-12" = "sienna2", JTB23 = "seashell2",
+                   Lentisphaerae = "yellow1", "NPL-UPA2"="#652926", OC31 = "mediumpurple4", Planctomycetes = "mediumorchid3", Proteobacteria = "deepskyblue",
+                   "SHA-109" = "lightsalmon3", SM2F11 = "lightskyblue2", SPOTSOCT00m83 = "orangered",
+                   Spirochaetae = "gold3", Tenericutes="pink", Thermotogae = "chocolate1", TA06 = "lightslateblue",TA18 = "rosybrown3", TM6 = "olivedrab",
+                   unclassified = "grey", Verrucomicrobia = "purple4", "WCHB1-60" = "palegreen")
+
+##  Do not show scientific notation 
+options(scipen = 999, digits = 7)
+
+## Set pander (table) output functions 
+panderOptions('table.split.table', Inf)
+panderOptions('table.style', 'rmarkdown')
+
+```
+
+
+```{r data import}
+### Data import
+#sharedfile = "mothur.normalized.shared"
+sharedfile <- "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.shared"
+taxfile <- "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
+mothurdata <- import_mothur(mothur_shared_file = sharedfile ,mothur_constaxonomy_file = taxfile )
+
+# Change the taxonomy names
+tax_table(mothurdata) <- cbind(tax_table(mothurdata),row.names(tax_table(mothurdata)))
+colnames(tax_table(mothurdata)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
+
+# Change some of the sample names to match our metadata sample names
+samplenames <- sample_names(mothurdata)
+names2 <- gsub("GULL", "GUL", samplenames)
+names3 <- gsub("LONG", "LON", names2)
+sample_names(mothurdata) <- names3
+
+# Import metadata file and merge with mothurdata object
+mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
+map <- import_qiime_sample_data(mapfile)
+merge <- merge_phyloseq(mothurdata,map)
+
+# lets look at only samples (removing blanks and mock and samples that didn't amplify)
+pruned <- prune_taxa(taxa_sums(merge) > 0, merge)
+bact_samples <-subset_taxa(pruned, Kingdom == "Bacteria")
+#nrow(otu_table(pruned)) - nrow(otu_table(bact_samples))  ## Check how many rows were not bacteria
+bact_samples2 <-subset_taxa(bact_samples, Class != "Chloroplast")
+#nrow(otu_table(bact_samples)) - nrow(otu_table(bact_samples2))  # Check how many rows were chloroplasts
+
+#Summary of object
+#bact_samples
+
+## Raw Sample read counts
+# Histogram of RAW sample read counts
+raw_plot <- ggplot(data.frame(sum=sample_sums(bact_samples)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="dodgerblue2", binwidth = 750)  + xlab("Total Sequences") +
+   ggtitle(expression(atop(bold("Raw Samples"), atop("Binwidth = 750 Sequences", ""))))
 ```
 
 
 
 
+```{r Mean Samples}
+################################################################
+### Take the average for samples that have a replicate
+noscale_merge <- merge_samples_mean(bact_samples, group = "dups")  # Here we calculate the mean between samples and then floor to the lower value if it is 0.5
+noscale_merge <- prune_taxa(taxa_sums(noscale_merge) > 0, noscale_merge)
+
+#######  The above functions mess up the metadata - let's fix it!
+data_dup <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup) <- data_dup$names
+data_dup$quadrant <- factor(data_dup$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+data_dup <- sample_data(data_dup)  # Metadata in our phyloseq object
+scale_otu <- otu_table(noscale_merge)  # OTU table in our phyloseq object
+scale_tax <- tax_table(noscale_merge)  # Taxonomy Table in our phyloseq object
+raw_merged <- merge_phyloseq(scale_otu, scale_tax, data_dup) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+
+##  Sample read counts with merging samples WITHOUT SCALING!!!! 
+# Histogram of RAW sample read counts
+mean_plot <- ggplot(data.frame(sum=sample_sums(noscale_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="violetred", binwidth = 500)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Mean Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
+```
+
+
+
+```{r Mean and Floored Samples}
+################################################################
+### Take the average for samples that have a replicate
+floor_mean_merge <- merge_samples_mean_floor(bact_samples, group = "dups")  # Here we calculate the mean between samples and then floor to the lower value if it is 0.5
+floor_mean_merge <- prune_taxa(taxa_sums(floor_mean_merge) > 0, floor_mean_merge)
+
+#######  The above functions mess up the metadata - let's fix it!
+data_dup_floor <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_floor) <- data_dup_floor$names
+data_dup_floor$quadrant <- factor(data_dup_floor$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+data_dup_floor <- sample_data(data_dup_floor)  # Metadata in our phyloseq object
+scale_otu <- otu_table(floor_mean_merge)  # OTU table in our phyloseq object
+scale_tax <- tax_table(floor_mean_merge)  # Taxonomy Table in our phyloseq object
+floor_mean_merge <- merge_phyloseq(scale_otu, scale_tax, data_dup_floor) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+
+##  Sample read counts with merging samples WITHOUT SCALING!!!! 
+# Histogram of RAW sample read counts
+mean_floor_plot <- ggplot(data.frame(sum=sample_sums(floor_mean_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="darkorange", binwidth = 500)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Mean and Floored Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
+```
+
+
+
+## Influence of Merging Samples and Scaling the Reads 
+```{r scale reads, fig.height = 10, fig.width = 12}
+### Now let's scale our read counts from our MERGED RAW data
+scaled_merged <- scale_reads(physeq = raw_merged, n = min(sample_sums(raw_merged)))
+
+##  Sample read counts with merging samples WITH SCALING!!!! 
+# Histogram of RAW sample read counts
+#jpeg(filename="raw_merged_scaled.jpeg", width= 20, height=15, units= "cm", pointsize= 14, res=500)
+mean_scaled_plot <- ggplot(data.frame(sum=sample_sums(scaled_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="purple", binwidth = 20)  + xlab("Total Sequences") + 
+  #scale_x_continuous(seq(14600, 15200, by =100), labels = seq(14600, 15100, by =100)) +
+  ggtitle(expression(atop(bold("Mean Samples with Scaling the Reads"), atop("Binwidth = 20"), ""))) 
+#dev.off()
+
+multiplot(raw_plot, mean_plot, mean_floor_plot, mean_scaled_plot, cols = 2)
+```
+
+
+```{r Sequencing Depth Table, results = 'asis'}
+manipulations <- c("Raw Samples", "Mean Samples Without Scaling", "Mean and Floored Samples Without Scaling", "Mean Samples With Scaling")
+mins <- c(min(sample_sums(bact_samples)), min(sample_sums(raw_merged)), min(sample_sums(floor_mean_merge)), min(sample_sums(scaled_merged)))
+means <- c(round(mean(sample_sums(bact_samples)), digits = 2), round(mean(sample_sums(raw_merged)), digits = 2), round(mean(sample_sums(floor_mean_merge)), digits = 2), round(mean(sample_sums(scaled_merged)), digits = 2))
+medians <- c(median(sample_sums(bact_samples)), median(sample_sums(raw_merged)), median(sample_sums(floor_mean_merge)), median(sample_sums(scaled_merged)))
+maxs <- c(max(sample_sums(bact_samples)), max(sample_sums(raw_merged)), max(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged)))
+ranges <- c(max(sample_sums(bact_samples)) - min(sample_sums(bact_samples)), max(sample_sums(raw_merged)) - min(sample_sums(raw_merged)), max(sample_sums(floor_mean_merge)) - min(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged)) - min(sample_sums(scaled_merged)))
+# Make the data frame 
+seq_depth <- data.frame(matrix(ncol = 0, nrow = 4))
+row.names(seq_depth) <- manipulations
+seq_depth$Minimum <- mins
+seq_depth$Means <- means
+seq_depth$Medians <- medians
+seq_depth$Maximum <- maxs
+seq_depth$Range <- ranges
+
+###  Time to make the pander output of our table!  
+panderOptions("digits", 1) # This will set the values to numbers and then will round to the whole number
+set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
+pander(seq_depth, caption="Table A:  Simple statistics on the sequencing depth while merging replicates.")
+#pandoc.table(seq_depth, style = "grid", caption = "Simple statistics on the sequencing depth while merging replicates.")
+```
+
+
+
+```{r Create phyloseq object}
+###  Time to create our phyloseq object with the merged and scaled sample reads.
+merged_final <- scaled_merged
+
+########## ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(merged_final))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
+
+phy$Phylum <- Phylum
+t <- tax_table(as.matrix(phy))
+
+tax_table(merged_final) <- t
+
+# Our phyloseq object!
+merged_final 
+```
+
+
+```{r Figure 1}
+####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
+####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
+####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
+# For alpha diversity we will RAREFY our phyloseq object.
+#  We will use the mean AND floored data.  
+#floor_mean_merge  # Raw Merged Samples, we have 9,740 OTUs  
+#raw_nowin <- subset_samples(floor_mean_merge, names != "WINH" & names != "WINH3um")
+#raw_nowin <- prune_taxa(taxa_sums(raw_nowin) > 0, raw_nowin)
+
+#Data Import for rarefied data 
+#raw_nowin  
+#raw_merged_min_minus1 <- min(sample_sums(raw_nowin)) - 1
+
+# Following code from Michelle's Butterflygut website: http://rstudio-pubs-static.s3.amazonaws.com/25722_9fc9bdc48f0d4f13b05fa61baeda57a0.html#alpha-diversity
+# Rarefy to 14937 reads with replacement 100 times to estimate species richness
+# Since we are rarefying to 14937 reads we need to remove the two samples with less than 1000 reads
+#raredata14854 <- prune_samples(sample_sums(raw_nowin) > raw_merged_min_minus1, raw_nowin)
+
+# Initialize matrices to store richness and evenness estimates
+#richness <- matrix(nrow = 41,ncol = 100)  # Store richness:  We have 41 samples 
+#row.names(richness) <- sample_names(raredata14854)
+#evenness <- matrix(nrow = 41,ncol = 100)  #Store evenness
+#row.names(evenness) <- sample_names(raredata14854)
+
+# We want to be reproducible - so let's set the seed.
+#set.seed(15879966) # Same seed as in the first chunk
+
+# For 100 replications, rarefy the OTU table to 14854 reads and store the richness and evennes estimates in our 2 matrices we just created.
+#The default for the rarefy_even_depth command is to pick with replacement so I set it to false. Picking without replacement is more computationally intensive 
+#for (i in 1:100) {
+#  r <- rarefy_even_depth(raredata14854, sample.size = raw_merged_min_minus1, verbose = FALSE, replace = FALSE)
+#  rich <- as.numeric(as.matrix(estimate_richness(r, measures="Observed")))
+#  richness[,i] <- rich
+#  even <- as.numeric(as.matrix(estimate_richness(r, measures="InvSimpson")))
+#  evenness[,i] <- even
+#}
+
+#write.table(richness, "~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100", row.names = TRUE)
+#write.table(evenness, "~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100", row.names = TRUE)
+
+richness <- read.table("~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100", header = TRUE)
+evenness <- read.table("~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100", header = TRUE)
+
+# Create a new matrix to hold the means and standard deviations of all the richness estimates
+rich_stats = matrix(nrow= nrow(richness), ncol=1)
+rich_stats[,1] = apply(richness, 1, mean)
+#rich_stats[,2] = apply(richness, 1, sd)
+rich_stats = data.frame(row.names(richness), rich_stats)
+colnames(rich_stats) = c("samples","mean_value")
+rich_stats$Test <- "Observed Richness"
+
+# Create a new matrix to hold the means and standard deviations of the evenness estimates
+even_stats = matrix(nrow = nrow(evenness), ncol = 1)
+even_stats[,1] = apply(evenness, 1, mean)
+#even_stats[,2] = apply(evenness, 1, sd)
+even_stats = data.frame(row.names(evenness), even_stats)
+colnames(even_stats) = c("samples","mean_value")
+even_stats$Test <- "Inverse Simpson"
+
+
+###  Add SIMPSON'S EVENNESS!
+#simps_even = as.data.frame(matrix(nrow = nrow(evenness), ncol = 2))
+simps_even <- data.frame(matrix(nrow = nrow(evenness), ncol = 3))
+colnames(simps_even) = c("samples","mean_value", "Test")
+simps_even$samples <- even_stats$samples
+simps_even$mean_value <-  even_stats$mean_value/rich_stats$mean_value
+simps_even$Test <- "Simpson's Evenness"
+
+#Combine the rich.stats and the even.stats dataframes
+alpha_stats <- rbind(rich_stats, even_stats, simps_even)
+alpha_stats$names <- alpha_stats$samples
+alpha_stats <- makeCategories_dups(alpha_stats)
+alpha_stats$ProdLevel <- as.character(alpha_stats$trophicstate)
+alpha_stats$ProdLevel[alpha_stats$trophicstate == "Eutrophic"] <- "Productive"
+alpha_stats$ProdLevel[alpha_stats$trophicstate == "Mesotrophic"] <- "Productive"
+alpha_stats$ProdLevel[alpha_stats$trophicstate == "Oligotrophic"] <- "Unproductive"
+alpha_stats$ProdLevel[alpha_stats$lakenames == "Sherman"] <- "Mixed"
+alpha_stats$trophicstate[alpha_stats$lakenames == "Sherman"] <- "Mixed"
+
+
+####  Add all information together!
+for(i in 1:length(alpha_stats$limnion)){
+  alpha_stats$troph_lim[i]<-paste(as.character(alpha_stats$trophicstate[i]),
+                                  as.character(alpha_stats$limnion[i]),
+                                  as.character(alpha_stats$filter[i]))}
+
+
+stats <- alpha_stats %>%
+  group_by(troph_lim, Test) %>%
+  summarize(mean = mean(mean_value), 
+            SE = se(mean_value), 
+            SD = sd(mean_value), 
+            median = median(mean_value))
+
+final_alpha_stats <- left_join(alpha_stats, stats, by = c("troph_lim", "Test"))
+
+
+final_alpha_stats$ProdLevel <-factor(final_alpha_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
+final_alpha_stats$trophicstate <-factor(final_alpha_stats$trophicstate,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+#final_alpha_stats$troph_lim <-factor(final_alpha_stats$troph_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+#                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+#                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+final_alpha_stats$troph_lim <-factor(final_alpha_stats$troph_lim,levels=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                                              "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                                              "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                                              "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+
+
+ggplot(final_alpha_stats, aes(x = troph_lim, y = mean_value, color = troph_lim)) + geom_jitter(size = 5, alpha = 0.7) +
+  ggtitle("Alpha Diversity") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  layer(data = final_alpha_stats, mapping = aes(x = troph_lim, y = median), geom = "point", pch = 95, size = 10, color = "black") + 
+  layer(data = final_alpha_stats, mapping = aes(x = troph_lim, y = mean), geom = "point", pch = 126, size = 10, color = "red") + 
+  facet_grid(Test ~ trophicstate, scales="free", space="free_x") +
+    scale_color_manual(name = "", limits=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                         "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                         "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink","orange","orange","orange","orange", 
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                            "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                            "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Epilimnion Particle", "Epilimnion Free", "Hypolimnion Particle", "Hypolimnion Free",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none")
 
 
 
 
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle", "Free")) + 
 
 
+ggplot(prodalpha_stats, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
+  facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
+  geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
+  ggtitle("Alpha Diversity: Standard Deviation") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none"); facet_prod_stats
+
+```
+
+
+
+```{r Figure S1, fig.width=7, fig.height = 10}
+####################################################  DEPTH PROFILE  ####################################################  Working up to Figure S1
+####################################################  DEPTH PROFILE  ####################################################  Working up to Figure S1
+####################################################  DEPTH PROFILE  ####################################################  Working up to Figure S1
+
+profile <- read.csv(file = "~/Final_PAFL_Trophicstate/raw_data/AllLakes_depthprofile.csv", header = TRUE); 
+profile <- subset(profile, select = c('lakename',"trophicstate", "depth", "temp", "DO", "pH", "SpC"))
+#profile$depth <- as.numeric(profile$depth)
+#profile$depth <- as.factor(profile$depth)
+profile$DO. = NULL
+
+profile$trophicstate <- as.character(profile$trophicstate)
+profile$trophicstate[profile$trophicstate == "Eutrophic"] <- "Productive"
+profile$trophicstate[profile$trophicstate == "Mesotrophic"] <- "Productive"
+profile$trophicstate[profile$trophicstate == "Oligotrophic"] <- "Unproductive"
+profile$trophicstate[profile$trophicstate == "Mixed"] <- "Mixed"
+
+# ALL LAKES 
+profile_all <- profile %>%  gather(Variable, Value, 4:7)
+profile_all$lakename <- as.character(profile_all$lakename)
+profile_all$lakename[profile_all$lakename == "WIN"] <- "Wintergreen"
+profile_all$lakename[profile_all$lakename == "SIX"] <- "Sixteen"
+profile_all$lakename[profile_all$lakename == "SHE"] <- "Sherman"
+profile_all$lakename[profile_all$lakename == "PAY"] <- "Payne"
+profile_all$lakename[profile_all$lakename == "LON"] <- "Little Long"
+profile_all$lakename[profile_all$lakename == "LEE"] <- "Lee"
+profile_all$lakename[profile_all$lakename == "GUL"] <- "Gull"
+profile_all$lakename[profile_all$lakename == "BRI"] <- "Bristol"
+profile_all$lakename[profile_all$lakename == "BAK"] <- "Baker"
+profile_all$lakename[profile_all$lakename == "BAS"] <- "Baseline"
+profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
+profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
+profile_all$trophicstate[profile_all$trophicstate == "Productive"] <- "High-Nutrient"
+profile_all$trophicstate[profile_all$trophicstate == "Unproductive"] <- "Low-Nutrient"
+profile_all$trophicstate[profile_all$trophicstate == "Mixed"] <- "High-Nutrient"
+
+
+profile_all <- subset(profile_all, Variable != "SpC")
+
+
+profile_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="Variable") { 
+    value[value=="temp"] <- "Temperature \n (Celsius)"
+    value[value=="DO"]   <- "Dissolved Oxygen \n (mg/L)"
+    value[value=="pH"]   <- "pH"
+    value[value=="SpC"]   <- "Specific Conductivity \n (uS/cm)"
+  }
+  return(value)
+}
+
+#####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1
+## All LAKES
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.tiff", width= 30, height=40, units= "cm",pointsize= 18, res=200)
+ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
+  geom_path(size=1, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
+  theme_bw() +  geom_point(size=2, alpha = 0.8) + geom_hline(h=0) +
+  scale_y_reverse(breaks=seq(0, 32, 4), expand = c(0, 0)) + #breaks=seq(0, 30, 5), lim = c(30,0), expand = c(0, 0)
+  scale_color_manual(name = "Lake Name", 
+                     labels = c("Baker", "Baseline", "Bassett", "Bristol", "Gull", "Lee", "Little Long", "Payne", "Sherman", "Sixteen", "Wintergreen"), 
+                     values = c("blue", "red", "black", "forestgreen","violet","limegreen", "purple", "orange", "maroon1", "turquoise3", "thistle4")) +
+  facet_grid(trophicstate ~ Variable, scales = "free",labeller = profile_labeller, space = "free_y") +  
+  theme(strip.background = element_blank(),
+        strip.text = element_text(face = "bold", colour = "black"),
+        axis.title.y = element_text(face="bold"),  #Set the y-axis title
+        legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+        legend.text = element_text(size = 8),  #Set the legend text
+        legend.position=c(0.225, 0.22));
+#dev.off()
+```
 
 ```{r session info, eval = TRUE, echo = FALSE}
 # Provide the Session Information for reproducibility

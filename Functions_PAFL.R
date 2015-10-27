@@ -8,6 +8,7 @@
 # 6. plot_phylum_deSEQ - plot the PHYLUM level log2-fold ratio
 # 7. scale_reads - McMurdie & Holmes scaling to dataset for uneven sequencing depth across samples
 # 8. nacols - look for NAs in the dataframe
+# 9. merge_samples_mean - mean the counts between two samples 
 
 
 
@@ -245,7 +246,7 @@ plot_phylum_deSEQ <- function(deSEQdata, title){
 ## This function was written by Michelle Berry and will scale the reads to the minimum number of sample reads in the dataset
 scale_reads <- function(physeq,n){  #n is the size you want to scale to. Usually, do min(sample_sums(physeq))
   physeq.scale <- transform_sample_counts(physeq, function(x) {(n*x/sum(x))})
-  otu_table(physeq.scale) = round(otu_table(physeq.scale))
+  otu_table(physeq.scale) = floor(otu_table(physeq.scale))
   physeq.scale = prune_taxa(taxa_sums(physeq.scale)>0,physeq.scale)
   return(physeq.scale)
 }
@@ -265,3 +266,50 @@ nacols <- function(df) {
 #################################################################################### 9
 
 
+#################################################################################### 10
+#################################################################################### 10
+# This function was written by Michelle Berry and can be found at https://github.com/joey711/phyloseq/issues/465
+merge_samples_mean <- function(physeq, group){
+  # Calculate the number of samples in each group
+  group_sums <- as.matrix(table(sample_data(physeq)[ ,group]))[,1]
+  
+  # Merge samples by summing
+  merged <- merge_samples(physeq, group)
+  
+  # Divide summed OTU counts by number of samples in each group to get mean
+  # Calculation is done while taxa are columns, but then transposed at the end
+  x <- as.matrix(otu_table(merged))
+  if(taxa_are_rows(merged)){ x<-t(x) }
+  out <- t(x/group_sums) 
+  
+  # Return new phyloseq object with taxa as rows
+  out <- otu_table(out, taxa_are_rows = TRUE)
+  otu_table(merged) <- out
+  return(merged)
+}
+#################################################################################### 10
+#################################################################################### 10
+
+#################################################################################### 11
+#################################################################################### 11
+# This function was written by Michelle Berry and can be found at https://github.com/joey711/phyloseq/issues/465
+merge_samples_mean_floor <- function(physeq, group){
+  # Calculate the number of samples in each group
+  group_sums <- as.matrix(table(sample_data(physeq)[ ,group]))[,1]
+  
+  # Merge samples by summing
+  merged <- merge_samples(physeq, group)
+  
+  # Divide summed OTU counts by number of samples in each group to get mean
+  # Calculation is done while taxa are columns, but then transposed at the end
+  x <- as.matrix(otu_table(merged))
+  if(taxa_are_rows(merged)){ x<-t(x) }
+  out <- t(floor(x/group_sums)) # Added floo to this function
+  
+  # Return new phyloseq object with taxa as rows
+  out <- otu_table(out, taxa_are_rows = TRUE)
+  otu_table(merged) <- out
+  return(merged)
+}
+#################################################################################### 11
+#################################################################################### 11

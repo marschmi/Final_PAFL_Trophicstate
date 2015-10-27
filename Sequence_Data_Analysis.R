@@ -233,6 +233,17 @@ profile_all$trophicstate[profile_all$trophicstate == "Mixed"] <- "High-Nutrient"
 
 profile_all <- subset(profile_all, Variable != "SpC")
 
+profile_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="Variable") { 
+    value[value=="temp"] <- "Temperature \n (Celsius)"
+    value[value=="DO"]   <- "Dissolved Oxygen \n (mg/L)"
+    value[value=="pH"]   <- "pH"
+    value[value=="SpC"]   <- "Specific Conductivity \n (uS/cm)"
+  }
+  return(value)
+}
+
 #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1
 ## All LAKES
 #tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S1_AllLake_profiles.tiff", width= 30, height=40, units= "cm",pointsize= 18, res=200)
