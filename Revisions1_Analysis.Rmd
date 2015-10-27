@@ -1,0 +1,49 @@
+---
+title: "Analysis Revisions after 1st Reviews"
+author: "Marian L. Schmidt"
+date: "October 27, 2015"
+output: html_document
+---
+
+```{r knitr_global_options, eval = TRUE, echo = FALSE}
+# Set the global options
+knitr::opts_chunk$set(echo=FALSE, eval = TRUE, fig.width=6, fig.height=5, fig.align = 'center', warning=FALSE, message=FALSE, include=TRUE)
+# Set the seed
+## runif(1, 0, 10^8) # Run this command once and plug it into the set.seed() function
+set.seed(15879966)
+```
+
+```{r load libraries and packages, echo=TRUE}
+# Load packages
+necessary_packages <-  c("phyloseq", "ggplot2", "ape", "vegan", "plyr", "scales", "grid", "reshape2", "data.table","DESeq2", "dplyr","tidyr", "sciplot","scales", "pgirmess","multcompView")
+# Install the packages that we need
+lapply(necessary_packages, install.packages, character.only = TRUE)
+# Now load the packages into our session
+lapply(necessary_packages, library, character.only = TRUE)
+
+### Set the Working Directory  
+###  Within the "Final_PAFL_Trophicstate" directory there should be the following 2 sub-directories:
+        #   1.  "raw_data":  includes 5 files:  taxonomy table, OTU (shared) table, "metadata", "duplicate_metadata.txt", "AllLakes_depthprofile.csv" 
+        #   2.  "alpha_data":  includes 2 files:  "InvSimpson100" and "ObservedRichness100"  (These files are made between lines 261-295 and take ~20 minutes to calculate.  These files are added for reviewer convenience.)
+setwd("~/Final_PAFL_Trophicstate")
+
+### Source written functions in the file Functions_PAFL.R that is housed within the "Final_PAFL_Trophicstate"
+source("Functions_PAFL.R")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r session info, eval = TRUE, echo = FALSE}
+# Provide the Session Information for reproducibility
+devtools::session_info()
+```
