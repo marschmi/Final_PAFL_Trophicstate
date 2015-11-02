@@ -17,10 +17,6 @@ set.seed(15879966)
 # Load packages
 necessary_packages <-  c("phyloseq", "ggplot2", "ape", "vegan", "plyr", "scales", "grid", "reshape2", "data.table","DESeq2", "dplyr","tidyr", "sciplot","scales", "pgirmess","multcompView", "pander")
 # Install the packages that we need
-#lapply(necessary_packages, install.packages, character.only = TRUE)
-# Now load the packages into our session
-
-
 packages <- lapply(necessary_packages, library, character.only = TRUE)
 
 # Make sure to have most updated version of phyloseq
@@ -118,7 +114,6 @@ raw_plot <- ggplot(data.frame(sum=sample_sums(bact_samples)),aes(sum)) + ylab("N
 ```
 
 
-## Influence of Meaning between Replicate Samples 
 
 ```{r Mean Samples}
 ################################################################
@@ -251,6 +246,12 @@ sum_reps <- prune_taxa(taxa_sums(sum_reps) > 0, sum_reps) # Remove any OTUs that
 data_dup_sum_reps <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
 row.names(data_dup_sum_reps) <- data_dup_sum_reps$names
 data_dup_sum_reps$quadrant <- factor(data_dup_sum_reps$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+# Add a column of Total Sequence sums 
+TotalSeqs_sum_reps <- data.frame(rowSums(otu_table(sum_reps)))
+TotalSeqs_sum_reps$names <- as.factor(row.names(TotalSeqs_sum_reps))
+colnames(TotalSeqs_sum_reps)[1] <- "TotalSeqs_Summed"
+data_dup_sum_reps<- left_join(data_dup_sum_reps, TotalSeqs_sum_reps, by = "names")
+row.names(data_dup_sum_reps) <- data_dup_sum_reps$names
 data_dup_sum_reps <- sample_data(data_dup_sum_reps)  # Metadata in our phyloseq object
 scale_otu <- otu_table(sum_reps)  # OTU table in our phyloseq object
 scale_tax <- tax_table(sum_reps)  # Taxonomy Table in our phyloseq object
@@ -260,8 +261,8 @@ sum_reps <- merge_phyloseq(scale_otu, scale_tax, data_dup_sum_reps) #####  THIS 
 sum_scale_floor <- scale_reads(physeq = sum_reps, n = min(sample_sums(sum_reps)), round = "floor")
 
 ##  Histogram of Sample Read Counts 
-sum_scale_floor_plot <- ggplot(data.frame(sum=sample_sums(sum_scale)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="plum2", binwidth = 20)  + xlab("Total Sequences") + 
+sum_scale_floor_plot <- ggplot(data.frame(sum=sample_sums(sum_scale_floor)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="thistle1", binwidth = 20)  + xlab("Total Sequences") + 
   ggtitle(expression(atop(bold("Sum & Scale (by flooring) the Reads"), atop("Binwidth = 20"), ""))) 
 
 # Step 3:  Scale the reads by rounding
@@ -269,7 +270,7 @@ sum_scale_round <- scale_reads(physeq = sum_reps, n = min(sample_sums(sum_reps))
 
 ##  Histogram of Sample Read Counts 
 sum_scale_round_plot <- ggplot(data.frame(sum=sample_sums(sum_scale_round)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="plum2", binwidth = 20)  + xlab("Total Sequences") + 
+  geom_histogram(colour="black",fill="thistle1", binwidth = 20)  + xlab("Total Sequences") + 
   ggtitle(expression(atop(bold("Sum & Scale (by 'R' rounding) the Reads"), atop("Binwidth = 20"), ""))) 
 
 # Step 3:  Scale the reads 
@@ -299,7 +300,7 @@ sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_
 
 ##  Histogram of Sample Read Counts 
 sum_scale_matround_plot <- ggplot(data.frame(sum=sample_sums(sum_scale_matround)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="plum2", binwidth = 20)  + xlab("Total Sequences") + 
+  geom_histogram(colour="black",fill="thistle1", binwidth = 20)  + xlab("Total Sequences") + 
   ggtitle(expression(atop(bold("Sum & Scale (by 'True' rounding) the Reads"), atop("Binwidth = 20"), ""))) 
 ```
 
@@ -307,17 +308,17 @@ sum_scale_matround_plot <- ggplot(data.frame(sum=sample_sums(sum_scale_matround)
 ```{r Sequencing Depth Table, results = 'asis', fig.width = 15, fig.height = 6}
 manipulations <- c("Raw Samples", "Mean Samples Without Scaling", "Mean and 'R' Rounded Samples Without Scaling", "Mean and 'True' Rounded Samples Without Scaling", "Mean and Floored Samples Without Scaling", "Mean Samples with Scaling (and flooring) the Reads", "Mean Samples with Scaling ('R' rounding) the Reads", "Mean Samples with Scaling ('True' rounding) the Reads", "Sum & Scale (by flooring) the Reads", "Sum & Scale (by 'R' rounding) the Reads", "Sum & Scale (by 'True' rounding) the Reads")
 
-mins <- c(min(sample_sums(bact_samples2)), min(sample_sums(raw_merged)),  min(sample_sums(round_mean_merge)), min(sample_sums(matround_mean_merge)),min(sample_sums(floor_mean_merge)), min(sample_sums(scaled_merged_floor)), min(sample_sums(scaled_merged_round)), min(sample_sums(scaled_merged_matround)), min(sample_sums(sum_scale_floor)), min(sample_sums(sum_scale_round)), min(sample_sums(sum_scale_matround)))
+mins <- c(min(sample_sums(bact_samples)), min(sample_sums(raw_merged)),  min(sample_sums(round_mean_merge)), min(sample_sums(matround_mean_merge)),min(sample_sums(floor_mean_merge)), min(sample_sums(scaled_merged_floor)), min(sample_sums(scaled_merged_round)), min(sample_sums(scaled_merged_matround)), min(sample_sums(sum_scale_floor)), min(sample_sums(sum_scale_round)), min(sample_sums(sum_scale_matround)))
 
-means <- c(round(mean(sample_sums(bact_samples2)), digits = 2), round(mean(sample_sums(raw_merged)), digits = 2), round(mean(sample_sums(round_mean_merge)), digits = 2),round(mean(sample_sums(matround_mean_merge)), digits = 2), round(mean(sample_sums(floor_mean_merge)), digits = 2), round(mean(sample_sums(scaled_merged_floor)), digits = 2), round(mean(sample_sums(scaled_merged_round)), digits = 2), round(mean(sample_sums(scaled_merged_matround)), digits = 2), round(mean(sample_sums(sum_scale_floor)), digits = 2), round(mean(sample_sums(sum_scale_round)), digits = 2), round(mean(sample_sums(sum_scale_matround)), digits = 2))
+means <- c(round(mean(sample_sums(bact_samples)), digits = 2), round(mean(sample_sums(raw_merged)), digits = 2), round(mean(sample_sums(round_mean_merge)), digits = 2),round(mean(sample_sums(matround_mean_merge)), digits = 2), round(mean(sample_sums(floor_mean_merge)), digits = 2), round(mean(sample_sums(scaled_merged_floor)), digits = 2), round(mean(sample_sums(scaled_merged_round)), digits = 2), round(mean(sample_sums(scaled_merged_matround)), digits = 2), round(mean(sample_sums(sum_scale_floor)), digits = 2), round(mean(sample_sums(sum_scale_round)), digits = 2), round(mean(sample_sums(sum_scale_matround)), digits = 2))
 
-medians <- c(median(sample_sums(bact_samples2)), median(sample_sums(raw_merged)), median(sample_sums(round_mean_merge)), median(sample_sums(matround_mean_merge)), median(sample_sums(floor_mean_merge)), median(sample_sums(scaled_merged_floor)),median(sample_sums(scaled_merged_round)), median(sample_sums(scaled_merged_matround)), median(sample_sums(sum_scale_floor)), median(sample_sums(sum_scale_round)), median(sample_sums(sum_scale_matround)))
+medians <- c(median(sample_sums(bact_samples)), median(sample_sums(raw_merged)), median(sample_sums(round_mean_merge)), median(sample_sums(matround_mean_merge)), median(sample_sums(floor_mean_merge)), median(sample_sums(scaled_merged_floor)),median(sample_sums(scaled_merged_round)), median(sample_sums(scaled_merged_matround)), median(sample_sums(sum_scale_floor)), median(sample_sums(sum_scale_round)), median(sample_sums(sum_scale_matround)))
 
-maxs <- c(max(sample_sums(bact_samples2)), max(sample_sums(raw_merged)), max(sample_sums(round_mean_merge)), max(sample_sums(matround_mean_merge)), max(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged_floor)), max(sample_sums(scaled_merged_round)), max(sample_sums(scaled_merged_matround)), max(sample_sums(sum_scale_floor)), max(sample_sums(sum_scale_round)), max(sample_sums(sum_scale_matround)))
+maxs <- c(max(sample_sums(bact_samples)), max(sample_sums(raw_merged)), max(sample_sums(round_mean_merge)), max(sample_sums(matround_mean_merge)), max(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged_floor)), max(sample_sums(scaled_merged_round)), max(sample_sums(scaled_merged_matround)), max(sample_sums(sum_scale_floor)), max(sample_sums(sum_scale_round)), max(sample_sums(sum_scale_matround)))
 
-ranges <- c(max(sample_sums(bact_samples2)) - min(sample_sums(bact_samples2)), max(sample_sums(raw_merged)) - min(sample_sums(raw_merged)), max(sample_sums(round_mean_merge)) - min(sample_sums(round_mean_merge)), max(sample_sums(matround_mean_merge)) - min(sample_sums(matround_mean_merge)), max(sample_sums(floor_mean_merge)) - min(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged_floor)) - min(sample_sums(scaled_merged_floor)), max(sample_sums(scaled_merged_round)) - min(sample_sums(scaled_merged_round)), max(sample_sums(scaled_merged_matround)) - min(sample_sums(scaled_merged_matround)), max(sample_sums(sum_scale_floor)) - min(sample_sums(sum_scale_floor)), max(sample_sums(sum_scale_round)) - min(sample_sums(sum_scale_round)), max(sample_sums(sum_scale_matround)) - min(sample_sums(sum_scale_matround)))
+ranges <- c(max(sample_sums(bact_samples)) - min(sample_sums(bact_samples)), max(sample_sums(raw_merged)) - min(sample_sums(raw_merged)), max(sample_sums(round_mean_merge)) - min(sample_sums(round_mean_merge)), max(sample_sums(matround_mean_merge)) - min(sample_sums(matround_mean_merge)), max(sample_sums(floor_mean_merge)) - min(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged_floor)) - min(sample_sums(scaled_merged_floor)), max(sample_sums(scaled_merged_round)) - min(sample_sums(scaled_merged_round)), max(sample_sums(scaled_merged_matround)) - min(sample_sums(scaled_merged_matround)), max(sample_sums(sum_scale_floor)) - min(sample_sums(sum_scale_floor)), max(sample_sums(sum_scale_round)) - min(sample_sums(sum_scale_round)), max(sample_sums(sum_scale_matround)) - min(sample_sums(sum_scale_matround)))
 
-num_otus <- c(nrow(otu_table(bact_samples2)), nrow(otu_table(raw_merged)), nrow(otu_table(round_mean_merge)), nrow(otu_table(matround_mean_merge)), nrow(otu_table(floor_mean_merge)), nrow(otu_table(scaled_merged_floor)), nrow(otu_table(scaled_merged_round)), nrow(otu_table(scaled_merged_matround)),  ncol(otu_table(sum_scale_floor)), ncol(otu_table(sum_scale_round)), ncol(otu_table(sum_scale_matround)))
+num_otus <- c(nrow(otu_table(bact_samples)), nrow(otu_table(raw_merged)), nrow(otu_table(round_mean_merge)), nrow(otu_table(matround_mean_merge)), nrow(otu_table(floor_mean_merge)), nrow(otu_table(scaled_merged_floor)), nrow(otu_table(scaled_merged_round)), nrow(otu_table(scaled_merged_matround)),  ncol(otu_table(sum_scale_floor)), ncol(otu_table(sum_scale_round)), ncol(otu_table(sum_scale_matround)))
 
 # Make the data frame 
 seq_depth <- data.frame(matrix(ncol = 0, nrow = 11))
@@ -340,7 +341,7 @@ pander(seq_depth[1:5,], caption="Table A:  Simple statistics on the sequencing d
 ```
 
 ## **Mean** between replicates and then scale the sample read counts
-```{r mean scale stats}
+```{r mean scale stats, fig.width = 15, fig.height = 6}
 multiplot(mean_scaled_floor_plot, mean_scaled_round_plot, mean_scaled_matround_plot,cols = 3)
 
 panderOptions("digits", 1) # This will set the values to numbers and then will round to the whole number
@@ -349,7 +350,7 @@ pander(seq_depth[6:8,], caption="Table A:  Simple statistics on the sequencing d
 ```
 
 ## **Sum** between replicates and then scale the sample read counts
-```{r sum-scaled stats}
+```{r sum-scaled stats, fig.width = 15, fig.height = 6}
 multiplot(sum_scale_floor_plot, sum_scale_round_plot, sum_scale_matround_plot,cols = 3)
 
 panderOptions("digits", 1) # This will set the values to numbers and then will round to the whole number
@@ -388,8 +389,8 @@ nowin_final <- prune_taxa(taxa_sums(nowin_final) > 0, nowin_final)
 
 ```
 
-## Influence of Productivity and Trophic State on Alpha Diversity 
-```{r Alpha Diversity - rarefied, fig.height=10, fig.width=16}
+
+```{r Alpha Diversity - rarefied, fig.height=10, fig.width=16, eval = FALSE}
 ####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
 ####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
 ####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
@@ -590,7 +591,7 @@ multiplot(troph_alpha_plot, prod_alpha_plot, cols = 2)
 ```
 
 ## Influence of Rarefying and Scaling the Reads on Alpha Diversity
-```{r Alpha diversity - scaled}
+```{r Alpha diversity - scaled, eval = FALSE}
 
 ###  Using the floored data 
 ##  First remove wintergreen "hypolimnion" samples 
@@ -760,9 +761,217 @@ scaled_round_prod_alpha_plot <- ggplot(final_scaled_round_prod_stats, aes(x = pr
 ```
 
 
+```{r comparing alpha diversity methods, fig.width = 28, fig.height = 20, eval = FALSE, echo = FALSE}
+multiplot(prod_alpha_plot, scaled_round_prod_alpha_plot, scaled_floor_prod_alpha_plot, sum_scaled_matround_prod_alpha_plot, cols =2)
+
+# Create a data frame to visually compare all the values 
+# Rarefied data 
+raw_alpha2 <- prod_stats %>%
+  select(Test, mean)
+colnames(raw_alpha2)[3] <- "mean_rarefied"
+
+# Scaled and Floored data 
+scale_floor_alpha2 <- scaled_floor_prod_stats %>%
+  select(Test, mean)
+colnames(scale_floor_alpha2)[3] <- "mean_scaled_floor"
+
+# Scaled and rounded data 
+scale_round_alpha2 <- scaled_round_prod_stats %>%
+  select(Test, mean)
+colnames(scale_round_alpha2)[3] <- "mean_scaled_round"
+
+# Sum, Scale and matrounded data 
+sum_scale_matround_alpha2 <- sum_scaled_matround_prod_stats %>%
+  select(Test, mean)
+colnames(sum_scale_matround_alpha2)[3] <- "sum_scaled_matround"
 
 
-```{r sum-scale-matround Alpha diversity}
+#Combine the data sets 
+joined_alpha<- 
+  left_join(raw_alpha2, scale_floor_alpha2, by = c("prod_lim", "Test")) %>%
+  left_join(scale_round_alpha2, by = c("prod_lim", "Test")) %>%
+  left_join(sum_scale_matround_alpha2, by = c("prod_lim", "Test")) 
+
+# Arrange the data to be sorted by Test
+joined_alpha2 <- as.data.frame(joined_alpha) 
+compare_alphas <- arrange(joined_alpha2, Test)
+
+###  Time to make the pander output of our table!  
+panderOptions("digits", 3) # This will set the values to numbers and then will round to the whole number
+set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
+pander(compare_alphas, caption="Table B:  Comparison of Alpha Diversity Measurements.")
+```
+
+
+
+
+```{r summed alpha diversity}
+# For alpha diversity we will RAREFY our phyloseq object.
+#  We will use the mean AND floored data.  
+#sum_reps  # Raw Merged Samples, we have 14,378 OTUs  
+#sum_reps_nowin <- subset_samples(sum_reps, names != "WINH" & names != "WINH3um")
+#sum_reps_nowin <- prune_taxa(taxa_sums(sum_reps_nowin) > 0, sum_reps_nowin)
+# Now, we have 14,184 OTUs !
+
+#Data Import for rarefied data 
+#sum_reps_nowin  
+#sum_reps_nowin_min_minus1 <- min(sample_sums(sum_reps_nowin)) - 1
+
+# Following code from Michelle's Butterflygut website: http://rstudio-pubs-static.s3.amazonaws.com/25722_9fc9bdc48f0d4f13b05fa61baeda57a0.html#alpha-diversity
+# Rarefy to 14936 reads with replacement 100 times to estimate species richness
+# Since we are rarefying to 14936 reads we need to remove samples with less than 14936 reads
+#raredata14936 <- prune_samples(sample_sums(sum_reps_nowin) > sum_reps_nowin_min_minus1, sum_reps_nowin)
+
+# Initialize matrices to store richness and evenness estimates
+#richness <- matrix(nrow = 41,ncol = 100)  # Store richness:  We have 41 samples 
+#row.names(richness) <- sample_names(raredata14936)
+#evenness <- matrix(nrow = 41,ncol = 100)  #Store evenness
+#row.names(evenness) <- sample_names(raredata14936)
+
+# We want to be reproducible - so let's set the seed.
+#set.seed(15879966) # Same seed as in the first chunk
+
+# For 100 replications, rarefy the OTU table to 14854 reads and store the richness and evennes estimates in our 2 matrices we just created.
+#The default for the rarefy_even_depth command is to pick with replacement so I set it to false. Picking without replacement is more computationally intensive 
+#for (i in 1:100) {
+#  r <- rarefy_even_depth(raredata14936, sample.size = sum_reps_nowin_min_minus1, verbose = FALSE, replace = FALSE)
+#  rich <- as.numeric(as.matrix(estimate_richness(r, measures="Observed")))
+#  richness[,i] <- rich
+#  even <- as.numeric(as.matrix(estimate_richness(r, measures="InvSimpson")))
+#  evenness[,i] <- even
+#}
+
+#write.table(richness, "~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100_summed", row.names = TRUE)
+#write.table(evenness, "~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100_summed", row.names = TRUE)
+
+
+richness_summed <- read.table("~/Final_PAFL_Trophicstate/alpha_data/ObservedRichness100_summed", header = TRUE)
+evenness_summed <- read.table("~/Final_PAFL_Trophicstate/alpha_data/InvSimpson100_summed", header = TRUE)
+
+# Create a new matrix to hold the means and standard deviations of all the richness_summed estimates
+rich_stats_summed <- matrix(nrow= nrow(richness_summed), ncol=1)
+rich_stats_summed[,1] <- apply(richness_summed, 1, mean)
+#rich_stats_summed[,2] = apply(richness_summed, 1, sd)
+rich_stats_summed = data.frame(row.names(richness_summed), rich_stats_summed)
+colnames(rich_stats_summed) <- c("samples","mean_value")
+rich_stats_summed$Test <- "Observed Richness"
+
+# Create a new matrix to hold the means and standard deviations of the evenness_summed estimates
+even_stats_summed <- matrix(nrow = nrow(evenness_summed), ncol = 1)
+even_stats_summed[,1] <- apply(evenness_summed, 1, mean)
+#even_stats[,2] = apply(evenness_summed, 1, sd)
+even_stats_summed <- data.frame(row.names(evenness_summed), even_stats_summed)
+colnames(even_stats_summed) <- c("samples","mean_value")
+even_stats_summed$Test <- "Inverse Simpson"
+
+
+###  Add SIMPSON'S EVENNESS!
+simps_even_summed <- data.frame(matrix(nrow = nrow(evenness_summed), ncol = 3))
+colnames(simps_even_summed) = c("samples","mean_value", "Test")
+simps_even_summed$samples <- even_stats_summed$samples
+simps_even_summed$mean_value <-  even_stats_summed$mean_value/rich_stats_summed$mean_value
+simps_even_summed$Test <- "Simpson's Evenness"
+
+
+#Combine the rich.stats and the even.stats dataframes
+alpha_stats_summed <- rbind(rich_stats_summed, even_stats_summed, simps_even_summed)
+alpha_stats_summed$names <- alpha_stats_summed$samples
+alpha_stats_summed <- makeCategories_dups(alpha_stats_summed)
+alpha_stats_summed$ProdLevel <- as.character(alpha_stats_summed$trophicstate)
+alpha_stats_summed$ProdLevel[alpha_stats_summed$trophicstate == "Eutrophic"] <- "Productive"
+alpha_stats_summed$ProdLevel[alpha_stats_summed$trophicstate == "Mesotrophic"] <- "Productive"
+alpha_stats_summed$ProdLevel[alpha_stats_summed$trophicstate == "Oligotrophic"] <- "Unproductive"
+alpha_stats_summed$ProdLevel[alpha_stats_summed$lakenames == "Sherman"] <- "Mixed"
+alpha_stats_summed$trophicstate[alpha_stats_summed$lakenames == "Sherman"] <- "Mixed"
+
+
+####  Add all information together!
+for(i in 1:length(alpha_stats_summed$limnion)){
+  alpha_stats_summed$prod_lim[i]<-paste(as.character(alpha_stats_summed$ProdLevel[i]),
+                                  as.character(alpha_stats_summed$limnion[i]),
+                                  as.character(alpha_stats_summed$filter[i]))}
+
+
+summed_stats <- alpha_stats_summed %>%
+  group_by(prod_lim, Test) %>%
+  summarize(mean = mean(mean_value), 
+            SE = se(mean_value), 
+            SD = sd(mean_value), 
+            median = median(mean_value))
+
+final_summed_alpha_stats <- left_join(alpha_stats_summed, summed_stats, by = c("prod_lim", "Test"))
+
+final_summed_alpha_stats$ProdLevel <-factor(final_summed_alpha_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
+final_summed_alpha_stats$prod_lim <-factor(final_summed_alpha_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+final_summed_alpha_stats_plot <- ggplot(final_summed_alpha_stats, aes(x = prod_lim, y = mean_value, color = prod_lim)) + geom_point(size = 5, alpha = 0.7) +
+  ggtitle("Alpha Diversity: Summed and Rarefied at 14,936 Sequences") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  #scale_y_continuous(breaks = seq(0,1500, 250)) + 
+  geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
+  layer(data = final_summed_alpha_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 10, color = "black") + 
+  layer(data = final_summed_alpha_stats, mapping = aes(x = prod_lim, y = mean), geom = "point", pch = 126, size = 10, color = "red") + 
+  facet_grid(Test ~ ProdLevel, scales="free", space="free_x") +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none")
+
+
+
+### Let's check it out!
+sum_reps_nowin <- subset_samples(sum_reps, names != "WINH" & names != "WINH3um")
+sum_reps_nowin <- prune_taxa(taxa_sums(sum_reps_nowin) > 0, sum_reps_nowin)
+nowin_sum_reps <- data.frame(sample_data(sum_reps_nowin))
+nowin_sum_reps <- select(nowin_sum_reps, names, TotalSeqs_Summed) 
+nowin_sum_reps$names <- as.factor(nowin_sum_reps$names)
+
+sum_reps_alpha_stats <- final_summed_alpha_stats %>%
+  filter(Test == "Observed Richness") %>%
+  select(names, prod_lim, Test, mean_value, lakenames, filter, quadrant, trophicstate, ProdLevel) %>%
+  arrange(names)
+
+sum_reps_alpha_test <- left_join(nowin_sum_reps, sum_reps_alpha_stats, by = "names")
+
+#SOURCE: http://goo.gl/K4yh  and http://stackoverflow.com/posts/7549819/revisions
+lm_eqn <- function(df, Y_column, X_column){
+    m <- lm(Y_column ~ X_column, df);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2*","~~italic(p)~"="~pval, 
+         list(a = format(coef(m)[1], digits = 2), 
+              b = format(coef(m)[2], digits = 2), 
+             r2 = format(summary(m)$r.squared, digits = 3),
+             pval = format(anova(m)$'Pr(>F)'[1], digits = 2)))
+    as.character(as.expression(eq));                 
+}
+
+
+
+ggplot(sum_reps_alpha_test, aes(x = TotalSeqs_Summed, y = mean_value)) + geom_point(size = 5, alpha = 1) + 
+  ggtitle("Total Summed Sequences vs Observed Richness") + theme_bw() +   xlab("Total Summed Sequences") + ylab("Observed Richness") + theme(legend.position = "none") +
+  geom_smooth(method = "lm") + geom_text(aes(x = 25000, y = 1200, label = lm_eqn(sum_reps_alpha_test, Y_column = mean_value, X_column = TotalSeqs_Summed)), parse = TRUE)
+
+```
+
+```{r sum-scale-matround Alpha diversity, fig.width = 12, fig.height = 15}
 ### Using the SUM and then SCALED  and MATrounded data
 ## remove the 2 wintergreen "hypolimnion" samples
 nowin_sum_scale_matround <- subset_samples(sum_scale_matround, names != "WINH" & names != "WINH3um")
@@ -847,50 +1056,78 @@ sum_scaled_matround_prod_alpha_plot <- ggplot(final_sum_scaled_matround_prod_sta
         strip.background = element_blank(),
         legend.position="none")
 
+
+nowin_sum_scaled_data <- data.frame(sample_data(nowin_sum_scale_matround))
+nowin_sum_scaled_data_final <- select(nowin_sum_scaled_data, names, TotalSeqs_Summed, TotalSeqs_Scaled) 
+nowin_sum_scaled_data_final$names <- as.character(nowin_sum_scaled_data_final$names)
+
+matround_stats_obsrich <- final_sum_scaled_matround_prod_stats %>%
+  filter(Test == "Observed Richness") %>%
+  select(names, prod_lim, Test, Value, lakenames, filter, quadrant, trophicstate, ProdLevel) %>%
+  arrange(names)
+
+alpha_test <- left_join(nowin_sum_scaled_data_final, matround_stats_obsrich, by = "names")
+
+
+
+obsrich_vs_summedseqs_plot <- ggplot(alpha_test, aes(x = TotalSeqs_Summed, y = Value)) + geom_point(size = 5, alpha = 1) + 
+  ggtitle("Total Summed Sequences vs Observed Richness") + theme_bw() +   xlab("Total Summed Sequences") + ylab("Observed Richness") + 
+  scale_y_continuous(breaks = seq(0,1500, 250)) + 
+  geom_smooth(method = "lm") + geom_text(aes(x = 25000, y = 1200, label = lm_eqn(alpha_test, Y_column = Value, X_column = TotalSeqs_Summed)), parse = TRUE) + 
+  geom_point(aes(x = TotalSeqs_Summed, y = Value, color = prod_lim), size = 5, alpha = 1) + scale_color_brewer(palette="Paired") 
+  
+
+obsrich_vs_scaledseqs_plot <- ggplot(alpha_test, aes(x = TotalSeqs_Scaled, y = Value)) + geom_point(size = 5, alpha = 1) + 
+  ggtitle("Total Scaled Sequences vs Observed Richness") + theme_bw() +   xlab("Total Scaled Sequences") + ylab("Observed Richness") + 
+  scale_y_continuous(breaks = seq(0,1500, 250)) + 
+  geom_smooth(method = "lm") + geom_text(aes(x = 14750, y = 1200, label = lm_eqn(alpha_test, Y_column = Value, X_column = TotalSeqs_Scaled)), parse = TRUE) + 
+  geom_point(aes(x = TotalSeqs_Scaled, y = Value, color = prod_lim), size = 5, alpha = 1) + scale_color_brewer(palette="Paired") 
+
+
+multiplot(obsrich_vs_summedseqs_plot, obsrich_vs_scaledseqs_plot, cols = 1)
+
+# Store ggplot graphical parameters
+#g1 = ggplotGrob(obsrich_vs_summedseqs_plot)
+#g2 = ggplotGrob(obsrich_vs_scaledseqs_plot)
+
+# Add columns to plots without legends
+#ncol(g1); ncol(g2)
+#g1 <- gtable_add_cols(g1, g2$widths[6])
+
+# Draw everything
+#grid.draw(rbind(g1, g2, size = "last"))
+
 ```
 
-
-
-```{r comparing alpha diversity methods, fig.width = 28, fig.height = 20}
-multiplot(prod_alpha_plot, scaled_round_prod_alpha_plot, scaled_floor_prod_alpha_plot, sum_scaled_matround_prod_alpha_plot, cols =2)
+```{r comparing summed alphas, fig.width = 28, fig.height = 18}
+multiplot(final_summed_alpha_stats_plot, sum_scaled_matround_prod_alpha_plot, cols = 2)
 
 # Create a data frame to visually compare all the values 
 # Rarefied data 
-raw_alpha2 <- prod_stats %>%
-  select(Test, mean)
-colnames(raw_alpha2)[3] <- "mean_rarefied"
-
-# Scaled and Floored data 
-scale_floor_alpha2 <- scaled_floor_prod_stats %>%
-  select(Test, mean)
-colnames(scale_floor_alpha2)[3] <- "mean_scaled_floor"
-
-# Scaled and rounded data 
-scale_round_alpha2 <- scaled_round_prod_stats %>%
-  select(Test, mean)
-colnames(scale_round_alpha2)[3] <- "mean_scaled_round"
+summed_alph <- summed_stats %>%
+  select(Test, mean, prod_lim)
+colnames(summed_alph)[2] <- "mean_rarefied"
 
 # Sum, Scale and matrounded data 
-sum_scale_matround_alpha2 <- sum_scaled_matround_prod_stats %>%
-  select(Test, mean)
-colnames(sum_scale_matround_alpha2)[3] <- "sum_scaled_matround"
+summed_scaled_alph <- sum_scaled_matround_prod_stats %>%
+  select(Test, mean, prod_lim)
+colnames(summed_scaled_alph)[2] <- "mean_summed_scaled"
 
 
 #Combine the data sets 
-joined_alpha<- 
-  left_join(raw_alpha2, scale_floor_alpha2, by = c("prod_lim", "Test")) %>%
-  left_join(scale_round_alpha2, by = c("prod_lim", "Test")) %>%
-  left_join(sum_scale_matround_alpha2, by = c("prod_lim", "Test")) 
+joined_summed_alpha <- left_join(summed_scaled_alph, summed_alph, by = c("prod_lim", "Test")) 
 
 # Arrange the data to be sorted by Test
-joined_alpha2 <- as.data.frame(joined_alpha) 
-compare_alphas <- arrange(joined_alpha2, Test)
+joined_summed_alpha2 <- as.data.frame(joined_summed_alpha) 
+compare_summed_alphas <- arrange(joined_summed_alpha2, Test)
 
 ###  Time to make the pander output of our table!  
 panderOptions("digits", 3) # This will set the values to numbers and then will round to the whole number
 set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
-pander(compare_alphas, caption="Table B:  Comparison of Alpha Diversity Measurements.")
+pander(compare_summed_alphas, caption="Table B:  Comparison of Summed & Scaled Alpha Diversity Measurements.")
 ```
+
+
 
 
 # Figure 2

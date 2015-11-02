@@ -294,8 +294,6 @@ merge_samples_mean <- function(physeq, group, round = "none"){
   x <- as.matrix(otu_table(merged))
   if(taxa_are_rows(merged)){ x<-t(x) }
   
-  print(round)
-  
   # Pick the rounding function
   if (round == "none"){
     out <- t(x/group_sums)
