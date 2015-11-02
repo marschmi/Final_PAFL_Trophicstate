@@ -244,12 +244,21 @@ plot_phylum_deSEQ <- function(deSEQdata, title){
 #################################################################################### 8
 #################################################################################### 8
 ## This function was written by Michelle Berry and will scale the reads to the minimum number of sample reads in the dataset
-scale_reads <- function(physeq,n){  #n is the size you want to scale to. Usually, do min(sample_sums(physeq))
-  physeq.scale <- transform_sample_counts(physeq, function(x) {(n*x/sum(x))})
-  otu_table(physeq.scale) = floor(otu_table(physeq.scale))
-  physeq.scale = prune_taxa(taxa_sums(physeq.scale)>0,physeq.scale)
-  return(physeq.scale)
-}
+#scale_reads_floor <- function(physeq,n){  #n is the size you want to scale to. Usually, do min(sample_sums(physeq))
+#  physeq.scale <- transform_sample_counts(physeq, function(x) {(n*x/sum(x))})
+#  otu_table(physeq.scale) = floor(otu_table(physeq.scale))
+#  physeq.scale = prune_taxa(taxa_sums(physeq.scale)>0,physeq.scale)
+#  return(physeq.scale)
+#}
+
+
+
+#scale_reads_round <- function(physeq,n){  #n is the size you want to scale to. Usually, do min(sample_sums(physeq))
+#  physeq.scale <- transform_sample_counts(physeq, function(x) {(n*x/sum(x))})
+#  otu_table(physeq.scale) = round(otu_table(physeq.scale))
+#  physeq.scale = prune_taxa(taxa_sums(physeq.scale)>0,physeq.scale)
+#  return(physeq.scale)
+#}
 #################################################################################### 8
 #################################################################################### 8
 
@@ -266,34 +275,14 @@ nacols <- function(df) {
 #################################################################################### 9
 
 
-#################################################################################### 10
-#################################################################################### 10
-# This function was written by Michelle Berry and can be found at https://github.com/joey711/phyloseq/issues/465
-merge_samples_mean <- function(physeq, group){
-  # Calculate the number of samples in each group
-  group_sums <- as.matrix(table(sample_data(physeq)[ ,group]))[,1]
-  
-  # Merge samples by summing
-  merged <- merge_samples(physeq, group)
-  
-  # Divide summed OTU counts by number of samples in each group to get mean
-  # Calculation is done while taxa are columns, but then transposed at the end
-  x <- as.matrix(otu_table(merged))
-  if(taxa_are_rows(merged)){ x<-t(x) }
-  out <- t(x/group_sums) 
-  
-  # Return new phyloseq object with taxa as rows
-  out <- otu_table(out, taxa_are_rows = TRUE)
-  otu_table(merged) <- out
-  return(merged)
-}
-#################################################################################### 10
-#################################################################################### 10
+# This function was written by Michelle Berry 
+# Better rounding function than R's base round
+matround <- function(x){trunc(x+0.5)}
 
-#################################################################################### 11
-#################################################################################### 11
-# This function was written by Michelle Berry and can be found at https://github.com/joey711/phyloseq/issues/465
-merge_samples_mean_floor <- function(physeq, group){
+#################################################################################### 10
+#################################################################################### 10
+# This function was written by Michelle Berry and edited by Marian Schmidt and can be found at https://github.com/joey711/phyloseq/issues/465
+merge_samples_mean <- function(physeq, group, round = "none"){
   # Calculate the number of samples in each group
   group_sums <- as.matrix(table(sample_data(physeq)[ ,group]))[,1]
   
@@ -304,7 +293,19 @@ merge_samples_mean_floor <- function(physeq, group){
   # Calculation is done while taxa are columns, but then transposed at the end
   x <- as.matrix(otu_table(merged))
   if(taxa_are_rows(merged)){ x<-t(x) }
-  out <- t(floor(x/group_sums)) # Added floo to this function
+  
+  print(round)
+  
+  # Pick the rounding function
+  if (round == "none"){
+    out <- t(x/group_sums)
+  } else if (round == "round"){
+    out <- t(round(x/group_sums))
+  } else if (round == "matround"){
+    out <- t(matround(x/group_sums))
+  } else if (round == "floor"){
+    out <- t(floor(x/group_sums))
+  }
   
   # Return new phyloseq object with taxa as rows
   out <- otu_table(out, taxa_are_rows = TRUE)
@@ -313,3 +314,35 @@ merge_samples_mean_floor <- function(physeq, group){
 }
 #################################################################################### 11
 #################################################################################### 11
+
+
+# Scales reads by 
+# 1) taking proportions
+# 2) multiplying by a given library size of n
+# 3) rounding 
+# Default for n is the minimum sample size in your library
+# Default for round is floor
+scale_reads <- function(physeq, n = min(sample_sums(physeq)), round = "floor") {
+  
+  # transform counts to n
+  physeq.scale <- transform_sample_counts(physeq, 
+                                          function(x) {(n * x/sum(x))}
+  )
+  
+  # Pick the rounding functions
+  if (round == "floor"){
+    otu_table(physeq.scale) <- floor(otu_table(physeq.scale))
+  } else if (round == "round"){
+    otu_table(physeq.scale) <- round(otu_table(physeq.scale))
+  } else if (round == "matround"){
+    otu_table(physeq.scale) <- matround(otu_table(physeq.scale))
+  }
+  
+  # Prune taxa and return new phyloseq object
+  physeq.scale <- prune_taxa(taxa_sums(physeq.scale) > 0, physeq.scale)
+  return(physeq.scale)
+}
+
+
+
+

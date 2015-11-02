@@ -19,11 +19,13 @@ necessary_packages <-  c("phyloseq", "ggplot2", "ape", "vegan", "plyr", "scales"
 # Install the packages that we need
 #lapply(necessary_packages, install.packages, character.only = TRUE)
 # Now load the packages into our session
-lapply(necessary_packages, library, character.only = TRUE)
+
+
+packages <- lapply(necessary_packages, library, character.only = TRUE)
 
 # Make sure to have most updated version of phyloseq
-#source("https://bioconductor.org/biocLite.R")
-#biocLite("phyloseq")
+source("https://bioconductor.org/biocLite.R")
+biocLite("phyloseq")
 
 ### Set the Working Directory  
 ###  Within the "Final_PAFL_Trophicstate" directory there should be the following 2 sub-directories:
@@ -102,7 +104,7 @@ merge <- merge_phyloseq(mothurdata,map)
 pruned <- prune_taxa(taxa_sums(merge) > 0, merge)
 bact_samples <-subset_taxa(pruned, Kingdom == "Bacteria")
 #nrow(otu_table(pruned)) - nrow(otu_table(bact_samples))  ## Check how many rows were not bacteria
-bact_samples2 <-subset_taxa(bact_samples, Class != "Chloroplast")
+bact_samples <-subset_taxa(bact_samples, Class != "Chloroplast")
 #nrow(otu_table(bact_samples)) - nrow(otu_table(bact_samples2))  # Check how many rows were chloroplasts
 
 #Summary of object
@@ -112,16 +114,16 @@ bact_samples2 <-subset_taxa(bact_samples, Class != "Chloroplast")
 # Histogram of RAW sample read counts
 raw_plot <- ggplot(data.frame(sum=sample_sums(bact_samples)),aes(sum)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="dodgerblue2", binwidth = 750)  + xlab("Total Sequences") +
-   ggtitle(expression(atop(bold("Raw Samples"), atop("Binwidth = 750 Sequences", ""))))
+   ggtitle(expression(atop(bold("Raw Samples"), atop("Binwidth = 750 Sequences", "")))); raw_plot
 ```
 
 
-
+## Influence of Meaning between Replicate Samples 
 
 ```{r Mean Samples}
 ################################################################
 ### Take the average for samples that have a replicate
-noscale_merge <- merge_samples_mean(bact_samples, group = "dups")  # Here we calculate the mean between samples and then floor to the lower value if it is 0.5
+noscale_merge <- merge_samples_mean(bact_samples, group = "dups", round = "none")  # Here we simply take the Mean between replicate samples 
 noscale_merge <- prune_taxa(taxa_sums(noscale_merge) > 0, noscale_merge)
 
 #######  The above functions mess up the metadata - let's fix it!
@@ -140,12 +142,31 @@ mean_plot <- ggplot(data.frame(sum=sample_sums(noscale_merge)),aes(sum)) + ylab(
   ggtitle(expression(atop(bold("Mean Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
 ```
 
+```{r Mean and Rounded Samples}
+### Take the average for samples that have a replicate
+round_mean_merge <- merge_samples_mean(bact_samples, group = "dups", round = "round")  # Here we calculate the "r" mean between the replicate samples 
+round_mean_merge <- prune_taxa(taxa_sums(round_mean_merge) > 0, round_mean_merge)
 
+#######  The above functions mess up the metadata - let's fix it!
+data_dup_round <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_round) <- data_dup_round$names
+data_dup_round$quadrant <- factor(data_dup_round$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+data_dup_round <- sample_data(data_dup_round)  # Metadata in our phyloseq object
+scale_otu <- otu_table(round_mean_merge)  # OTU table in our phyloseq object
+scale_tax <- tax_table(round_mean_merge)  # Taxonomy Table in our phyloseq object
+round_mean_merge <- merge_phyloseq(scale_otu, scale_tax, data_dup_round) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
 
-```{r Mean and Floored Samples}
+##  Sample read counts with merging samples WITHOUT SCALING!!!! 
+# Histogram of RAW sample read counts
+mean_round_plot <- ggplot(data.frame(sum=sample_sums(round_mean_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="tomato", binwidth = 500)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Mean and 'R' rounded Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
+```
+
+```{r Mean and Floored Samples, fig.width = 15, fig.height = 6}
 ################################################################
 ### Take the average for samples that have a replicate
-floor_mean_merge <- merge_samples_mean_floor(bact_samples, group = "dups")  # Here we calculate the mean between samples and then floor to the lower value if it is 0.5
+floor_mean_merge <- merge_samples_mean(bact_samples, group = "dups", round = "floor")  # Calculate the mean and floor the values
 floor_mean_merge <- prune_taxa(taxa_sums(floor_mean_merge) > 0, floor_mean_merge)
 
 #######  The above functions mess up the metadata - let's fix it!
@@ -157,8 +178,7 @@ scale_otu <- otu_table(floor_mean_merge)  # OTU table in our phyloseq object
 scale_tax <- tax_table(floor_mean_merge)  # Taxonomy Table in our phyloseq object
 floor_mean_merge <- merge_phyloseq(scale_otu, scale_tax, data_dup_floor) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
 
-##  Sample read counts with merging samples WITHOUT SCALING!!!! 
-# Histogram of RAW sample read counts
+# Histogram of sample read counts
 mean_floor_plot <- ggplot(data.frame(sum=sample_sums(floor_mean_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="darkorange", binwidth = 500)  + xlab("Total Sequences") + 
   ggtitle(expression(atop(bold("Mean and Floored Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
@@ -166,52 +186,182 @@ mean_floor_plot <- ggplot(data.frame(sum=sample_sums(floor_mean_merge)),aes(sum)
 
 
 
-## Influence of Merging Samples and Scaling the Reads 
-```{r scale reads, fig.height = 10, fig.width = 12}
-### Now let's scale our read counts from our MERGED RAW data
-scaled_merged <- scale_reads(physeq = raw_merged, n = min(sample_sums(raw_merged)))
+```{r Mean and True Rounding of Samples, fig.height = 12, fig.width = 12}
+################################################################
+### Take the average for samples that have a replicate
+matround_mean_merge <- merge_samples_mean(bact_samples, group = "dups", round = "matround")  # Calculate the "true mean"
+matround_mean_merge <- prune_taxa(taxa_sums(matround_mean_merge) > 0, matround_mean_merge)
 
-##  Sample read counts with merging samples WITH SCALING!!!! 
+#######  The above functions mess up the metadata - let's fix it!
+data_dup_matround <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_matround) <- data_dup_matround$names
+data_dup_matround$quadrant <- factor(data_dup_matround$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+data_dup_matround <- sample_data(data_dup_matround)  # Metadata in our phyloseq object
+scale_otu <- otu_table(matround_mean_merge)  # OTU table in our phyloseq object
+scale_tax <- tax_table(matround_mean_merge)  # Taxonomy Table in our phyloseq object
+matround_mean_merge <- merge_phyloseq(scale_otu, scale_tax, data_dup_matround) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+
 # Histogram of RAW sample read counts
-#jpeg(filename="raw_merged_scaled.jpeg", width= 20, height=15, units= "cm", pointsize= 14, res=500)
-mean_scaled_plot <- ggplot(data.frame(sum=sample_sums(scaled_merged)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="purple", binwidth = 20)  + xlab("Total Sequences") + 
-  #scale_x_continuous(seq(14600, 15200, by =100), labels = seq(14600, 15100, by =100)) +
-  ggtitle(expression(atop(bold("Mean Samples with Scaling the Reads"), atop("Binwidth = 20"), ""))) 
-#dev.off()
+mean_matround_plot <- ggplot(data.frame(sum=sample_sums(matround_mean_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="orangered3", binwidth = 500)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Mean and 'True' Rounding Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
 
-multiplot(raw_plot, mean_plot, mean_floor_plot, mean_scaled_plot, cols = 2)
+multiplot(mean_plot, mean_round_plot, mean_floor_plot, mean_matround_plot, cols = 2)
 ```
 
 
-```{r Sequencing Depth Table, results = 'asis'}
-manipulations <- c("Raw Samples", "Mean Samples Without Scaling", "Mean and Floored Samples Without Scaling", "Mean Samples With Scaling")
-mins <- c(min(sample_sums(bact_samples)), min(sample_sums(raw_merged)), min(sample_sums(floor_mean_merge)), min(sample_sums(scaled_merged)))
-means <- c(round(mean(sample_sums(bact_samples)), digits = 2), round(mean(sample_sums(raw_merged)), digits = 2), round(mean(sample_sums(floor_mean_merge)), digits = 2), round(mean(sample_sums(scaled_merged)), digits = 2))
-medians <- c(median(sample_sums(bact_samples)), median(sample_sums(raw_merged)), median(sample_sums(floor_mean_merge)), median(sample_sums(scaled_merged)))
-maxs <- c(max(sample_sums(bact_samples)), max(sample_sums(raw_merged)), max(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged)))
-ranges <- c(max(sample_sums(bact_samples)) - min(sample_sums(bact_samples)), max(sample_sums(raw_merged)) - min(sample_sums(raw_merged)), max(sample_sums(floor_mean_merge)) - min(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged)) - min(sample_sums(scaled_merged)))
-# Make the data frame 
-seq_depth <- data.frame(matrix(ncol = 0, nrow = 4))
-row.names(seq_depth) <- manipulations
-seq_depth$Minimum <- mins
-seq_depth$Means <- means
-seq_depth$Medians <- medians
-seq_depth$Maximum <- maxs
-seq_depth$Range <- ranges
 
+## Influence of Merging Samples and Scaling the Reads 
+```{r scale reads by rounding and flooring}
+### Now let's scale our read counts from our MERGED RAW data
+scaled_merged_round <- scale_reads(physeq = raw_merged, n = min(sample_sums(raw_merged)), round = "round")
+
+# Histogram of sample read counts
+mean_scaled_round_plot <- ggplot(data.frame(sum=sample_sums(scaled_merged_round)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="plum2", binwidth = 20)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Mean Samples with Scaling (and 'r' rounding) the Reads"), atop("Binwidth = 20"), ""))) 
+
+# Scaled with a "true" rounding function 
+scaled_merged_matround <- scale_reads(physeq = raw_merged, n = min(sample_sums(raw_merged)), round = "matround")
+# Histogram of sample read counts
+mean_scaled_matround_plot <- ggplot(data.frame(sum=sample_sums(scaled_merged_matround)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="plum4", binwidth = 20)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Mean Samples with Scaling (and 'true' rounding) the Reads"), atop("Binwidth = 20"), ""))) 
+
+
+## Now let's scale our read counts from our MERGED RAW data
+scaled_merged_floor <- scale_reads(physeq = raw_merged, n = min(sample_sums(raw_merged)), round = "floor")
+
+# Histogram of sample read counts 
+mean_scaled_floor_plot <- ggplot(data.frame(sum=sample_sums(scaled_merged_floor)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="purple", binwidth = 20)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Mean Samples with Scaling (and flooring) the Reads"), atop("Binwidth = 20"), ""))) 
+```
+
+
+
+```{r sum-scale }
+### Now let's 1. sum between replicates.  
+
+# Step 1.  Sum the reads 
+sum_reps <- merge_samples(x = bact_samples, group = "dups", fun = "sum") # Sum between replicate samples
+sum_reps <- prune_taxa(taxa_sums(sum_reps) > 0, sum_reps) # Remove any OTUs that are 0
+
+# The above function ruins the sample data :/  
+data_dup_sum_reps <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_sum_reps) <- data_dup_sum_reps$names
+data_dup_sum_reps$quadrant <- factor(data_dup_sum_reps$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+data_dup_sum_reps <- sample_data(data_dup_sum_reps)  # Metadata in our phyloseq object
+scale_otu <- otu_table(sum_reps)  # OTU table in our phyloseq object
+scale_tax <- tax_table(sum_reps)  # Taxonomy Table in our phyloseq object
+sum_reps <- merge_phyloseq(scale_otu, scale_tax, data_dup_sum_reps) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+
+# Step 3:  Scale the reads by flooring
+sum_scale_floor <- scale_reads(physeq = sum_reps, n = min(sample_sums(sum_reps)), round = "floor")
+
+##  Histogram of Sample Read Counts 
+sum_scale_floor_plot <- ggplot(data.frame(sum=sample_sums(sum_scale)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="plum2", binwidth = 20)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Sum & Scale (by flooring) the Reads"), atop("Binwidth = 20"), ""))) 
+
+# Step 3:  Scale the reads by rounding
+sum_scale_round <- scale_reads(physeq = sum_reps, n = min(sample_sums(sum_reps)), round = "round")
+
+##  Histogram of Sample Read Counts 
+sum_scale_round_plot <- ggplot(data.frame(sum=sample_sums(sum_scale_round)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="plum2", binwidth = 20)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Sum & Scale (by 'R' rounding) the Reads"), atop("Binwidth = 20"), ""))) 
+
+# Step 3:  Scale the reads 
+sum_scale_matround <- scale_reads(physeq = sum_reps, n = min(sample_sums(sum_reps)), round = "matround")
+
+
+data_dup_sum_scale_matround <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_sum_scale_matround) <- data_dup_sum_scale_matround$names
+data_dup_sum_scale_matround$quadrant <- factor(data_dup_sum_scale_matround$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+# Add a column of Total Sequence sums 
+TotalSeqs_sum_reps <- data.frame(rowSums(otu_table(sum_reps)))
+TotalSeqs_sum_reps$names <- as.factor(row.names(TotalSeqs_sum_reps))
+colnames(TotalSeqs_sum_reps)[1] <- "TotalSeqs_Summed"
+data_dup_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround, TotalSeqs_sum_reps, by = "names") 
+
+TotalSeqs_sum_scale_matround <- data.frame(rowSums(otu_table(sum_scale_matround)))
+TotalSeqs_sum_scale_matround$names <- as.factor(row.names(TotalSeqs_sum_scale_matround))
+colnames(TotalSeqs_sum_scale_matround)[1] <- "TotalSeqs_Scaled"
+data_dup_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround_join, TotalSeqs_sum_scale_matround, by = "names") 
+row.names(data_dup_sum_scale_matround_join) <- data_dup_sum_scale_matround_join$names
+
+data_dup_sum_scale_matround_join <- sample_data(data_dup_sum_scale_matround_join)  # Metadata in our phyloseq object
+sum_scale_matround_otu <- otu_table(sum_scale_matround)  # OTU table in our phyloseq object
+sum_scale_matround_tax <- tax_table(sum_scale_matround)  # Taxonomy Table in our phyloseq object
+sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, data_dup_sum_scale_matround_join) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+
+
+##  Histogram of Sample Read Counts 
+sum_scale_matround_plot <- ggplot(data.frame(sum=sample_sums(sum_scale_matround)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="plum2", binwidth = 20)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Sum & Scale (by 'True' rounding) the Reads"), atop("Binwidth = 20"), ""))) 
+```
+
+
+```{r Sequencing Depth Table, results = 'asis', fig.width = 15, fig.height = 6}
+manipulations <- c("Raw Samples", "Mean Samples Without Scaling", "Mean and 'R' Rounded Samples Without Scaling", "Mean and 'True' Rounded Samples Without Scaling", "Mean and Floored Samples Without Scaling", "Mean Samples with Scaling (and flooring) the Reads", "Mean Samples with Scaling ('R' rounding) the Reads", "Mean Samples with Scaling ('True' rounding) the Reads", "Sum & Scale (by flooring) the Reads", "Sum & Scale (by 'R' rounding) the Reads", "Sum & Scale (by 'True' rounding) the Reads")
+
+mins <- c(min(sample_sums(bact_samples2)), min(sample_sums(raw_merged)),  min(sample_sums(round_mean_merge)), min(sample_sums(matround_mean_merge)),min(sample_sums(floor_mean_merge)), min(sample_sums(scaled_merged_floor)), min(sample_sums(scaled_merged_round)), min(sample_sums(scaled_merged_matround)), min(sample_sums(sum_scale_floor)), min(sample_sums(sum_scale_round)), min(sample_sums(sum_scale_matround)))
+
+means <- c(round(mean(sample_sums(bact_samples2)), digits = 2), round(mean(sample_sums(raw_merged)), digits = 2), round(mean(sample_sums(round_mean_merge)), digits = 2),round(mean(sample_sums(matround_mean_merge)), digits = 2), round(mean(sample_sums(floor_mean_merge)), digits = 2), round(mean(sample_sums(scaled_merged_floor)), digits = 2), round(mean(sample_sums(scaled_merged_round)), digits = 2), round(mean(sample_sums(scaled_merged_matround)), digits = 2), round(mean(sample_sums(sum_scale_floor)), digits = 2), round(mean(sample_sums(sum_scale_round)), digits = 2), round(mean(sample_sums(sum_scale_matround)), digits = 2))
+
+medians <- c(median(sample_sums(bact_samples2)), median(sample_sums(raw_merged)), median(sample_sums(round_mean_merge)), median(sample_sums(matround_mean_merge)), median(sample_sums(floor_mean_merge)), median(sample_sums(scaled_merged_floor)),median(sample_sums(scaled_merged_round)), median(sample_sums(scaled_merged_matround)), median(sample_sums(sum_scale_floor)), median(sample_sums(sum_scale_round)), median(sample_sums(sum_scale_matround)))
+
+maxs <- c(max(sample_sums(bact_samples2)), max(sample_sums(raw_merged)), max(sample_sums(round_mean_merge)), max(sample_sums(matround_mean_merge)), max(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged_floor)), max(sample_sums(scaled_merged_round)), max(sample_sums(scaled_merged_matround)), max(sample_sums(sum_scale_floor)), max(sample_sums(sum_scale_round)), max(sample_sums(sum_scale_matround)))
+
+ranges <- c(max(sample_sums(bact_samples2)) - min(sample_sums(bact_samples2)), max(sample_sums(raw_merged)) - min(sample_sums(raw_merged)), max(sample_sums(round_mean_merge)) - min(sample_sums(round_mean_merge)), max(sample_sums(matround_mean_merge)) - min(sample_sums(matround_mean_merge)), max(sample_sums(floor_mean_merge)) - min(sample_sums(floor_mean_merge)), max(sample_sums(scaled_merged_floor)) - min(sample_sums(scaled_merged_floor)), max(sample_sums(scaled_merged_round)) - min(sample_sums(scaled_merged_round)), max(sample_sums(scaled_merged_matround)) - min(sample_sums(scaled_merged_matround)), max(sample_sums(sum_scale_floor)) - min(sample_sums(sum_scale_floor)), max(sample_sums(sum_scale_round)) - min(sample_sums(sum_scale_round)), max(sample_sums(sum_scale_matround)) - min(sample_sums(sum_scale_matround)))
+
+num_otus <- c(nrow(otu_table(bact_samples2)), nrow(otu_table(raw_merged)), nrow(otu_table(round_mean_merge)), nrow(otu_table(matround_mean_merge)), nrow(otu_table(floor_mean_merge)), nrow(otu_table(scaled_merged_floor)), nrow(otu_table(scaled_merged_round)), nrow(otu_table(scaled_merged_matround)),  ncol(otu_table(sum_scale_floor)), ncol(otu_table(sum_scale_round)), ncol(otu_table(sum_scale_matround)))
+
+# Make the data frame 
+seq_depth <- data.frame(matrix(ncol = 0, nrow = 11))
+row.names(seq_depth) <- manipulations
+seq_depth$Minimum_Seqs <- mins
+seq_depth$Mean_Seqs <- means
+seq_depth$Median_Seqs <- medians
+seq_depth$Maximum_Seqs <- maxs
+seq_depth$Range_Seqs <- ranges
+seq_depth$Number_of_OTUs <- num_otus
+```
+
+## Meaning between replicates without scaling
+```{r}
 ###  Time to make the pander output of our table!  
 panderOptions("digits", 1) # This will set the values to numbers and then will round to the whole number
 set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
-pander(seq_depth, caption="Table A:  Simple statistics on the sequencing depth while merging replicates.")
-#pandoc.table(seq_depth, style = "grid", caption = "Simple statistics on the sequencing depth while merging replicates.")
+pander(seq_depth[1:5,], caption="Table A:  Simple statistics on the sequencing depth while merging replicates WITHOUT scaling.")
+
+```
+
+## **Mean** between replicates and then scale the sample read counts
+```{r mean scale stats}
+multiplot(mean_scaled_floor_plot, mean_scaled_round_plot, mean_scaled_matround_plot,cols = 3)
+
+panderOptions("digits", 1) # This will set the values to numbers and then will round to the whole number
+set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
+pander(seq_depth[6:8,], caption="Table A:  Simple statistics on the sequencing depth while merging replicates WITH scaling.")
+```
+
+## **Sum** between replicates and then scale the sample read counts
+```{r sum-scaled stats}
+multiplot(sum_scale_floor_plot, sum_scale_round_plot, sum_scale_matround_plot,cols = 3)
+
+panderOptions("digits", 1) # This will set the values to numbers and then will round to the whole number
+set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
+pander(seq_depth[9:11,], caption="Table A:  Simple statistics on the sequencing depth while SUMMING replicates WITH scaling.")
 ```
 
 
 
 ```{r Create phyloseq object}
 ###  Time to create our phyloseq object with the merged and scaled sample reads.
-merged_final <- scaled_merged
+merged_final <- scaled_merged_round
 
 ########## ADD THE PROTEOBACTERIA TO THE PHYLA
 phy <- data.frame(tax_table(merged_final))
@@ -230,19 +380,25 @@ t <- tax_table(as.matrix(phy))
 tax_table(merged_final) <- t
 
 # Our phyloseq object!
-merged_final 
+#merged_final 
+
+## The same object without the 2 wintergreen "hypolimnion" samples
+nowin_final <- subset_samples(merged_final, names != "WINH" & names != "WINH3um")
+nowin_final <- prune_taxa(taxa_sums(nowin_final) > 0, nowin_final)
+
 ```
 
-
-```{r Figure 1}
+## Influence of Productivity and Trophic State on Alpha Diversity 
+```{r Alpha Diversity - rarefied, fig.height=10, fig.width=16}
 ####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
 ####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
 ####################################################  WITHIN-SAMPLE (ALPHA) DIVERSITY  ####################################################  Working up to Figure 1
 # For alpha diversity we will RAREFY our phyloseq object.
 #  We will use the mean AND floored data.  
-#floor_mean_merge  # Raw Merged Samples, we have 9,740 OTUs  
+#floor_mean_merge  # Raw Merged Samples, we have 9,854 OTUs  
 #raw_nowin <- subset_samples(floor_mean_merge, names != "WINH" & names != "WINH3um")
 #raw_nowin <- prune_taxa(taxa_sums(raw_nowin) > 0, raw_nowin)
+# Now, we have 9,740 OTUs !
 
 #Data Import for rarefied data 
 #raw_nowin  
@@ -332,11 +488,7 @@ stats <- alpha_stats %>%
 final_alpha_stats <- left_join(alpha_stats, stats, by = c("troph_lim", "Test"))
 
 
-final_alpha_stats$ProdLevel <-factor(final_alpha_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
 final_alpha_stats$trophicstate <-factor(final_alpha_stats$trophicstate,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
-#final_alpha_stats$troph_lim <-factor(final_alpha_stats$troph_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
-#                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
-#                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
 final_alpha_stats$troph_lim <-factor(final_alpha_stats$troph_lim,levels=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
                                                               "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
                                                               "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
@@ -344,8 +496,9 @@ final_alpha_stats$troph_lim <-factor(final_alpha_stats$troph_lim,levels=c("Eutro
 
 
 
-ggplot(final_alpha_stats, aes(x = troph_lim, y = mean_value, color = troph_lim)) + geom_jitter(size = 5, alpha = 0.7) +
-  ggtitle("Alpha Diversity") + theme_bw() +   xlab("Habitat") + ylab("") + 
+troph_alpha_plot <- ggplot(final_alpha_stats, aes(x = troph_lim, y = mean_value, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
+  ggtitle("Alpha Diversity: Rarefied at 14,854") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
   layer(data = final_alpha_stats, mapping = aes(x = troph_lim, y = median), geom = "point", pch = 95, size = 10, color = "black") + 
   layer(data = final_alpha_stats, mapping = aes(x = troph_lim, y = mean), geom = "point", pch = 126, size = 10, color = "red") + 
   facet_grid(Test ~ trophicstate, scales="free", space="free_x") +
@@ -377,24 +530,36 @@ ggplot(final_alpha_stats, aes(x = troph_lim, y = mean_value, color = troph_lim))
 
 
 
+#######  By productivity
 
-  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
-                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
-                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
-                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
-                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
-  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
-                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
-                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
-                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
-                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
-                            "Particle", "Free")) + 
+####  Add all information together!
+for(i in 1:length(alpha_stats$limnion)){
+  alpha_stats$prod_lim[i]<-paste(as.character(alpha_stats$ProdLevel[i]),
+                                  as.character(alpha_stats$limnion[i]),
+                                  as.character(alpha_stats$filter[i]))}
 
 
-ggplot(prodalpha_stats, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)) + geom_point(size = 5, alpha = 0.7) +
-  facet_grid(Test ~ trophicstate, scales="free", space="free_x") + 
-  geom_errorbar(aes(ymin=Meantroph_lim-SDtroph_lim, ymax=Meantroph_lim+SDtroph_lim), width=.2, position=position_dodge(.9)) +
-  ggtitle("Alpha Diversity: Standard Deviation") + theme_bw() +   xlab("Habitat") + ylab("") + 
+prod_stats <- alpha_stats %>%
+  group_by(prod_lim, Test) %>%
+  summarize(mean = mean(mean_value), 
+            SE = se(mean_value), 
+            SD = sd(mean_value), 
+            median = median(mean_value))
+
+final_prod_stats <- left_join(alpha_stats, prod_stats, by = c("prod_lim", "Test"))
+
+
+final_prod_stats$ProdLevel <-factor(final_prod_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
+final_prod_stats$prod_lim <-factor(final_prod_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+prod_alpha_plot <- ggplot(final_prod_stats, aes(x = prod_lim, y = mean_value, color = prod_lim)) + geom_point(size = 5, alpha = 0.7) +
+  ggtitle("Alpha Diversity:  Rarefied at 14,854") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
+  layer(data = final_prod_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 10, color = "black") + 
+  layer(data = final_prod_stats, mapping = aes(x = prod_lim, y = mean), geom = "point", pch = 126, size = 10, color = "red") + 
+  facet_grid(Test ~ ProdLevel, scales="free", space="free_x") +
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
                                          "Mixed Mixed Particle", "Mixed Mixed Free"), 
@@ -416,13 +581,423 @@ ggplot(prodalpha_stats, aes(x = troph_lim, y = Meantroph_lim, color = troph_lim)
         legend.title = element_text(size=14, face="bold"),
         legend.text = element_text(size = 14),
         strip.background = element_blank(),
-        legend.position="none"); facet_prod_stats
+        legend.position="none")
+
+
+
+
+multiplot(troph_alpha_plot, prod_alpha_plot, cols = 2)
+```
+
+## Influence of Rarefying and Scaling the Reads on Alpha Diversity
+```{r Alpha diversity - scaled}
+
+###  Using the floored data 
+##  First remove wintergreen "hypolimnion" samples 
+nowin_scaled_merged_floor <- subset_samples(scaled_merged_floor, names != "WINH" & names != "WINH3um")
+nowin_scaled_merged_floor <- prune_taxa(taxa_sums(nowin_scaled_merged_floor) > 0, nowin_scaled_merged_floor)
+
+# Get sample names and calculate Observed richness and Inverse Simpson
+names <- sample_names(nowin_scaled_merged_floor)
+scaled_floor_rich <- as.numeric(as.matrix(estimate_richness(nowin_scaled_merged_floor, measures="Observed")))
+scaled_floor_even <- as.numeric(as.matrix(estimate_richness(nowin_scaled_merged_floor, measures="InvSimpson")))
+scaled_floor_simpseven <- scaled_floor_even/scaled_floor_rich
+
+#Create new data frame
+scaled_floor_alpha <- data.frame(matrix(ncol = 0, nrow = length(names)))
+scaled_floor_alpha$names <- names
+scaled_floor_alpha$ObsRichness <- scaled_floor_rich
+scaled_floor_alpha$InvSimpson <- scaled_floor_even
+scaled_floor_alpha$Simps_Even <- scaled_floor_simpseven
+
+# Reshape the data
+scaled_floor_alpha <- gather(scaled_floor_alpha, "Test", "Value", 2:4)
+scaled_floor_alpha <- makeCategories_dups(scaled_floor_alpha)
+scaled_floor_alpha$ProdLevel <- as.character(scaled_floor_alpha$trophicstate)
+scaled_floor_alpha$ProdLevel[scaled_floor_alpha$trophicstate == "Eutrophic"] <- "Productive"
+scaled_floor_alpha$ProdLevel[scaled_floor_alpha$trophicstate == "Mesotrophic"] <- "Productive"
+scaled_floor_alpha$ProdLevel[scaled_floor_alpha$trophicstate == "Oligotrophic"] <- "Unproductive"
+scaled_floor_alpha$ProdLevel[scaled_floor_alpha$lakenames == "Sherman"] <- "Mixed"
+scaled_floor_alpha$trophicstate[scaled_floor_alpha$lakenames == "Sherman"] <- "Mixed"
+# Change test 
+scaled_floor_alpha$Test <- as.character(scaled_floor_alpha$Test)
+scaled_floor_alpha$Test[scaled_floor_alpha$Test == "ObsRichness"] <- "Observed Richness"
+scaled_floor_alpha$Test[scaled_floor_alpha$Test == "InvSimpson"] <- "Inverse Simpson"
+scaled_floor_alpha$Test[scaled_floor_alpha$Test == "Simps_Even"] <- "Simpson's Evenness"
+
+for(i in 1:length(scaled_floor_alpha$limnion)){
+  scaled_floor_alpha$prod_lim[i]<-paste(as.character(scaled_floor_alpha$ProdLevel[i]),
+                                  as.character(scaled_floor_alpha$limnion[i]),
+                                  as.character(scaled_floor_alpha$filter[i]))}
+
+# Calculate summary statistics 
+scaled_floor_prod_stats <- scaled_floor_alpha %>%
+  group_by(prod_lim, Test) %>%
+  summarize(mean = mean(Value), 
+            SE = se(Value), 
+            SD = sd(Value), 
+            median = median(Value))
+
+
+final_scaled_floor_prod_stats <- left_join(scaled_floor_alpha, scaled_floor_prod_stats, by = c("prod_lim", "Test"))
+
+final_scaled_floor_prod_stats$ProdLevel <-factor(final_scaled_floor_prod_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
+final_scaled_floor_prod_stats$prod_lim <-factor(final_scaled_floor_prod_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+scaled_floor_prod_alpha_plot <- ggplot(final_scaled_floor_prod_stats, aes(x = prod_lim, y = Value, color = prod_lim)) + geom_point(size = 5, alpha = 0.7) +
+  ggtitle("Alpha Diversity: Scaled and Floored") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
+  layer(data = final_scaled_floor_prod_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 10, color = "black") + 
+  layer(data = final_scaled_floor_prod_stats, mapping = aes(x = prod_lim, y = mean), geom = "point", pch = 126, size = 10, color = "red") + 
+  facet_grid(Test ~ ProdLevel, scales="free", space="free_x") +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none")
+
+
+### Using the rounded data
+# Get sample names and calculate Observed richness and Inverse Simpson
+names <- sample_names(nowin_final)
+scaled_round_rich <- as.numeric(as.matrix(estimate_richness(nowin_final, measures="Observed")))
+scaled_round_even <- as.numeric(as.matrix(estimate_richness(nowin_final, measures="InvSimpson")))
+scaled_round_simpseven <- scaled_round_even/scaled_round_rich
+
+#Create new data frame
+scaled_round_alpha <- data.frame(matrix(ncol = 0, nrow = length(names)))
+scaled_round_alpha$names <- names
+scaled_round_alpha$ObsRichness <- scaled_round_rich
+scaled_round_alpha$InvSimpson <- scaled_round_even
+scaled_round_alpha$Simps_Even <- scaled_round_simpseven
+
+# Reshape the data
+scaled_round_alpha <- gather(scaled_round_alpha, "Test", "Value", 2:4)
+scaled_round_alpha <- makeCategories_dups(scaled_round_alpha)
+scaled_round_alpha$ProdLevel <- as.character(scaled_round_alpha$trophicstate)
+scaled_round_alpha$ProdLevel[scaled_round_alpha$trophicstate == "Eutrophic"] <- "Productive"
+scaled_round_alpha$ProdLevel[scaled_round_alpha$trophicstate == "Mesotrophic"] <- "Productive"
+scaled_round_alpha$ProdLevel[scaled_round_alpha$trophicstate == "Oligotrophic"] <- "Unproductive"
+scaled_round_alpha$ProdLevel[scaled_round_alpha$lakenames == "Sherman"] <- "Mixed"
+scaled_round_alpha$trophicstate[scaled_round_alpha$lakenames == "Sherman"] <- "Mixed"
+# Change test 
+scaled_round_alpha$Test <- as.character(scaled_round_alpha$Test)
+scaled_round_alpha$Test[scaled_round_alpha$Test == "ObsRichness"] <- "Observed Richness"
+scaled_round_alpha$Test[scaled_round_alpha$Test == "InvSimpson"] <- "Inverse Simpson"
+scaled_round_alpha$Test[scaled_round_alpha$Test == "Simps_Even"] <- "Simpson's Evenness"
+
+for(i in 1:length(scaled_round_alpha$limnion)){
+  scaled_round_alpha$prod_lim[i]<-paste(as.character(scaled_round_alpha$ProdLevel[i]),
+                                  as.character(scaled_round_alpha$limnion[i]),
+                                  as.character(scaled_round_alpha$filter[i]))}
+
+# Calculate summary statistics 
+scaled_round_prod_stats <- scaled_round_alpha %>%
+  group_by(prod_lim, Test) %>%
+  summarize(mean = mean(Value), 
+            SE = se(Value), 
+            SD = sd(Value), 
+            median = median(Value))
+
+
+
+final_scaled_round_prod_stats <- left_join(scaled_round_alpha, scaled_round_prod_stats, by = c("prod_lim", "Test"))
+
+final_scaled_round_prod_stats$ProdLevel <-factor(final_scaled_round_prod_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
+final_scaled_round_prod_stats$prod_lim <-factor(final_scaled_round_prod_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+scaled_round_prod_alpha_plot <- ggplot(final_scaled_round_prod_stats, aes(x = prod_lim, y = Value, color = prod_lim)) + geom_point(size = 5, alpha = 0.7) +
+  ggtitle("Alpha Diversity: Scaled and Rounded") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  #scale_y_continuous(breaks = seq(0,1500, 250)) + 
+  geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
+  layer(data = final_scaled_round_prod_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 10, color = "black") + 
+  layer(data = final_scaled_round_prod_stats, mapping = aes(x = prod_lim, y = mean), geom = "point", pch = 126, size = 10, color = "red") + 
+  facet_grid(Test ~ ProdLevel, scales="free", space="free_x") +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none")
 
 ```
 
 
 
-```{r Figure S1, fig.width=7, fig.height = 10}
+
+```{r sum-scale-matround Alpha diversity}
+### Using the SUM and then SCALED  and MATrounded data
+## remove the 2 wintergreen "hypolimnion" samples
+nowin_sum_scale_matround <- subset_samples(sum_scale_matround, names != "WINH" & names != "WINH3um")
+nowin_sum_scale_matround <- prune_taxa(taxa_sums(nowin_sum_scale_matround) > 0, nowin_sum_scale_matround)
+
+names <- sample_names(nowin_sum_scale_matround)
+sum_scaled_matround_rich <- as.numeric(as.matrix(estimate_richness(nowin_sum_scale_matround, measures="Observed")))
+sum_scaled_matround_even <- as.numeric(as.matrix(estimate_richness(nowin_sum_scale_matround, measures="InvSimpson")))
+sum_scaled_matround_simpseven <- sum_scaled_matround_even/sum_scaled_matround_rich
+
+#Create new data frame
+sum_scaled_matround_alpha <- data.frame(matrix(ncol = 0, nrow = length(names)))
+sum_scaled_matround_alpha$names <- names
+sum_scaled_matround_alpha$ObsRichness <- sum_scaled_matround_rich
+sum_scaled_matround_alpha$InvSimpson <- sum_scaled_matround_even
+sum_scaled_matround_alpha$Simps_Even <- sum_scaled_matround_simpseven
+
+# Reshape the data
+sum_scaled_matround_alpha <- gather(sum_scaled_matround_alpha, "Test", "Value", 2:4)
+sum_scaled_matround_alpha <- makeCategories_dups(sum_scaled_matround_alpha)
+sum_scaled_matround_alpha$ProdLevel <- as.character(sum_scaled_matround_alpha$trophicstate)
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Eutrophic"] <- "Productive"
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Mesotrophic"] <- "Productive"
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Oligotrophic"] <- "Unproductive"
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$lakenames == "Sherman"] <- "Mixed"
+sum_scaled_matround_alpha$trophicstate[sum_scaled_matround_alpha$lakenames == "Sherman"] <- "Mixed"
+# Change test 
+sum_scaled_matround_alpha$Test <- as.character(sum_scaled_matround_alpha$Test)
+sum_scaled_matround_alpha$Test[sum_scaled_matround_alpha$Test == "ObsRichness"] <- "Observed Richness"
+sum_scaled_matround_alpha$Test[sum_scaled_matround_alpha$Test == "InvSimpson"] <- "Inverse Simpson"
+sum_scaled_matround_alpha$Test[sum_scaled_matround_alpha$Test == "Simps_Even"] <- "Simpson's Evenness"
+
+for(i in 1:length(sum_scaled_matround_alpha$limnion)){
+  sum_scaled_matround_alpha$prod_lim[i]<-paste(as.character(sum_scaled_matround_alpha$ProdLevel[i]),
+                                  as.character(sum_scaled_matround_alpha$limnion[i]),
+                                  as.character(sum_scaled_matround_alpha$filter[i]))}
+
+# Calculate summary statistics 
+sum_scaled_matround_prod_stats <- sum_scaled_matround_alpha %>%
+  group_by(prod_lim, Test) %>%
+  summarize(mean = mean(Value), 
+            SE = se(Value), 
+            SD = sd(Value), 
+            median = median(Value))
+
+
+
+final_sum_scaled_matround_prod_stats <- left_join(sum_scaled_matround_alpha, sum_scaled_matround_prod_stats, by = c("prod_lim", "Test"))
+
+final_sum_scaled_matround_prod_stats$ProdLevel <-factor(final_sum_scaled_matround_prod_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
+final_sum_scaled_matround_prod_stats$prod_lim <-factor(final_sum_scaled_matround_prod_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+sum_scaled_matround_prod_alpha_plot <- ggplot(final_sum_scaled_matround_prod_stats, aes(x = prod_lim, y = Value, color = prod_lim)) + geom_point(size = 5, alpha = 0.7) +
+  ggtitle("Alpha Diversity: Sum, Scaled and Rounded") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  #scale_y_continuous(breaks = seq(0,1500, 250)) + 
+  geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
+  layer(data = final_sum_scaled_matround_prod_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 10, color = "black") + 
+  layer(data = final_sum_scaled_matround_prod_stats, mapping = aes(x = prod_lim, y = mean), geom = "point", pch = 126, size = 10, color = "red") + 
+  facet_grid(Test ~ ProdLevel, scales="free", space="free_x") +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.text.y = element_text(size=14, face="bold"),
+        legend.title = element_text(size=14, face="bold"),
+        legend.text = element_text(size = 14),
+        strip.background = element_blank(),
+        legend.position="none")
+
+```
+
+
+
+```{r comparing alpha diversity methods, fig.width = 28, fig.height = 20}
+multiplot(prod_alpha_plot, scaled_round_prod_alpha_plot, scaled_floor_prod_alpha_plot, sum_scaled_matround_prod_alpha_plot, cols =2)
+
+# Create a data frame to visually compare all the values 
+# Rarefied data 
+raw_alpha2 <- prod_stats %>%
+  select(Test, mean)
+colnames(raw_alpha2)[3] <- "mean_rarefied"
+
+# Scaled and Floored data 
+scale_floor_alpha2 <- scaled_floor_prod_stats %>%
+  select(Test, mean)
+colnames(scale_floor_alpha2)[3] <- "mean_scaled_floor"
+
+# Scaled and rounded data 
+scale_round_alpha2 <- scaled_round_prod_stats %>%
+  select(Test, mean)
+colnames(scale_round_alpha2)[3] <- "mean_scaled_round"
+
+# Sum, Scale and matrounded data 
+sum_scale_matround_alpha2 <- sum_scaled_matround_prod_stats %>%
+  select(Test, mean)
+colnames(sum_scale_matround_alpha2)[3] <- "sum_scaled_matround"
+
+
+#Combine the data sets 
+joined_alpha<- 
+  left_join(raw_alpha2, scale_floor_alpha2, by = c("prod_lim", "Test")) %>%
+  left_join(scale_round_alpha2, by = c("prod_lim", "Test")) %>%
+  left_join(sum_scale_matround_alpha2, by = c("prod_lim", "Test")) 
+
+# Arrange the data to be sorted by Test
+joined_alpha2 <- as.data.frame(joined_alpha) 
+compare_alphas <- arrange(joined_alpha2, Test)
+
+###  Time to make the pander output of our table!  
+panderOptions("digits", 3) # This will set the values to numbers and then will round to the whole number
+set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
+pander(compare_alphas, caption="Table B:  Comparison of Alpha Diversity Measurements.")
+```
+
+
+# Figure 2
+```{r ordinations, eval = FALSE, echo = FALSE}
+####################################################  ORDINATIONS  ####################################################  Working up to Figure 3
+####################################################  ORDINATIONS  ####################################################  Working up to FIgure 3
+####################################################  ORDINATIONS  ####################################################  Working up to Figure 3
+### Clustering 
+### Get rid of the Wintergreen HYPOLIMNION Samples
+nowinOTU <- otu_table(nowin_final)
+#weighted
+norm_bray <- vegdist(nowinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+nowinOTU_df <- data.frame(otu_table(nowin_final))  
+norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
+
+
+########  NMDS + PCoA Plots
+#########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
+bray_pcoa <- pcoa(norm_bray)
+bray_pcoa2 <- bray_pcoa$vectors
+bray_pcoa3 <- data.frame(bray_pcoa2[, 1:3])
+bray_pcoa3$names <- row.names(bray_pcoa3)
+bray_pcoa4 <- makeCategories_dups(bray_pcoa3)
+bray_pcoa4$quadrant <- factor(bray_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+### Let's extract the values of each axis for the pcoa
+bray_values <- bray_pcoa$values
+bray_rel_eigens <- bray_values$Relative_eig
+bray_rel_eigen1 <- bray_rel_eigens[1]
+bray_rel_eigen1_percent <- round(bray_rel_eigen1 * 100, digits = 1)
+bray_rel_eigen2 <- bray_rel_eigens[2]
+bray_rel_eigen2_percent <- round(bray_rel_eigen2 * 100, digits = 1)
+bray_axis1 <- paste("PCoA1:",bray_rel_eigen1_percent,"%")
+bray_axis2 <- paste("PCoA2:",bray_rel_eigen2_percent,"%")
+
+pcoa_bray <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape = trophicstate)) +
+  xlab(bray_axis1) + ylab(bray_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+                     values = c(15, 19, 17)) +
+  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "none"); pcoa_bray
+
+
+
+##########  SORENSEN'S DISSIMILARITY
+soren_pcoa <- pcoa(norm_soren)
+soren_pcoa2 <- soren_pcoa$vectors
+soren_pcoa3 <- data.frame(soren_pcoa2[, 1:3])
+soren_pcoa3$names <- row.names(soren_pcoa3)
+soren_pcoa4 <- makeCategories_dups(soren_pcoa3)
+soren_pcoa4$quadrant <- factor(soren_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+### Let's extract the values of each axis for the pcoa
+soren_values <- soren_pcoa$values
+soren_rel_eigens <- soren_values$Relative_eig
+soren_rel_eigen1 <- soren_rel_eigens[1]
+soren_rel_eigen1_percent <- round(soren_rel_eigen1 * 100, digits = 1)
+soren_rel_eigen2 <- soren_rel_eigens[2]
+soren_rel_eigen2_percent <- round(soren_rel_eigen2 * 100, digits = 1)
+soren_axis1 <- paste("PCoA1:",soren_rel_eigen1_percent,"%")
+soren_axis2 <- paste("PCoA2:",soren_rel_eigen2_percent,"%")
+
+pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1 * -1, Axis.2 * -1, color = quadrant, shape = trophicstate)) +
+  xlab(soren_axis1) + ylab(soren_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+                     values = c(15, 19, 17)) +
+  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "right"); pcoa_soren
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.2_NMDS_bc+soren.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.4,0.6))))
+print(pcoa_bray, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(pcoa_soren, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
+
+
+```
+
+
+
+
+
+
+
+## Figure S1:  Depth Profiles between the Lakes 
+```{r Figure S1, fig.width=6, fig.height = 6}
 ####################################################  DEPTH PROFILE  ####################################################  Working up to Figure S1
 ####################################################  DEPTH PROFILE  ####################################################  Working up to Figure S1
 ####################################################  DEPTH PROFILE  ####################################################  Working up to Figure S1
@@ -489,9 +1064,16 @@ ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +
         axis.title.y = element_text(face="bold"),  #Set the y-axis title
         legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
         legend.text = element_text(size = 8),  #Set the legend text
-        legend.position=c(0.225, 0.22));
+        legend.position="right"); #c(0.225, 0.22));
 #dev.off()
 ```
+
+
+
+
+
+
+
 
 ```{r session info, eval = TRUE, echo = FALSE}
 # Provide the Session Information for reproducibility
