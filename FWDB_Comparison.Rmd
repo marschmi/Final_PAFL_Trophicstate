@@ -1,0 +1,230 @@
+---
+title: "Comparing Mothur to Freshwater DB"
+author: "Marian L. Schmidt"
+date: "November 4, 2015"
+output: html_document
+---
+
+```{r knitr_global_options, eval = TRUE, echo = FALSE}
+# Set the global options
+knitr::opts_chunk$set(echo=FALSE, eval = TRUE, fig.width=6, fig.height=5, fig.align = 'center', warning=FALSE, message=FALSE)
+# Set the seed
+## runif(1, 0, 10^8) # Run this command once and plug it into the set.seed() function
+set.seed(15879966)
+```
+
+```{r load libraries and packages}
+# Load packages
+necessary_packages <-  c("phyloseq", "ggplot2", "ape", "vegan", "plyr", "scales", "grid", "reshape2", "data.table","DESeq2", "dplyr","tidyr", "sciplot","scales", "pgirmess","multcompView", "pander")
+# Install the packages that we need
+packages <- lapply(necessary_packages, library, character.only = TRUE)
+
+# Make sure to have most updated version of phyloseq
+source("https://bioconductor.org/biocLite.R")
+biocLite("phyloseq")
+
+# Set the working Directory
+setwd("~/Final_PAFL_Trophicstate")
+
+### Source written functions in the file Functions_PAFL.R that is housed within the "Final_PAFL_Trophicstate"
+source("Functions_PAFL.R")
+```
+
+
+```{r set colors and theme}
+### Set our theme for our plots down the road
+set_ggtheme <- theme_set(theme_bw() + 
+                           theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
+                                 strip.text.x = element_text(size=10, face="bold"),  #Set the facet titles on x-axis 
+                                 strip.text.y = element_text(size=10, face="bold"),  #Set the facet titles on x-axis 
+                                 strip.background = element_blank(),  #Set the facet background to no background
+                                 axis.title.x = element_text(face="bold", size=12),  #Set the x-axis title
+                                 axis.title.y = element_text(face="bold", size=12),  #Set the y-axis title
+                                 axis.text.x = element_text(colour = "black", size=8),  #Set the x-axis labels
+                                 axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+                                 legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                                 legend.text = element_text(size = 8),  #Set the legend text
+                                 legend.position="right"))  #Default the legend position to the right
+
+#set phylum plotting colors
+phylum.colors <- c(Acidobacteria = "grey26", Actinobacteria = "royalblue", Alphaproteobacteria = "plum2", Armatimonadetes = "red", Bacteroidetes = "darkorange",
+                   "BD1-5" = "chartreuse", Betaproteobacteria = "slateblue2", Caldiserica = "black","Candidate_division_BRC1" = "violetred4",
+                   "Candidate_division_JS1" = "aquamarine1",
+                   "Candidate_division_OD1" = "#6DDE88", "Candidate_division_OP3" = "hotpink", "Candidate_division_OP8" = "goldenrod1", "Candidate_division_OP11" = "chocolate4",
+                   "Candidate_division_SR1" = "tan3", "Candidate_division_TM7" = "skyblue1", "Candidate_division_WS3" = "magenta",
+                   Chlamydiae="violet", Chlorobi="cyan2", Chloroflexi="darkgreen", Cyanobacteria = "chartreuse3", 
+                   Deferribacteres = "slateblue3", "Deinococcus-Thermus" = "violetred", Dictyoglomi = "cornsilk4", Deltaproteobacteria = "deepskyblue", 
+                   Elusimicrobia = "yellow3", Epsilonproteobacteria = "lightskyblue", Fibrobacteres = "darkred", Firmicutes = "blue4", FGL7S = "palevioletred1",
+                   Fusobacteria = "slateblue1", Gammaproteobacteria = "steelblue4", Gemmatimonadetes="black", GOUTA4 = "plum1", "Hyd24-12" = "sienna2", JTB23 = "seashell2",
+                   Lentisphaerae = "yellow1", "NPL-UPA2"="#652926", OC31 = "mediumpurple4", Planctomycetes = "mediumorchid3", Proteobacteria = "deepskyblue",
+                   "SHA-109" = "lightsalmon3", SM2F11 = "lightskyblue2", SPOTSOCT00m83 = "orangered",
+                   Spirochaetae = "gold3", Tenericutes="pink", Thermotogae = "chocolate1", TA06 = "lightslateblue",TA18 = "rosybrown3", TM6 = "olivedrab",
+                   unclassified = "grey", Verrucomicrobia = "purple4", "WCHB1-60" = "palegreen")
+
+##  Do not show scientific notation 
+options(scipen = 999, digits = 7)
+
+## Set pander (table) output functions 
+panderOptions('table.split.table', Inf)
+panderOptions('table.style', 'rmarkdown')
+```
+
+
+```{r data import of Original Mothur data}
+### Data import
+#sharedfile = "mothur.normalized.shared"
+sharedfile <- "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.shared"
+taxfile <- "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
+mothurdata <- import_mothur(mothur_shared_file = sharedfile ,mothur_constaxonomy_file = taxfile )
+
+# Change the taxonomy names
+tax_table(mothurdata) <- cbind(tax_table(mothurdata),row.names(tax_table(mothurdata)))
+colnames(tax_table(mothurdata)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
+
+# Change some of the sample names to match our metadata sample names
+samplenames <- sample_names(mothurdata)
+names2 <- gsub("GULL", "GUL", samplenames)
+names3 <- gsub("LONG", "LON", names2)
+sample_names(mothurdata) <- names3
+
+# Import metadata file and merge with mothurdata object
+mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
+map <- import_qiime_sample_data(mapfile)
+merge <- merge_phyloseq(mothurdata,map)
+
+# lets look at only samples (removing blanks and mock and samples that didn't amplify)
+pruned <- prune_taxa(taxa_sums(merge) > 0, merge)
+bact_samples <-subset_taxa(pruned, Kingdom == "Bacteria")
+bact_samples <-subset_taxa(bact_samples, Class != "Chloroplast")
+
+
+###  Time to (1) Sum between replicates and then (2) scale 
+# Step 1.  Sum the reads 
+sum_reps <- merge_samples(x = bact_samples, group = "dups", fun = "sum") # Sum between replicate samples
+sum_reps <- prune_taxa(taxa_sums(sum_reps) > 0, sum_reps) # Remove any OTUs that are 0
+
+# Step 2:  Scale the reads 
+sum_scale_matround <- scale_reads(physeq = sum_reps, n = min(sample_sums(sum_reps)), round = "matround")
+
+data_dup_sum_scale_matround <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_sum_scale_matround) <- data_dup_sum_scale_matround$names
+data_dup_sum_scale_matround$quadrant <- factor(data_dup_sum_scale_matround$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+# Add a column of Total Sequence sums 
+TotalSeqs_sum_reps <- data.frame(rowSums(otu_table(sum_reps)))
+TotalSeqs_sum_reps$names <- as.factor(row.names(TotalSeqs_sum_reps))
+colnames(TotalSeqs_sum_reps)[1] <- "TotalSeqs_Summed"
+data_dup_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround, TotalSeqs_sum_reps, by = "names") 
+
+TotalSeqs_sum_scale_matround <- data.frame(rowSums(otu_table(sum_scale_matround)))
+TotalSeqs_sum_scale_matround$names <- as.factor(row.names(TotalSeqs_sum_scale_matround))
+colnames(TotalSeqs_sum_scale_matround)[1] <- "TotalSeqs_Scaled"
+data_dup_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround_join, TotalSeqs_sum_scale_matround, by = "names") 
+row.names(data_dup_sum_scale_matround_join) <- data_dup_sum_scale_matround_join$names
+
+data_dup_sum_scale_matround_join <- sample_data(data_dup_sum_scale_matround_join)  # Metadata in our phyloseq object
+sum_scale_matround_otu <- otu_table(sum_scale_matround)  # OTU table in our phyloseq object
+sum_scale_matround_tax <- tax_table(sum_scale_matround)  # Taxonomy Table in our phyloseq object
+sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, data_dup_sum_scale_matround_join) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+```
+
+```{r data import of Freshwater DB data}
+# Load in the shared file from the mothur FWDB analysis
+FWWDB_shared <- "~/Final_PAFL_Trophicstate/FWDB/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.shared"
+# Load in the taxonomy file from the mothur FWDB analysis
+FWDB_tax <- "~/Final_PAFL_Trophicstate/FWDB/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
+#Create FWDB phyloseq object
+FWDB_data <- import_mothur(mothur_shared_file = FWWDB_shared ,mothur_constaxonomy_file = FWDB_tax )
+
+# Change the taxonomy names
+#View(tax_table(FWDB_data))
+#length(colnames(tax_table(FWDB_data))) # 8 columns 
+colnames(tax_table(FWDB_data)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species", "Strain")
+#View(otu_table(FWDB_data))
+#sum(row.names(otu_table(FWDB_data)) == row.names(tax_table(FWDB_data))) # OTU names are the same in the tax and otu tables.
+
+# The taxomomy is a little wonky - we need to fix before we can proceed.
+# By wonky, I mean that there is "k__" in front of the kingdom name, "p__" in front of the phylum name, "o__" in front of the order and so on...
+# Let's remove this by using gsub 
+tax <- data.frame(tax_table(FWDB_data))
+newtax <- sapply(tax, function(x) gsub(pattern = ".__", replacement = "", x)) # apply gsub over all the columns 
+#dim(tax); dim(newtax) # Same dimensions
+row.names(newtax) <- row.names(tax) # replace the names so we can merge this as our new tax_table
+tax_table(FWDB_data) <- newtax
+
+# Change some of the sample names to match our metadata sample names
+samplenames_FWDB <- sample_names(FWDB_data)
+names2_FWDB <- gsub("Gull", "GUL", samplenames_FWDB)
+names3_FWDB <- gsub("Long", "LON", names2_FWDB)
+sample_names(FWDB_data) <- names3_FWDB
+
+# Import metadata file and merge with FWDB_data object
+mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
+map <- import_qiime_sample_data(mapfile)
+
+#Check the sample names 
+names_fw <- sample_names(FWDB_data)
+names_map <- sample_names(map)
+length(names_fw); length(names_map)
+setdiff(names_fw, names_map)
+setdiff(names_map, names_fw)
+
+# Check the sequencing depth of each sample 
+sums_FWDB <- data.frame(colSums(otu_table(FWDB_data)))
+colnames(sums_FWDB) <- "Sample_TotalSeqs"
+sums_FWDB$sample <- row.names(sums_FWDB)
+sums_FWDB <- arrange(sums_FWDB, Sample_TotalSeqs)
+ggplot(sums_FWDB, aes(x=reorder(sample, Sample_TotalSeqs), y = Sample_TotalSeqs)) + 
+  ylab("Number of Sequences per Sample") +
+  geom_bar(stat = "identity", colour="black",fill="cornflowerblue")  + xlab("Sample Name") + ggtitle("Sample Sums") + 
+  theme(axis.text.x = element_text(colour = "black", size=8, angle=45, hjust = 1, vjust = 1))  #Set the x-axis labels
+
+FWDB_data_sub <- prune_samples(sample_sums(FWDB_data) > 14000, FWDB_data)
+#names_fw_sub <- sample_names(FWDB_data_sub)
+#length(names_fw_sub); length(names_map)
+#setdiff(names_fw_sub, names_map)
+#setdiff(names_map, names_fw_sub)
+
+# Combine FWDB and mapfiles 
+FWDB_raw <- merge_phyloseq(FWDB_data_sub,map)
+
+
+# lets look at only samples (removing blanks and mock and samples that didn't amplify)
+FW_pruned <- prune_taxa(taxa_sums(FWDB_raw) > 0, FWDB_raw)
+FW_samples <-subset_taxa(FW_pruned, Kingdom == "Bacteria")
+FW_samples <-subset_taxa(FW_samples, Class != "Chloroplast")
+
+
+###  Time to (1) Sum between replicates and then (2) scale 
+# Step 1.  Sum the reads 
+sum_reps <- merge_samples(x = bact_samples, group = "dups", fun = "sum") # Sum between replicate samples
+sum_reps <- prune_taxa(taxa_sums(sum_reps) > 0, sum_reps) # Remove any OTUs that are 0
+
+# Step 2:  Scale the reads 
+sum_scale_matround <- scale_reads(physeq = sum_reps, n = min(sample_sums(sum_reps)), round = "matround")
+
+data_dup_sum_scale_matround <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_sum_scale_matround) <- data_dup_sum_scale_matround$names
+data_dup_sum_scale_matround$quadrant <- factor(data_dup_sum_scale_matround$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+# Add a column of Total Sequence sums 
+TotalSeqs_sum_reps <- data.frame(rowSums(otu_table(sum_reps)))
+TotalSeqs_sum_reps$names <- as.factor(row.names(TotalSeqs_sum_reps))
+colnames(TotalSeqs_sum_reps)[1] <- "TotalSeqs_Summed"
+data_dup_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround, TotalSeqs_sum_reps, by = "names") 
+
+TotalSeqs_sum_scale_matround <- data.frame(rowSums(otu_table(sum_scale_matround)))
+TotalSeqs_sum_scale_matround$names <- as.factor(row.names(TotalSeqs_sum_scale_matround))
+colnames(TotalSeqs_sum_scale_matround)[1] <- "TotalSeqs_Scaled"
+data_dup_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround_join, TotalSeqs_sum_scale_matround, by = "names") 
+row.names(data_dup_sum_scale_matround_join) <- data_dup_sum_scale_matround_join$names
+
+data_dup_sum_scale_matround_join <- sample_data(data_dup_sum_scale_matround_join)  # Metadata in our phyloseq object
+sum_scale_matround_otu <- otu_table(sum_scale_matround)  # OTU table in our phyloseq object
+sum_scale_matround_tax <- tax_table(sum_scale_matround)  # Taxonomy Table in our phyloseq object
+sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, data_dup_sum_scale_matround_join) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+
+
+
+
+
+
+

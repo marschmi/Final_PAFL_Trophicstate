@@ -1140,8 +1140,8 @@ pander(compare_summed_alphas, caption="Table B:  Comparison of Summed & Scaled A
 nowinOTU <- otu_table(nowin_final)
 #weighted
 norm_bray <- vegdist(nowinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
-nowinOTU_df <- data.frame(otu_table(nowin_final))  
-norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
+#nowinOTU_df <- data.frame(otu_table(nowin_final))  
+#norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
 
 
 ########  NMDS + PCoA Plots
