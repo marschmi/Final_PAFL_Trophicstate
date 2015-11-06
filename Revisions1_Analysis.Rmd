@@ -248,6 +248,9 @@ row.names(data_dup_sum_reps) <- data_dup_sum_reps$names
 data_dup_sum_reps$quadrant <- factor(data_dup_sum_reps$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 # Add a column of Total Sequence sums 
 TotalSeqs_sum_reps <- data.frame(rowSums(otu_table(sum_reps)))
+
+arrange(TotalSeqs_sum_reps, TotalSeqs_Summed)
+
 TotalSeqs_sum_reps$names <- as.factor(row.names(TotalSeqs_sum_reps))
 colnames(TotalSeqs_sum_reps)[1] <- "TotalSeqs_Summed"
 data_dup_sum_reps<- left_join(data_dup_sum_reps, TotalSeqs_sum_reps, by = "names")

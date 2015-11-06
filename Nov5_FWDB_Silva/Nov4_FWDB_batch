@@ -1,0 +1,55 @@
+# Copied over from:  FWGG_SerialClassification_Manual_Draft_042514 that was obtained from https://github.com/mcmahon-uw/FWMFG
+# Added notes and edits from meeting with Vincent on Nov. 3, 2015
+# Date ran:  Nov. 3rd, 2015
+
+##Set working directory
+set.dir(input=~/Desktop/FWDB_Analysis/)
+set.dir(output=~/Desktop/FWDB_Analysis/)
+set.dir(tempdefault=~/Desktop/FWDB_Analysis/)
+set.current(processors=6)
+
+
+# Classify sequences with a bayesian classifier using the silva database
+#classify.seqs(fasta=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta, count=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.count_table, reference=FW_trainingset_MMBR_strict_12July12.fasta.txt, taxonomy=FW_trainingset_MMBR_strict_12July12.taxonomy.txt, cutoff=80)
+
+#remove.lineage(taxonomy=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy, taxon=k__Bacteria;p__Cyanobacteria;c__Chloroplast;)
+
+
+# Correct GG names (remove *__ before taxonomy name) to "Silva" names and make new file name with .sed addition
+#system(sed -e 's/.__//g' SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.pick.taxonomy > SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed)
+
+# Select all that DO match FWDB
+#system(grep -v "^[^;]*;[^;]*;[^;]*;[^;]*;unclassified" SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed > matched_FW.80.taxonomy)
+
+# Select all that do NOT match FWDB
+#system(grep "^[^;]*;[^;]*;[^;]*;[^;]*;unclassified" SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed > not_matched_toFWDB.taxonomy)
+
+# Retain read names of reads that do NOT match FWDB
+#system(cut -f 1 not_matched_toFWDB.taxonomy > not_matched_toFWDB_readnames.taxonomy.list.txt)
+
+# Generate a fasta file based on the list of sequences that do NOT match FWDB
+# use the script called "screen_list.pl" that Vincent sent on Nov.4
+#system(perl screen_list.pl not_matched_toFWDB_readnames.taxonomy.list.txt SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta keep > unclassified_Silva.fasta)
+
+# now classify the reads NOT classified by FWDB, using Silva_NR
+#classify.seqs(fasta=unclassified_Silva.fasta, reference=silva.nr_v119.align, taxonomy=silva.nr_v119.tax, cutoff=80)
+
+###  Insert file name from above command into the below commands
+# make a copy of "unclassified_Silva.nr_v119.wang.taxonomy" and name it "silva.assigned.80.taxonomy"
+#system(scp unclassified_Silva.nr_v119.wang.taxonomy silva.assigned.80.taxonomy)
+
+# Concatenate the FWDB matches to the SilvaDB matches into one file called "final.FWDB.Silva.taxonomy"
+#system(cat matched_FW.80.taxonomy silva.assigned.80.taxonomy > final.FWDB.Silva.taxonomy)
+
+# Cluster sequences into OTUs. To save memory/time we first split sequences by taxlevel 4 (order) and then cluster from there. Read mothur wiki for more info. 
+cluster.split(fasta=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta, count=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.count_table, taxonomy=final.FWDB.Silva.taxonomy, splitmethod=classify, taxlevel=3, cutoff=0.15)
+summary.seqs(count=current)
+
+# Determine how many sequences are in each OTU, using a .03 similarity cutoff 
+make.shared(list=current, count=current, label=0.03)
+summary.seqs(count=current)
+
+# Generate a consensus taxonomy for each OTU
+classify.otu(list=current, count=current, taxonomy=final.FWDB.Silva.taxonomy, label=0.03)
+summary.seqs(count=current)
+

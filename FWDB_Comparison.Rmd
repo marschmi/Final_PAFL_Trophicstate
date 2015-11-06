@@ -196,7 +196,7 @@ FW_samples <-subset_taxa(FW_samples, Class != "Chloroplast")
 
 ###  Time to (1) Sum between replicates and then (2) scale 
 # Step 1.  Sum the reads 
-sum_reps <- merge_samples(x = bact_samples, group = "dups", fun = "sum") # Sum between replicate samples
+FW_sum_reps <- merge_samples(x = bact_samples, group = "dups", fun = "sum") # Sum between replicate samples
 sum_reps <- prune_taxa(taxa_sums(sum_reps) > 0, sum_reps) # Remove any OTUs that are 0
 
 # Step 2:  Scale the reads 
