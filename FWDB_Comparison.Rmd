@@ -97,7 +97,6 @@ pruned <- prune_taxa(taxa_sums(merge) > 0, merge)
 bact_samples <-subset_taxa(pruned, Kingdom == "Bacteria")
 bact_samples <-subset_taxa(bact_samples, Class != "Chloroplast")
 
-
 ###  Time to (1) Sum between replicates and then (2) scale 
 # Step 1.  Sum the reads 
 sum_reps <- merge_samples(x = bact_samples, group = "dups", fun = "sum") # Sum between replicate samples
@@ -124,14 +123,18 @@ row.names(data_dup_sum_scale_matround_join) <- data_dup_sum_scale_matround_join$
 data_dup_sum_scale_matround_join <- sample_data(data_dup_sum_scale_matround_join)  # Metadata in our phyloseq object
 sum_scale_matround_otu <- otu_table(sum_scale_matround)  # OTU table in our phyloseq object
 sum_scale_matround_tax <- tax_table(sum_scale_matround)  # Taxonomy Table in our phyloseq object
-sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, data_dup_sum_scale_matround_join) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, data_dup_sum_scale_matround_join) 
+
+nowin_silva_scaled <- subset_samples(sum_scale_matround, names != "WINH" & names != "WINH3um")
+nowin_silva_scaled <- prune_taxa(taxa_sums(nowin_silva_scaled) > 0, nowin_silva_scaled) # Remove any OTUs that are 0
+
 ```
 
 ```{r data import of Freshwater DB data}
 # Load in the shared file from the mothur FWDB analysis
-FWWDB_shared <- "~/Final_PAFL_Trophicstate/FWDB/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.shared"
+FWWDB_shared <- "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.shared"
 # Load in the taxonomy file from the mothur FWDB analysis
-FWDB_tax <- "~/Final_PAFL_Trophicstate/FWDB/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
+FWDB_tax <- "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
 #Create FWDB phyloseq object
 FWDB_data <- import_mothur(mothur_shared_file = FWWDB_shared ,mothur_constaxonomy_file = FWDB_tax )
 
@@ -142,34 +145,43 @@ colnames(tax_table(FWDB_data)) <- c("Kingdom","Phylum","Class","Order","Family",
 #View(otu_table(FWDB_data))
 #sum(row.names(otu_table(FWDB_data)) == row.names(tax_table(FWDB_data))) # OTU names are the same in the tax and otu tables.
 
-# The taxomomy is a little wonky - we need to fix before we can proceed.
-# By wonky, I mean that there is "k__" in front of the kingdom name, "p__" in front of the phylum name, "o__" in front of the order and so on...
-# Let's remove this by using gsub 
-tax <- data.frame(tax_table(FWDB_data))
-newtax <- sapply(tax, function(x) gsub(pattern = ".__", replacement = "", x)) # apply gsub over all the columns 
+#Let's check out the taxonomy table 
+tax <- data.frame(tax_table(sub_FWDB))
+unique(tax$Class)
+
+#chloroplast <- subset(tax, Class == "Chloroplast")
+#unknown_tax <- subset(tax, Kingdom == "unknown")
+#eukarya <- subset(tax, Kingdom == "Eukaryota")
+#archaea <- subset(tax, Kingdom == "Archaea")
+#mitochondria <- subset(tax, Strain == "Mitochondria")
+
+# Remove
+sub_FWDB <- subset_taxa(FWDB_data, Kingdom == "Bacteria" &
+              Class != "Chloroplast")
+
+
+#newtax <- sapply(tax, function(x) gsub(pattern = ".__", replacement = "", x)) # apply gsub over all the columns 
 #dim(tax); dim(newtax) # Same dimensions
-row.names(newtax) <- row.names(tax) # replace the names so we can merge this as our new tax_table
-tax_table(FWDB_data) <- newtax
 
 # Change some of the sample names to match our metadata sample names
-samplenames_FWDB <- sample_names(FWDB_data)
+samplenames_FWDB <- sample_names(sub_FWDB)
 names2_FWDB <- gsub("Gull", "GUL", samplenames_FWDB)
 names3_FWDB <- gsub("Long", "LON", names2_FWDB)
-sample_names(FWDB_data) <- names3_FWDB
+sample_names(sub_FWDB) <- names3_FWDB
 
-# Import metadata file and merge with FWDB_data object
+# Import metadata file and merge with sub_FWDB object
 mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
 map <- import_qiime_sample_data(mapfile)
 
 #Check the sample names 
-names_fw <- sample_names(FWDB_data)
+names_fw <- sample_names(sub_FWDB)
 names_map <- sample_names(map)
 length(names_fw); length(names_map)
 setdiff(names_fw, names_map)
 setdiff(names_map, names_fw)
 
 # Check the sequencing depth of each sample 
-sums_FWDB <- data.frame(colSums(otu_table(FWDB_data)))
+sums_FWDB <- data.frame(colSums(otu_table(sub_FWDB)))
 colnames(sums_FWDB) <- "Sample_TotalSeqs"
 sums_FWDB$sample <- row.names(sums_FWDB)
 sums_FWDB <- arrange(sums_FWDB, Sample_TotalSeqs)
@@ -178,50 +190,95 @@ ggplot(sums_FWDB, aes(x=reorder(sample, Sample_TotalSeqs), y = Sample_TotalSeqs)
   geom_bar(stat = "identity", colour="black",fill="cornflowerblue")  + xlab("Sample Name") + ggtitle("Sample Sums") + 
   theme(axis.text.x = element_text(colour = "black", size=8, angle=45, hjust = 1, vjust = 1))  #Set the x-axis labels
 
-FWDB_data_sub <- prune_samples(sample_sums(FWDB_data) > 14000, FWDB_data)
+pruned_sub_FWDB <- prune_samples(sample_sums(sub_FWDB) > 10000, sub_FWDB)
 #names_fw_sub <- sample_names(FWDB_data_sub)
 #length(names_fw_sub); length(names_map)
 #setdiff(names_fw_sub, names_map)
 #setdiff(names_map, names_fw_sub)
 
 # Combine FWDB and mapfiles 
-FWDB_raw <- merge_phyloseq(FWDB_data_sub,map)
+FWDB_no_scale <- merge_phyloseq(pruned_sub_FWDB,map)
 
 
 # lets look at only samples (removing blanks and mock and samples that didn't amplify)
-FW_pruned <- prune_taxa(taxa_sums(FWDB_raw) > 0, FWDB_raw)
+FW_pruned <- prune_taxa(taxa_sums(FWDB_no_scale) > 0, FWDB_no_scale)
 FW_samples <-subset_taxa(FW_pruned, Kingdom == "Bacteria")
 FW_samples <-subset_taxa(FW_samples, Class != "Chloroplast")
 
 
 ###  Time to (1) Sum between replicates and then (2) scale 
 # Step 1.  Sum the reads 
-FW_sum_reps <- merge_samples(x = bact_samples, group = "dups", fun = "sum") # Sum between replicate samples
-sum_reps <- prune_taxa(taxa_sums(sum_reps) > 0, sum_reps) # Remove any OTUs that are 0
+FW_sum_reps <- merge_samples(x = FW_samples, group = "dups", fun = "sum") # Sum between replicate samples
+FW_sum_reps <- prune_taxa(taxa_sums(FW_sum_reps) > 0, FW_sum_reps) # Remove any OTUs that are 0
 
 # Step 2:  Scale the reads 
-sum_scale_matround <- scale_reads(physeq = sum_reps, n = min(sample_sums(sum_reps)), round = "matround")
+FWDB_sum_scale_matround <- scale_reads(physeq = FW_sum_reps, n = min(sample_sums(FW_sum_reps)), round = "matround")
 
-data_dup_sum_scale_matround <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
-row.names(data_dup_sum_scale_matround) <- data_dup_sum_scale_matround$names
-data_dup_sum_scale_matround$quadrant <- factor(data_dup_sum_scale_matround$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
-# Add a column of Total Sequence sums 
-TotalSeqs_sum_reps <- data.frame(rowSums(otu_table(sum_reps)))
-TotalSeqs_sum_reps$names <- as.factor(row.names(TotalSeqs_sum_reps))
-colnames(TotalSeqs_sum_reps)[1] <- "TotalSeqs_Summed"
-data_dup_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround, TotalSeqs_sum_reps, by = "names") 
+data_dup_FWDB_sum_scale_matround <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_FWDB_sum_scale_matround) <- data_dup_FWDB_sum_scale_matround$names
+data_dup_FWDB_sum_scale_matround$quadrant <- factor(data_dup_FWDB_sum_scale_matround$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
-TotalSeqs_sum_scale_matround <- data.frame(rowSums(otu_table(sum_scale_matround)))
-TotalSeqs_sum_scale_matround$names <- as.factor(row.names(TotalSeqs_sum_scale_matround))
-colnames(TotalSeqs_sum_scale_matround)[1] <- "TotalSeqs_Scaled"
-data_dup_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround_join, TotalSeqs_sum_scale_matround, by = "names") 
-row.names(data_dup_sum_scale_matround_join) <- data_dup_sum_scale_matround_join$names
+# Add a column of Total Sequence sums to data_dup
+TotalSeqs_FWDB_sum_reps <- data.frame(rowSums(otu_table(FW_sum_reps)))
+TotalSeqs_FWDB_sum_reps$names <- as.factor(row.names(TotalSeqs_FWDB_sum_reps))
+colnames(TotalSeqs_FWDB_sum_reps)[1] <- "TotalSeqs_Summed"
+data_dup_FWDB_sum_scale_matround_join<- left_join(data_dup_FWDB_sum_scale_matround, TotalSeqs_FWDB_sum_reps, by = "names") 
 
-data_dup_sum_scale_matround_join <- sample_data(data_dup_sum_scale_matround_join)  # Metadata in our phyloseq object
-sum_scale_matround_otu <- otu_table(sum_scale_matround)  # OTU table in our phyloseq object
-sum_scale_matround_tax <- tax_table(sum_scale_matround)  # Taxonomy Table in our phyloseq object
-sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, data_dup_sum_scale_matround_join) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+TotalSeqs_FWDB_sum_scale_matround <- data.frame(rowSums(otu_table(FWDB_sum_scale_matround)))
+TotalSeqs_FWDB_sum_scale_matround$names <- as.factor(row.names(TotalSeqs_FWDB_sum_scale_matround))
+colnames(TotalSeqs_FWDB_sum_scale_matround)[1] <- "TotalSeqs_Scaled"
+data_dup_FWDB_sum_scale_matround_join<- left_join(data_dup_sum_scale_matround, TotalSeqs_FWDB_sum_scale_matround, by = "names") 
+row.names(data_dup_FWDB_sum_scale_matround_join) <- data_dup_FWDB_sum_scale_matround_join$names
 
+data_dup_FWDB_sum_scale_matround_join <- sample_data(data_dup_FWDB_sum_scale_matround_join)  # Metadata in our phyloseq object
+sum_scale_matround_otu <- otu_table(FWDB_sum_scale_matround)  # OTU table in our phyloseq object
+sum_scale_matround_tax <- tax_table(FWDB_sum_scale_matround)  # Taxonomy Table in our phyloseq object
+FWDB_sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, data_dup_FWDB_sum_scale_matround_join) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
+
+
+ggplot(data.frame(sum=sample_sums(matround_mean_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="orangered3", binwidth = 500)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Mean and 'True' Rounding Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
+
+
+##  Our phyloseq object!
+nowin_FWDB_scaled <- subset_samples(FWDB_sum_scale_matround, names != "WINH" & names != "WINH3um")
+nowin_FWDB_scaled <- prune_taxa(taxa_sums(nowin_FWDB_scaled) > 0, nowin_FWDB_scaled) # Remove any OTUs that are 0
+
+ggplot(data.frame(sum=sample_sums(nowin_FWDB_scaled)),aes(sum)) + ylab("Number of Sequences per Sample") +
+  geom_histogram(colour="black",fill="thistle1", binwidth = 20)  + xlab("Total Sequences") + 
+  ggtitle(expression(atop(bold("Sum & Scale (by 'True' rounding) the Reads"), atop("Binwidth = 20"), ""))) 
+
+####  Obtain the top 100 most abundant OTUs
+topN <- 500
+most_abundant_taxa = sort(taxa_sums(nowin_FWDB_scaled), TRUE)[1:topN]
+print(most_abundant_taxa)
+FWDB_500_OTUs <- prune_taxa(names(most_abundant_taxa), nowin_FWDB_scaled)
+
+sums <- data.frame(taxa_sums(FWDB_500_OTUs))
+
+ggplot(sums,aes(x=row.names(sums), y=taxa_sums.FWDB_500_OTUs.)) + ylab("Number of Sequences per OTU") + scale_x_discrete(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) + theme_classic() +
+  geom_bar(stat="identity",colour="black",fill="plum4")  + xlab("OTU Rank") + 
+  ggtitle("Rank Abundance Curve of Top 500 OTUs") + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+```
+
+
+```{r}
+comparisons <- c("Silva Raw", "FWDB+Silva Raw", "Merged Silva", "Merged FWDB+Silva", "Silva Scaled", "FWDB+Silva Scaled")
+
+compare_list <- c("bact_samples", "FW_samples", "sum_reps", "FW_sum_reps","sum_scale_matround", "FWDB_sum_scale_matround")
+
+compare_df <- data.frame(matrix(ncol = 7, nrow = 6))
+row.names(compare_df) <- comparisons
+
+for (i in 1:compare_list){
+   <-  min(compare_list)
+  append()
+}
+
+```
 
 
 
