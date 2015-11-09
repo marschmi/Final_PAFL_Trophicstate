@@ -513,7 +513,7 @@ grid.draw(z)
 
 ```{r abundance plots comparing 2}
 #  Prep the data frame 
-bicompare_phy <- subset(goodsamps_phy_melt, select = c("Sample", "filter", "ProdLevel", "quadrant", "Phylum","Abundance"))
+bicompare_phy <- subset(goodsamps_phy_melt, select = c("Sample", "filter", "ProdLevel", "limnion","quadrant", "Phylum","Abundance"))
 
 bi_TOTALS <- ddply(bicompare_phy, c("Sample"), summarise, ##  Let's get the McMurdie and Holmes Scaled  Total for each sample 
                 total   = sum(Abundance))   
@@ -537,15 +537,431 @@ bicompare_phy$Phylum <- factor(bicompare_phy$Phylum,levels = c("Bacteroidetes", 
 
 
 
-ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("") + geom_boxplot() +  ylab("Mean Percent Relative Abundance (%)") + 
-  theme_bw() + theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+g1 <- ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("15 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance (%)") + 
+  scale_fill_manual(name="Filter Fraction", values = c("orangered", "orangered4")) +
+  theme_bw() + theme(axis.text.x = element_blank(),
+                     plot.title = element_text(face="bold", size = 12),
+                     axis.title.y = element_text(face="bold", size=10),
+                     legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                     legend.text = element_text(size = 8),
+                     plot.margin = unit(c(0.1, 0.1, -1, 0.1), "cm"), #top, right, bottom, left
+                     legend.position = c(0.85, 0.7))
+
+g2 <- ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance (%)") + 
+  scale_fill_manual(name="Lake Strata", values = c("palevioletred", "palevioletred4")) +
+  theme_bw() + theme(axis.text.x = element_blank(),
+                     axis.title.y = element_text(face="bold", size=10),
+                     legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                     legend.text = element_text(size = 8),
+                     plot.margin = unit(c(-0.25, 0.1, -0.5, 0.1), "cm"), #top, right, bottom, left
+                     legend.position = c(0.85, 0.7))
+
+
+g3 <- ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("") + xlab("Phylum") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance (%)") + 
+  scale_fill_manual(name="Productivity Level", values = c("cornflowerblue", "royalblue4")) +
+  theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
+                     axis.title.x = element_text(face="bold", size=10),
+                     axis.title.y = element_text(face="bold", size=10),
+                     legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                     legend.text = element_text(size = 8),  #Set the legend text
+                     plot.margin = unit(c(-0.75, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+                     legend.position = c(0.85, 0.7))
+
+
+# Store ggplot graphical parameters
+g1 <- ggplotGrob(g1)
+g2 <- ggplotGrob(g2)
+g3 <- ggplotGrob(g3)
+
+# Add columns to plots without legends
+#ncol(g1); ncol(g2); ncol(g3)
+#g1 <- gtable_add_cols(g1, g2$widths[6])
+
+# Draw everything
+grid.draw(rbind(g1, g2, g3, size = "last"))
+```
+
+
+```{r phylum level heat map}
 
 
 
-ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("") + geom_boxplot() +  ylab("Mean Percent Relative Abundance (%)") + 
-  theme_bw() + theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
+####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
+####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
+#View(data.frame(tax_table(merged_final)))  #Sanity check
+good_phylum <-tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
+
+### Subsetting Sherman lake for differences between particle and free living 
+phy_sherm <- subset_samples(good_phylum, lakenames == "Sherman")  
+phy_shemeister <- deSEQ(phy_sherm, ~ filter)
+physherm_plot <- plot_phylum_deSEQ(phy_shemeister, "Sherman: Phylum-Level")
+
+########## SUBSET OUT SHERMAN AND WINTERGREEN HYPOLIMNION
+good_phylum_nosherwin <- subset_samples(good_phylum, lakenames != "Sherman")
+#View(data.frame(sample_data(good_phylum_nosherwin))) #Sanity check
+
+############################
+###########################################################PA VS FL
+#1. Top prod 
+phytopProd <- subset_samples(good_phylum_nosherwin, ProdLevel == "Productive" & limnion == "Epilimnion") 
+de_phytopProd<- deSEQ(phytopProd, ~ filter)
+phytopProd_plot <- plot_phylum_deSEQ(de_phytopProd, "PA vs FL:  Surface Productive (Phylum)")
+
+#2 Top Oligo -->  No SIGNIFICANT DIFFERENCES 
+phytopUNProd <- subset_samples(good_phylum_nosherwin, ProdLevel == "Unproductive" & limnion == "Epilimnion") 
+de_phytopUNProd <- deSEQ(phytopUNProd, ~ filter)  # NO DIFFERENCE!
+phytopUNProd_plot <- plot_phylum_deSEQ(de_phytopUNProd, "PA vs FL:  Surface Unproductive (Phylum)")
+
+#3 Bottom Productive 
+phybotProd <- subset_samples(good_phylum_nosherwin, ProdLevel == "Productive" & limnion == "Hypolimnion")
+de_phybotProd <- deSEQ(phybotProd, ~ filter)
+phybotProd_plot <- plot_phylum_deSEQ(de_phybotProd, "PA vs FL:  Bottom Productive (Phylum)")
+
+#4 Bottom Unproductive 
+phybotUNProd <- subset_samples(good_phylum_nosherwin, ProdLevel == "Unproductive" & limnion == "Hypolimnion") 
+de_phybotUNProd <- deSEQ(phybotUNProd, ~ filter)
+phybotUNProd_plot <- plot_phylum_deSEQ(de_phybotUNProd, "PA vs FL:  Bottom Unproductive (Phylum)")
+
+pafl_phylum <- multiplot(phytopProd_plot, phybotProd_plot, phybotUNProd_plot,cols = 2)
+
+
+############################
+###########################################################TOP VS BOTTOM
+#1. PA prod 
+phyprodPA <- subset_samples(good_phylum_nosherwin, ProdLevel == "Productive" & filter == "Particle") 
+de_phyprodPA <- deSEQ(phyprodPA, ~ limnion)
+phyprodPA_plot <- plot_phylum_deSEQ(de_phyprodPA, "Surface vs Bottom:  PA Productive (Phylum)")
+
+#2 PA Oligo 
+phyunprodPA <- subset_samples(good_phylum_nosherwin, ProdLevel == "Unproductive" & filter == "Particle") 
+de_phyunprodPA <- deSEQ(phyunprodPA, ~ limnion)
+phyunprodPA_plot <- plot_phylum_deSEQ(de_phyunprodPA, "Surface vs Bottom:  PA Unproductive (Phylum)")
+
+#3 FL Productive 
+phyprodFL <- subset_samples(good_phylum_nosherwin, ProdLevel == "Productive" & filter == "Free") 
+de_phyprodFL <- deSEQ(phyprodFL, ~ limnion)
+phyprodFL_plot <- plot_phylum_deSEQ(de_phyprodFL, "Surface vs Bottom:  FL Productive (Phylum)")
+
+#4 FL Unproductive 
+phyunprodFL <- subset_samples(good_phylum_nosherwin, ProdLevel == "Unproductive" & filter == "Free") 
+de_phyunprodFL <- deSEQ(phyunprodFL, ~ limnion)
+phyunprodFL_plot <- plot_phylum_deSEQ(de_phyunprodFL, "Surface vs Bottom:  FL Unproductive (Phylum)")
+
+topbot_phylum <- multiplot(phyprodPA_plot, phyprodFL_plot, phyunprodPA_plot, phyunprodFL_plot,cols = 2)
+
+
+############################
+###########################################################PROD VS OLIGO
+#1. Top PA 
+phytopPA <- subset_samples(good_phylum_nosherwin, limnion == "Epilimnion" & filter == "Particle") ## DOES NOT WORK!!!!!!!!!!
+de_phytopPA <- deSEQ(phytopPA, ~ ProdLevel)   ## NO DIFFERENCE
+phytopPA_plot <- plot_phylum_deSEQ(de_phytopPA, "Productive vs Unproductive:  PA Surface (Phylum)")
+
+#2 BOTTOM PA 
+phybotPA <- subset_samples(good_phylum_nosherwin, limnion == "Hypolimnion" & filter == "Particle") 
+de_phybotPA <- deSEQ(phybotPA, ~ ProdLevel)
+phybotPA_plot <- plot_phylum_deSEQ(de_phybotPA, "Productive vs Unproductive:  PA Bottom (Phylum)")
+
+#3 TOP FL
+phytopFL <- subset_samples(good_phylum_nosherwin, limnion == "Epilimnion" & filter == "Free") 
+de_phytopFL <- deSEQ(phytopFL, ~ ProdLevel)  ## NO DIFFERENCE
+phytopFL_plot <- plot_phylum_deSEQ(de_phytopFL, "Productive vs Unproductive:  FL Surface (Phylum)")
+
+#4 Bottom FL 
+phybotFL <- subset_samples(good_phylum_nosherwin, limnion == "Hypolimnion" & filter == "Free") 
+de_phybotFL <- deSEQ(phybotFL, ~ ProdLevel)
+phybotFL_plot <- plot_phylum_deSEQ(de_phybotFL, "Productive vs Unproductive:  FL Bottom (Phylum)")
+
+prodoligo_phylum <- multiplot(phybotFL_plot, phybotPA_plot, cols = 2)
+
+
+
+#PA VS FL:  
+#Surface productive
+pafl_topprod <- subset(de_phytopProd, select = c(Phylum, log2FoldChange, padj))
+pafl_topprod$Habitat <- "PA vs. FL: Top Productive"
+#Surface unproductive
+pafl_topUNprod <- subset(de_phytopUNProd, select = c(Phylum, log2FoldChange, padj))
+pafl_topUNprod$Habitat <- "PA vs. FL: Top Unproductive"
+#Bottom Productive
+pafl_botprod <- subset(de_phybotProd, select = c(Phylum, log2FoldChange, padj))
+pafl_botprod$Habitat <- "PA vs. FL: Bottom Productive"
+#Bottom Unproductive
+pafl_botUNprod <- subset(de_phybotUNProd, select = c(Phylum, log2FoldChange, padj))
+pafl_botUNprod$Habitat <- "PA vs. FL: Bottom Unproductive"
+## SHERMAN
+pafl_isothermal <- subset(phy_shemeister, select = c(Phylum, log2FoldChange, padj))
+pafl_isothermal$Habitat <- "PA vs. FL: Mixed"
+
+###Top vs Bottom:  
+topbot1 <- subset(de_phyprodPA, select = c(Phylum, log2FoldChange, padj))
+topbot1$Habitat <- "Top vs. Bottom: PA Productive"
+# Particle-Associated UNproductive
+topbot2 <- subset(de_phyunprodPA, select = c(Phylum, log2FoldChange, padj))
+topbot2$Habitat <- "Top vs. Bottom: PA Unproductive"
+# Free-Living Productive 
+topbot3 <- subset(de_phyprodFL, select = c(Phylum, log2FoldChange, padj))
+topbot3$Habitat <- "Top vs. Bottom: FL Productive"
+# Free-Living UNproductive
+topbot4 <- subset(de_phyunprodFL, select = c(Phylum, log2FoldChange, padj))
+topbot4$Habitat <- "Top vs. Bottom: FL Unproductive"
+
+
+#Prod vs Oligo:  
+#troph1 <- subset(de_phytopPA, select = c(Phylum, log2FoldChange, padj))  ## NO SIGNIFICANT CHANGES HERE!
+#troph1$Habitat <- "Prod vs. Unprod: PA Epilimnion"
+# Particle-Associated BOTTOM
+troph2 <- subset(de_phybotPA, select = c(Phylum, log2FoldChange, padj))
+troph2$Habitat <- "Prod vs. Unprod: PA Bottom"
+# Free-Living TOP 
+#troph3 <- subset(de_phytopFL, select = c(Phylum, log2FoldChange, padj))   ## NO SIGNIFICANT CHANGES HERE!
+#troph3$Habitat <- "Prod vs. Unprod: FL Top"
+# Free-Living BOTTOM
+troph4 <- subset(de_phybotFL, select = c(Phylum, log2FoldChange, padj))
+troph4$Habitat <- "Prod vs. Unprod: FL Bottom"
+trophs <- rbind(troph2, troph4)
+newlog2foldchange <- as.numeric(trophs$log2FoldChange * -1)  ##  To make PRODUCTIVE changes POSITIVE 
+trophs$log2FoldChange <- newlog2foldchange
+
+df_ratio <-rbind(pafl_topprod, pafl_topUNprod, pafl_botprod, pafl_botUNprod,pafl_isothermal,
+                 topbot1, topbot2, topbot3, topbot4,
+                 trophs)
+
+paste(c("The range of the log2foldChange is",min(df_ratio$log2FoldChange), "to", max(df_ratio$log2FoldChange)))
+
+#Split of the habitat column to 2 columns named comparison and habitat
+split_cols <- colsplit(df_ratio$Habitat, ":", c("Comparison", "Habitat"))
+df_ratio$Habitat = NULL
+dfrat <- cbind(df_ratio, split_cols)
+
+mf_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="Comparison") { 
+    value[value=="PA vs. FL"] <- "Particle-Associated \n vs. \nFree-Living"
+    value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. \nEpilimnion"
+    value[value=="Prod vs. Unprod"]   <- "High-Nutrient \n vs.\nLow-Nutrient"
+  }
+  return(value)
+}
+
+uncla <- subset(dfrat, Phylum == "unclassified")
+
+dfrat$Phylum <- factor(dfrat$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Chlamydiae", "Epsilonproteobacteria", "TA18", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))
+
+dfrat$Phylum = with(dfrat, factor(Phylum, levels = rev(levels(Phylum))))
+
+
+#################################################################################  OVERALL ABUNDANCE PLOT
+good_phylum_proteo <-tax_glom(merged_final,taxrank = "Phylum")
+goodsamps_phylum <- tax_glom(good_phylum_proteo,taxrank = "Phylum")
+goodsamps_phy_melt <- psmelt(goodsamps_phylum)  ##  Melt it into a dataframe 
+sub_goodsamps_phy_melt <- subset(goodsamps_phy_melt, select = c("Sample", "ProdLevel", "quadrant", "Phylum","Abundance"))
+TOTALS <- ddply(sub_goodsamps_phy_melt, c("Sample"), summarise, ##  Let's get the McMurdie and Holmes Scaled  Total for each sample 
+                total   = sum(Abundance))   
+sub_phy_melt_totals <- merge(sub_goodsamps_phy_melt, TOTALS, by = "Sample")  ### Merge phylum sums and the total numbers -> so we can calculate the Relative Abundance
+sub_phy_melt_totals$RelAbundance <- sub_phy_melt_totals$Abundance/sub_phy_melt_totals$total  ## Calculate the relative abundance
+sub_phy_melt_totals$PercentAbund <- sub_phy_melt_totals$RelAbundance * 100  ##  Calculate the Percent Abundance
+
+####  Make a new dataframe with the percent abudance within the entire dataset!
+phy_stats <- ddply(sub_phy_melt_totals, c("Phylum"), summarise, 
+                   N = length(PercentAbund),
+                   PercentPhy = mean(PercentAbund),
+                   sd   = sd(PercentAbund),
+                   se   = sd / sqrt(N))
+abund <- subset(phy_stats,PercentPhy > 0.001)  # Only take the phyla that are more than 0.01% abundant
+
+abund_ordered <- arrange(abund, desc(PercentPhy))
+
+abund$Phylum <- factor(abund$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Chlamydiae", "Epsilonproteobacteria", "TA18", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))   
+
+abund$Phylum = with(abund, factor(Phylum, levels = rev(levels(Phylum)))) 
+
+#Relative abundance plot 
+abund_plot <- ggplot(abund, aes(y=PercentPhy , x=Phylum))  +
+  #geom_boxplot(fill = "magenta4", colour = "black") + 
+  geom_bar(stat="identity", position=position_dodge(),  fill = "magenta4", colour = "black") +
+  theme_bw() + ggtitle("Phyla Above 0.1% in All Samples") +
+  xlab("Phylum") + ylab("Mean Relative Abundance (%)") +
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25) + coord_flip() +
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=0, colour = "black", size=14),
+        axis.text.y = element_text(colour = "black", size=14),
+        axis.title.y = element_text(face="bold", size=16),
+        plot.title = element_text(face="bold", size = 20),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        legend.position="none"); abund_plot
+
+
+#################################################################################
+#################################################################################
+dfrat$Habitat <- as.character(dfrat$Habitat)
+dfrat$Habitat[dfrat$Habitat == " Mixed"] <- "Mixed"
+dfrat$Habitat[dfrat$Habitat == " Top Productive"] <- "Epilimnion \nHigh-Nutrient"
+dfrat$Habitat[dfrat$Habitat == " Top Unproductive"] <- "Epilimnion \nLow-Nutrient"
+dfrat$Habitat[dfrat$Habitat == " Bottom Productive"] <- "Hypolimnion \nHigh-Nutrient"
+dfrat$Habitat[dfrat$Habitat == " Bottom Unproductive"] <- "Hypolimnion \nLow-Nutrient"
+dfrat$Habitat[dfrat$Habitat == " PA Productive"] <- "High-Nutrient \nParticle-Associated"
+dfrat$Habitat[dfrat$Habitat == " PA Unproductive"] <- "Low-Nutrient \nParticle-Associated"
+dfrat$Habitat[dfrat$Habitat == " FL Productive"] <- "High-Nutrient \nFree-Living"
+dfrat$Habitat[dfrat$Habitat == " FL Unproductive"] <- "Low-Nutrient \nFree-Living"
+dfrat$Habitat[dfrat$Habitat == " PA Top"] <- "Particle-Associated \nEpilimnion"
+dfrat$Habitat[dfrat$Habitat == " FL Top"] <- "Free-Living \nEpilimnion"
+dfrat$Habitat[dfrat$Habitat == " FL Bottom"] <- "Free-Living \nHypolimnion"
+dfrat$Habitat[dfrat$Habitat == " PA Bottom"] <- "Particle-Associated \nHypolimnion"
+
+dfrat$Habitat <- factor(dfrat$Habitat,levels = c("Epilimnion \nHigh-Nutrient", "Hypolimnion \nHigh-Nutrient", "Mixed", "Epilimnion \nLow-Nutrient", "Hypolimnion \nLow-Nutrient",
+                                                 "Particle-Associated \nHypolimnion", "Free-Living \nEpilimnion", "Free-Living \nHypolimnion", 
+                                                 "High-Nutrient \nParticle-Associated", "High-Nutrient \nFree-Living", "Low-Nutrient \nParticle-Associated", "Low-Nutrient \nFree-Living"))
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.4_heat_only.jpeg", width= 30, height=35, units= "cm", pointsize= 8, res=250)
+heat <- ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 18)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + 
+  ylab("Phylum") + xlab("Habitat") + 
+  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
+  #scale_y_discrete(limits=phys) + xlab("Habitat") + ylab("Phylum") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.text.x = element_text(colour="black", size=12, angle = 30, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        legend.title = element_text(face="bold", size=14),
+        legend.text = element_text(size = 14),
+        legend.position = c(0.94, 0.13),#"left",
+        axis.title.y = element_text(face="bold", size=16),
+        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
+        strip.text.x = element_text(size=14, face = "bold", colour = "black"),
+        strip.background = element_blank()); 
+#dev.off()
+
+#http://stackoverflow.com/questions/4559229/drawing-pyramid-plot-using-r-and-ggplot2
+
+setdiff(abund$Phylum, dfrat$Phylum)  # Discover the phyla that are in the abundance plot but NOT significantly differentially abundant at the phylum level
+phylum_delete <- c("Candidate_division_OP11", "Candidate_division_OP8", "Candidate_division_TM7", "Deferribacteres", "Deltaproteobacteria", "Dictyoglomi", "SPOTSOCT00m83", "Thermotogae", "TM6", "unclassified", "WCHB1-60")
+
+subset_abundPhylum <- subset(abund, !(Phylum %in% phylum_delete))
+#setdiff(subset_abundPhylum$Phylum, dfrat$Phylum)  # Sanity check
+#setdiff(dfrat$Phylum, subset_abundPhylum$Phylum)  # Double sanity check
+
+
+relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
+  ylab("Mean Percent \n Relative \n Abundance (%)") + coord_flip() + theme_bw() + 
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
+  scale_y_continuous(expand= c(0,0), limits = c(0,25)) +
+  theme(axis.title.x = element_text(face="bold", size=16),
+        axis.text.x = element_text(angle=0, colour = "black", size=12),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_rect(colour="black", fill = "black"),
+        plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
+        #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
+        legend.position="none"); #relabun_plot
+
+
+#####  Plotting FIGURE 5  #####  Plotting FIGURE 5  #####  Plotting FIGURE 5  #####  Plotting FIGURE 5  #####  Plotting FIGURE 5
+#http://stackoverflow.com/questions/20817094/how-to-control-width-of-multiple-plots-in-ggplot2
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.5_heat+abund.tiff", width= 40, height=35, units= "cm", pointsize= 8, res=200)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
+print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(relabun_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
+
+
+#### Subsetting out the top 14 phyla. 
+phy14 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+           "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes")
+phy14_dfrat <- subset(dfrat, Phylum %in% phy14)
+phy14_dfrat <- subset(phy14_dfrat, Habitat != "Mixed")
+
+phy14_dfrat$Phylum <- factor(phy14_dfrat$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
+                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes"))
+
+phy14_dfrat$Phylum = with(phy14_dfrat, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
+
+
+phy_heat <- ggplot(phy14_dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-Ratio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 1, barheight = 4)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + 
+  ylab("Phylum") + xlab("Habitat") + 
+  #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
+  #scale_y_discrete(limits=phys) + xlab("Habitat") + ylab("Phylum") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+        axis.text.x = element_text(colour = "black", size=8, angle = 30, hjust = 1, vjust = 1),  #Set the x-axis labels
+        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+        legend.title = element_text(size=7, face="bold"),  #Set the legend title 
+        legend.text = element_text(size = 7),
+        strip.text.x = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+        strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+        legend.position = c(0.92, 0.75),#"left",
+        plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
+        strip.text.x = element_text(size=14, face = "bold", colour = "black"),
+        strip.background = element_blank()); phy_heat
+ggsave(phy_heat, filename = "~/Final_PAFL_Trophicstate/phy14_heat.pdf", height = 4, width = 6.5, dpi = 300)
+
+
+#######  Making the abundance plot!
+newphy <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria","Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi","Armatimonadetes")
+
+phy14_abund <- subset(abund, Phylum %in% newphy)
+phy14_abund$Phylum <- factor(phy14_abund$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
+                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi","Armatimonadetes"))  #"Lentisphaerae", "Chlorobi",  "Firmicutes"
+
+phy14_abund$Phylum = with(phy14_abund, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
+
+
+phy14_relabnd <- ggplot(phy14_abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
+  ylab("Mean Percent \n Relative Abundance") + coord_flip() + theme_bw() + 
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
+  scale_y_continuous(expand= c(0,0), limits = c(0,25)) +
+  theme(axis.title.x = element_text(face="bold", size=10),
+        axis.text.x = element_text(angle=0, colour = "black", size=8),
+        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+        strip.background = element_rect(colour="black", fill = "black"),
+        #plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
+        #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
+        legend.position="none"); 
+ggsave(phy14_relabnd, filename = "~/Final_PAFL_Trophicstate/phy14_abundance.pdf", height = 3.5, width = 3, dpi = 300)
+
+horizontal_phy14 <-ggplot(phy14_abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
+  ylab("Mean Percent \n Relative Abundance") + theme_bw() + 
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
+  scale_y_continuous(expand= c(0,0), limits = c(0,25)) +
+  theme(axis.title.x = element_text(face="bold", size=10),
+        axis.text.x = element_text(angle=30, colour = "black", size=8, vjust = 1, hjust = 1),
+        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
+        strip.background = element_rect(colour="black", fill = "black"),
+        #plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
+        #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
+        legend.position="none"); horizontal_phy14
+ggsave(horizontal_phy14, filename = "~/Final_PAFL_Trophicstate/phylum_abundance.pdf", height = 3, width = 4, dpi = 300)
+
+
+
+
+```
+
+
+
 
 
 
