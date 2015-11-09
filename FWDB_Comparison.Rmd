@@ -684,9 +684,9 @@ prodoligo_phylum <- multiplot(phybotFL_plot, phybotPA_plot, cols = 2)
 #Surface productive
 pafl_topprod <- subset(de_phytopProd, select = c(Phylum, log2FoldChange, padj))
 pafl_topprod$Habitat <- "PA vs. FL: Top Productive"
-#Surface unproductive
-pafl_topUNprod <- subset(de_phytopUNProd, select = c(Phylum, log2FoldChange, padj))
-pafl_topUNprod$Habitat <- "PA vs. FL: Top Unproductive"
+# NOTHING SIGNIFICANT HERE:  Surface unproductive
+#pafl_topUNprod <- subset(de_phytopUNProd, select = c(Phylum, log2FoldChange, padj))
+#pafl_topUNprod$Habitat <- "PA vs. FL: Top Unproductive"
 #Bottom Productive
 pafl_botprod <- subset(de_phybotProd, select = c(Phylum, log2FoldChange, padj))
 pafl_botprod$Habitat <- "PA vs. FL: Bottom Productive"
@@ -727,7 +727,7 @@ trophs <- rbind(troph2, troph4)
 newlog2foldchange <- as.numeric(trophs$log2FoldChange * -1)  ##  To make PRODUCTIVE changes POSITIVE 
 trophs$log2FoldChange <- newlog2foldchange
 
-df_ratio <-rbind(pafl_topprod, pafl_topUNprod, pafl_botprod, pafl_botUNprod,pafl_isothermal,
+df_ratio <-rbind(pafl_topprod, pafl_botprod, pafl_botUNprod,pafl_isothermal,
                  topbot1, topbot2, topbot3, topbot4,
                  trophs)
 
@@ -760,7 +760,7 @@ dfrat$Phylum = with(dfrat, factor(Phylum, levels = rev(levels(Phylum))))
 
 
 #################################################################################  OVERALL ABUNDANCE PLOT
-good_phylum_proteo <-tax_glom(merged_final,taxrank = "Phylum")
+good_phylum_proteo <-tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
 goodsamps_phylum <- tax_glom(good_phylum_proteo,taxrank = "Phylum")
 goodsamps_phy_melt <- psmelt(goodsamps_phylum)  ##  Melt it into a dataframe 
 sub_goodsamps_phy_melt <- subset(goodsamps_phy_melt, select = c("Sample", "ProdLevel", "quadrant", "Phylum","Abundance"))
@@ -828,28 +828,28 @@ dfrat$Habitat <- factor(dfrat$Habitat,levels = c("Epilimnion \nHigh-Nutrient", "
 
 #jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.4_heat_only.jpeg", width= 30, height=35, units= "cm", pointsize= 8, res=250)
 heat <- ggplot(dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
-  scale_fill_gradient2(name = "Odds\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 18)) + #scale_y_reverse() + 
+  scale_fill_gradient2(name = "Odds\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 1, barheight = 3)) + #scale_y_reverse() + 
   theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + 
   ylab("Phylum") + xlab("Habitat") + 
   #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
   #scale_y_discrete(limits=phys) + xlab("Habitat") + ylab("Phylum") + 
   facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
-  theme(axis.text.x = element_text(colour="black", size=12, angle = 30, hjust = 1, vjust = 1), 
-        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
-        axis.title.x = element_text(face="bold", size=16),
-        legend.title = element_text(face="bold", size=14),
-        legend.text = element_text(size = 14),
-        legend.position = c(0.94, 0.13),#"left",
-        axis.title.y = element_text(face="bold", size=16),
+  theme(axis.text.x = element_text(colour="black", size=8, angle = 30, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=8),
+        axis.title.x = element_text(face="bold", size=8),
+        legend.title = element_text(face="bold", size=6),
+        legend.text = element_text(size = 6),
+        legend.position = c(0.93, 0.14),#"left",
+        axis.title.y = element_text(face="bold", size=8),
         plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
-        strip.text.x = element_text(size=14, face = "bold", colour = "black"),
-        strip.background = element_blank()); 
+        strip.text.x = element_text(size=8, face = "bold", colour = "black"),
+        strip.background = element_blank()); heat
 #dev.off()
 
 #http://stackoverflow.com/questions/4559229/drawing-pyramid-plot-using-r-and-ggplot2
 
 setdiff(abund$Phylum, dfrat$Phylum)  # Discover the phyla that are in the abundance plot but NOT significantly differentially abundant at the phylum level
-phylum_delete <- c("Candidate_division_OP11", "Candidate_division_OP8", "Candidate_division_TM7", "Deferribacteres", "Deltaproteobacteria", "Dictyoglomi", "SPOTSOCT00m83", "Thermotogae", "TM6", "unclassified", "WCHB1-60")
+phylum_delete <- c("Candidate_division_OP11", "Candidate_division_OP8", "Candidate_division_TM7", "Dictyoglomi", "SPOTSOCT00m83", "Thermotogae", "TM6", "unclassified", "WCHB1-60")
 
 subset_abundPhylum <- subset(abund, !(Phylum %in% phylum_delete))
 #setdiff(subset_abundPhylum$Phylum, dfrat$Phylum)  # Sanity check
@@ -861,15 +861,14 @@ relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coor
   ylab("Mean Percent \n Relative \n Abundance (%)") + coord_flip() + theme_bw() + 
   geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
   scale_y_continuous(expand= c(0,0), limits = c(0,25)) +
-  theme(axis.title.x = element_text(face="bold", size=16),
-        axis.text.x = element_text(angle=0, colour = "black", size=12),
+  theme(axis.title.x = element_text(face="bold", size=8),
+        axis.text.x = element_text(angle=0, colour = "black", size=8),
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),
         strip.background = element_rect(colour="black", fill = "black"),
-        plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
+        plot.margin = unit(c(1.65, 2, 1.35, -1.35), "cm"), #top, right, bottom, left
         #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
         legend.position="none"); #relabun_plot
-
 
 #####  Plotting FIGURE 5  #####  Plotting FIGURE 5  #####  Plotting FIGURE 5  #####  Plotting FIGURE 5  #####  Plotting FIGURE 5
 #http://stackoverflow.com/questions/20817094/how-to-control-width-of-multiple-plots-in-ggplot2
