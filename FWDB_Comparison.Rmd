@@ -128,6 +128,20 @@ sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_
 nowin_silva_scaled <- subset_samples(sum_scale_matround, names != "WINH" & names != "WINH3um")
 nowin_silva_scaled <- prune_taxa(taxa_sums(nowin_silva_scaled) > 0, nowin_silva_scaled) # Remove any OTUs that are 0
 
+
+####  Obtain the top 100 most abundant OTUs
+topN <- 50
+most_abundant_taxa = sort(taxa_sums(nowin_silva_scaled), TRUE)[1:topN]
+print(most_abundant_taxa)
+silva_50_OTUs <- prune_taxa(names(most_abundant_taxa), nowin_silva_scaled)
+
+silva_sums <- data.frame(taxa_sums(silva_50_OTUs))
+
+ggplot(silva_sums,aes(x=row.names(silva_sums), y=taxa_sums.silva_50_OTUs.)) + ylab("Number of Sequences per OTU") + scale_x_discrete(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) + theme_classic() +
+  geom_bar(stat="identity",colour="black",fill="skyblue")  + xlab("OTU Rank") + 
+  ggtitle("Silva DB: Rank Abundance Curve of Top 50 OTUs") + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 ```
 
 ```{r data import of Freshwater DB data}
@@ -239,8 +253,10 @@ FWDB_sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matr
 ggplot(data.frame(sum=sample_sums(matround_mean_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
   geom_histogram(colour="black",fill="orangered3", binwidth = 500)  + xlab("Total Sequences") + 
   ggtitle(expression(atop(bold("Mean and 'True' Rounding Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
+```
 
 
+```{r Create the Scaled phyloseq object}
 ##  Our phyloseq object!
 nowin_FWDB_scaled <- subset_samples(FWDB_sum_scale_matround, names != "WINH" & names != "WINH3um")
 nowin_FWDB_scaled <- prune_taxa(taxa_sums(nowin_FWDB_scaled) > 0, nowin_FWDB_scaled) # Remove any OTUs that are 0
@@ -249,37 +265,285 @@ ggplot(data.frame(sum=sample_sums(nowin_FWDB_scaled)),aes(sum)) + ylab("Number o
   geom_histogram(colour="black",fill="thistle1", binwidth = 20)  + xlab("Total Sequences") + 
   ggtitle(expression(atop(bold("Sum & Scale (by 'True' rounding) the Reads"), atop("Binwidth = 20"), ""))) 
 
-####  Obtain the top 100 most abundant OTUs
-topN <- 500
-most_abundant_taxa = sort(taxa_sums(nowin_FWDB_scaled), TRUE)[1:topN]
-print(most_abundant_taxa)
-FWDB_500_OTUs <- prune_taxa(names(most_abundant_taxa), nowin_FWDB_scaled)
 
-sums <- data.frame(taxa_sums(FWDB_500_OTUs))
+########## ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(nowin_FWDB_scaled))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
 
-ggplot(sums,aes(x=row.names(sums), y=taxa_sums.FWDB_500_OTUs.)) + ylab("Number of Sequences per OTU") + scale_x_discrete(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) + theme_classic() +
-  geom_bar(stat="identity",colour="black",fill="plum4")  + xlab("OTU Rank") + 
-  ggtitle("Rank Abundance Curve of Top 500 OTUs") + 
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
-```
-
-
-```{r}
-comparisons <- c("Silva Raw", "FWDB+Silva Raw", "Merged Silva", "Merged FWDB+Silva", "Silva Scaled", "FWDB+Silva Scaled")
-
-compare_list <- c("bact_samples", "FW_samples", "sum_reps", "FW_sum_reps","sum_scale_matround", "FWDB_sum_scale_matround")
-
-compare_df <- data.frame(matrix(ncol = 7, nrow = 6))
-row.names(compare_df) <- comparisons
-
-for (i in 1:compare_list){
-   <-  min(compare_list)
-  append()
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
 }
 
+phy$Phylum <- Phylum
+t <- tax_table(as.matrix(phy))
+
+tax_table(nowin_FWDB_scaled) <- t
+
+# Our phyloseq object!
+#nowin_FWDB_scaled 
+
 ```
 
+```{r rank abundance curve}
+
+
+```
+
+```{r comparisons}
+silva <- c("Silva Raw", "Merged Silva", "Silva Scaled")
+FWDB <- c("FWDB+Silva Raw", "Merged FWDB+Silva", "FWDB+Silva Scaled")
+
+silva_list <- c("bact_samples", "sum_reps", "sum_scale_matround")
+
+fwdb_list <- c( "FW_samples", "FW_sum_reps", "FWDB_sum_scale_matround")
+  
+compare_silva <- data.frame(matrix(ncol = 6, nrow = 3))
+compare_fwdb <- data.frame(matrix(ncol = 6, nrow = 3))
+
+row.names(compare_silva) <- silva_list
+row.names(compare_fwdb) <- fwdb_list
+
+colnames(compare_silva) <- c("MinSeqs", "MeanSeqs", "MedianSeqs", "MaxSeqs", "RangeSeqs", "NumOTUs")
+colnames(compare_fwdb) <- c("MinSeqs", "MeanSeqs", "MedianSeqs", "MaxSeqs", "RangeSeqs", "NumOTUs")
+
+physeq_stats <- function(physeq){
+  out <- c(min(sample_sums(physeq)), 
+                  mean(sample_sums(physeq)), 
+                  median(sample_sums(physeq)), 
+                  max(sample_sums(physeq)),
+                  max(sample_sums(physeq)) -min(sample_sums(physeq)),
+                  nrow(otu_table(physeq)))
+  print(out)
+}
+
+compare_silva[1,] <- physeq_stats(bact_samples)
+compare_silva[2,] <- physeq_stats(sum_reps)
+compare_silva[2,6] <- ncol(otu_table(sum_reps))
+compare_silva[3,] <- physeq_stats(sum_scale_matround)
+compare_silva[3,6] <- ncol(otu_table(sum_scale_matround))
+
+
+compare_fwdb[1,] <- physeq_stats(FW_samples)
+compare_fwdb[2,] <- physeq_stats(FW_sum_reps)
+compare_fwdb[2,6] <- ncol(otu_table(FW_sum_reps))
+compare_fwdb[3,] <- physeq_stats(FWDB_sum_scale_matround)
+compare_fwdb[3,6] <- ncol(otu_table(FWDB_sum_scale_matround))
+
+panderOptions("digits", 1) # This will set the values to numbers and then will round to the whole number
+set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
+pander(compare_silva, caption="Original data with the Silva Database.")
+
+pander(compare_fwdb, caption="New Freshwater Database combined with the Silva Database")
+```
+
+
+
+```{r overall phylum abundance}
+### Calculate the mean relative abundance based on ProdLevel + Quadrant for each PHYLUM 
+nosherwin_FWDB_scaled <- subset_samples(nowin_FWDB_scaled, names != "SHEE" & names != "SHEE3um" & names !="SHEH" & names != "SHEH3um") # 537 unique OTUs to Sherman lake
+nosherwin_FWDB_scaled <- prune_taxa(taxa_sums(nosherwin_FWDB_scaled) > 0, nosherwin_FWDB_scaled) # Remove any OTUs that are 0
+
+
+#################################################################################  OVERALL ABUNDANCE PLOT
+###############  NO ISOTHERMAL LAKE (SHERMAN) SAMPLES AND NO WINTERGREEN HYPOLIMNION SAMPLES 
+good_phylum_proteo <-tax_glom(nosherwin_FWDB_scaled,taxrank = "Phylum")
+goodsamps_phylum <- tax_glom(good_phylum_proteo,taxrank = "Phylum")
+goodsamps_phy_melt <- psmelt(goodsamps_phylum)  ##  Melt it into a dataframe 
+sub_goodsamps_phy_melt <- subset(goodsamps_phy_melt, select = c("Sample", "ProdLevel", "quadrant", "Phylum","Abundance"))
+TOTALS <- ddply(sub_goodsamps_phy_melt, c("Sample"), summarise, ##  Let's get the McMurdie and Holmes Scaled  Total for each sample 
+                total   = sum(Abundance))   
+sub_phy_melt_totals <- merge(sub_goodsamps_phy_melt, TOTALS, by = "Sample")  ### Merge phylum sums and the total numbers -> so we can calculate the Relative Abundance
+sub_phy_melt_totals$RelAbundance <- sub_phy_melt_totals$Abundance/sub_phy_melt_totals$total  ## Calculate the relative abundance
+sub_phy_melt_totals$PercentAbund <- sub_phy_melt_totals$RelAbundance * 100  ##  Calculate the Percent Abundance
+
+
+####  Make a new dataframe with the percent abudance within the entire dataset!
+phy_stats <- ddply(sub_phy_melt_totals, c("Phylum"), summarise, 
+                   N = length(PercentAbund),
+                   PercentPhy = mean(PercentAbund),
+                   sd   = sd(PercentAbund),
+                   se   = sd / sqrt(N))
+
+abund <- subset(phy_stats,PercentPhy > 0.001)  # Only take the phyla that are more than 0.01% abundant
+
+abund$Phylum <- factor(abund$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Firmicutes", "Chlorobi", "Armatimonadetes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae",   "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "Gemmatimonadetes", "WCHB1-60", "Deferribacteres", "Fusobacteria",  
+                                               "Candidate_division_TM7",  "SPOTSOCT00m83", "Candidate_division_OP8", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "SM2F11", "unclassified"))   
+
+abund$Phylum = with(abund, factor(Phylum, levels = rev(levels(Phylum)))) 
+
+
+#Relative abundance plot 
+ggplot(abund, aes(y=PercentPhy , x=Phylum))  +
+  geom_bar(stat="identity", position=position_dodge(),  fill = "cornflowerblue", colour = "black") +
+  theme_bw() + ggtitle("Phyla Above 0.1% in All Samples") +
+  xlab("Phylum") + ylab("Mean Relative Abundance (%)") +
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25) + 
+  coord_flip() 
+```
+
+
+
+
+```{r abundance bar plots}
+##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
+##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
+##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
+
+##  Calculate the Phylum abundance based on the ProdLevel and the filter fraction.  
+prod_phylum_FWDB_stats <- ddply(sub_phy_melt_totals, c("ProdLevel","quadrant", "Phylum"), summarise, 
+                                N = length(PercentAbund),
+                                mean_abundance = mean(PercentAbund),
+                                sd   = sd(PercentAbund),
+                                se   = sd / sqrt(N))
+###  Only the phylum 
+abund_only_by_phylum <- ddply(prod_phylum_FWDB_stats, c("Phylum"), summarise, 
+                              N = length(mean_abundance),
+                              phylum_mean = mean(mean_abundance))
+
+abund_only_by_phylum <-arrange(abund_only_by_phylum, desc(phylum_mean)) # abund_only_by_phylum[with(abund_only_by_phylum, order(-phylum_mean)), ]
+
+phy_order <- as.character(abund_only_by_phylum$Phylum)  # THIS IS A VECTOR OF THE PHYLUM IN THE ORDER THAT WE WANT
+
+### TOP 25 PHYLA!
+top15phy <- prod_phylum_FWDB_stats[prod_phylum_FWDB_stats$Phylum %in% phy_order[1:15], ]
+
+phy15_order <- as.character(abund_only_by_phylum$Phylum)[1:15]
+
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+top15phy$Phylum <- factor(top15phy$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi"))
+  
+top15phy$quadrant <- factor(top15phy$quadrant,levels = c("Free Epilimnion", "Particle Epilimnion", "Free Hypolimnion", "Particle Hypolimnion"))
+
+top15phy$Phylum = with(top15phy, factor(Phylum, levels = rev(levels(Phylum))))
+
+#### ADDING NO SPACES FOR FREE LIVING and ADDING 2 SPACE FOR PARICLE ASSOCIATED AT THE END
+top15phy$quadrant <- as.character(top15phy$quadrant)
+top15phy$quadrant[top15phy$quadrant=="Particle Epilimnion"] <- "Epilimnion   "
+top15phy$quadrant[top15phy$quadrant=="Free Epilimnion"]   <- "Epilimnion"
+top15phy$quadrant[top15phy$quadrant=="Particle Hypolimnion"]   <- " Hypolimnion  "
+top15phy$quadrant[top15phy$quadrant=="Free Hypolimnion"]   <- "Hypolimnion"
+
+#### ADDING NO SPACES FOR PRODUCTIVE and ADDING 1 SPACE FOR UNPRODUCTIVE
+top15phy$prod <- top15phy$ProdLevel
+top15phy$prod <- as.character(top15phy$prod)
+top15phy$prod[top15phy$prod =="Productive"]   <- ""
+top15phy$prod[top15phy$prod =="Unproductive"]   <- " "
+
+for(i in 1:length(top15phy$prod)){
+  top15phy$prod_quad [i]<-paste(as.character(top15phy$prod[i]),as.character(top15phy$quadrant[i]))}
+
+top15phy$prod_quad <- factor(top15phy$prod_quad,levels = c(" Epilimnion", " Hypolimnion", " Epilimnion   ", "  Hypolimnion  ", 
+                                                           "  Epilimnion", "  Hypolimnion", "  Epilimnion   ",  "   Hypolimnion  "))
+
+phy.colors.whew <- c(Acidobacteria = "grey26", Actinobacteria = "palevioletred2", Alphaproteobacteria = "steelblue4", Armatimonadetes = "red", Bacteroidetes = "darkorange",
+                     "BD1-5" = "chartreuse", Betaproteobacteria = "royalblue", Caldiserica = "black","Candidate_division_BRC1" = "red",
+                     "Candidate_division_JS1" = "aquamarine1",
+                     "Candidate_division_OD1" = "#6DDE88", "Candidate_division_OP3" = "yellow1", "Candidate_division_OP8" = "goldenrod1", "Candidate_division_OP11" = "chocolate4",
+                     "Candidate_division_SR1" = "tan3", "Candidate_division_TM7" = "skyblue1", "Candidate_division_WS3" = "magenta",
+                     Chlamydiae="violet", Chlorobi="cyan2", Chloroflexi="darkgreen", Cyanobacteria = "chartreuse3", 
+                     Deferribacteres = "slateblue3", "Deinococcus-Thermus" = "violetred", Dictyoglomi = "cornsilk4", Deltaproteobacteria = "deepskyblue", 
+                     Elusimicrobia = "violetred4", Epsilonproteobacteria = "lightskyblue", Fibrobacteres = "hotpink", Firmicutes = "blue4", FGL7S = "palevioletred1",
+                     Fusobacteria = "slateblue1", Gammaproteobacteria = "plum2", Gemmatimonadetes="black", GOUTA4 = "plum1", "Hyd24-12" = "sienna2", JTB23 = "seashell2",
+                     Lentisphaerae = "yellow1", "NPL-UPA2"="royalblue", OC31 = "mediumpurple4", Planctomycetes = "mediumorchid3", Proteobacteria = "deepskyblue",
+                     "SHA-109" = "lightsalmon3", SM2F11 = "lightskyblue2", SPOTSOCT00m83 = "orangered",
+                     Spirochaetae = "gold3", Tenericutes="pink", Thermotogae = "chocolate1", TA06 = "lightslateblue",TA18 = "rosybrown3", TM6 = "olivedrab",
+                     unclassified = "grey", Verrucomicrobia = "purple4", "WCHB1-60" = "palegreen")
+
+
+###########################  Here we will use GTable to manually create the labels. 
+library(gtable)
+# get gtable object
+top15plot <- ggplot(top15phy, aes(y=mean_abundance , x=Phylum, fill=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  guides(fill = guide_legend(reverse=TRUE)) + ggtitle("") + 
+  geom_bar(stat="identity", position=position_dodge()) + #theme_classic() +
+  geom_bar(stat="identity", position=position_dodge(), colour = "black", show_guide = FALSE) +
+  facet_wrap(~ prod_quad, ncol = 8) + xlab("Top 15 Most Abundant Phyla") +
+  scale_fill_manual(values = phy.colors.whew,name="Phylum") + 
+  geom_errorbar(aes(ymin = mean_abundance -se, ymax = mean_abundance +se), width = 0.25, color = "black") + 
+  ylab("Mean Percent Relative Abundance (%)") + coord_flip() + theme_bw() 
+
+
+z <- ggplot_gtable(ggplot_build(top15plot))
+
+# add label for top strip
+z <- gtable_add_rows(z, z$heights[[3]], 2)
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 4, 3, 7, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Particle-Associated", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 9, 3, 13, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.6))),
+                             textGrob("High-Nutrient", gp = gpar(fontsize = 14, col = "black"))),
+                     2, 4, 2, 13, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 15, 3, 19, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
+                             textGrob("Particle-Associated", gp = gpar(fontsize = 14, col = "black"))),
+                     3, 22, 3, 25, name = paste(runif(2)))
+
+z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gray(0.6))),
+                             textGrob("Low-Nutrient", gp = gpar(fontsize = 14, col = "black"))),
+                     2, 15, 2, 25, name = paste(runif(2)))
+
+# add margins
+z <- gtable_add_cols(z, unit(1/8, "line"), 7)
+z <- gtable_add_rows(z, unit(1/8, "line"), 3)
+
+#####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
+# draw it
+grid.newpage()
+grid.draw(z)
+#dev.off()
+```
+
+
+```{r abundance plots comparing 2}
+#  Prep the data frame 
+bicompare_phy <- subset(goodsamps_phy_melt, select = c("Sample", "filter", "ProdLevel", "quadrant", "Phylum","Abundance"))
+
+bi_TOTALS <- ddply(bicompare_phy, c("Sample"), summarise, ##  Let's get the McMurdie and Holmes Scaled  Total for each sample 
+                total   = sum(Abundance))   
+bicompare_totals <- merge(bicompare_phy, bi_TOTALS, by = "Sample")  ### Merge phylum sums and the total numbers -> so we can calculate the Relative Abundance
+bicompare_phy$RelAbundance <- bicompare_phy$Abundance/bicompare_totals$total  ## Calculate the relative abundance
+bicompare_phy$PercentAbund <- bicompare_phy$RelAbundance * 100  ##  Calculate the Percent Abundance
+
+# Compare particle associated to free living 
+filter_phy <- ddply(bicompare_phy, c("filter", "Phylum"), summarise, 
+                                N = length(PercentAbund),
+                                mean_abundance = mean(PercentAbund),
+                                sd   = sd(PercentAbund),
+                                se   = sd / sqrt(N))
+
+
+top15phy_filter <- filter_phy[filter_phy$Phylum %in% phy_order[1:15], ]
+
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+top15phy_filter$Phylum <- factor(top15phy_filter$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi"))
+
+
+ggplot(top15phy_filter, aes(y=mean_abundance , x=Phylum, fill=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
+  guides(fill = guide_legend(reverse=TRUE)) + ggtitle("") + 
+  geom_bar(stat="identity", position=position_dodge()) + #theme_classic() +
+  geom_bar(stat="identity", position=position_dodge(), colour = "black", show_guide = FALSE) +
+  facet_wrap(~ filter, ncol = 2) + xlab("Top 15 Most Abundant Phyla") +
+  scale_fill_manual(values = phy.colors.whew,name="Phylum") + 
+  geom_errorbar(aes(ymin = mean_abundance -se, ymax = mean_abundance +se), width = 0.25, color = "black") + 
+  ylab("Mean Percent Relative Abundance (%)") + coord_flip() + theme_bw() 
 
 
 
