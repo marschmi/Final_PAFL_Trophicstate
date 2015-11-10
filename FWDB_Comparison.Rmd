@@ -127,8 +127,9 @@ sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_
 
 nowin_silva_scaled <- subset_samples(sum_scale_matround, names != "WINH" & names != "WINH3um")
 nowin_silva_scaled <- prune_taxa(taxa_sums(nowin_silva_scaled) > 0, nowin_silva_scaled) # Remove any OTUs that are 0
+```
 
-
+```{r Silva rank abundance curve}
 ####  Obtain the top 100 most abundant OTUs
 topN <- 50
 most_abundant_taxa = sort(taxa_sums(nowin_silva_scaled), TRUE)[1:topN]
@@ -150,7 +151,7 @@ FWWDB_shared <- "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/SoMiLakes_copy_FWDB.f
 # Load in the taxonomy file from the mothur FWDB analysis
 FWDB_tax <- "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
 #Create FWDB phyloseq object
-FWDB_data <- import_mothur(mothur_shared_file = FWWDB_shared ,mothur_constaxonomy_file = FWDB_tax )
+FWDB_data <- import_mothur(mothur_shared_file = FWWDB_shared, mothur_constaxonomy_file = FWDB_tax )
 
 # Change the taxonomy names
 #View(tax_table(FWDB_data))
@@ -160,8 +161,9 @@ colnames(tax_table(FWDB_data)) <- c("Kingdom","Phylum","Class","Order","Family",
 #sum(row.names(otu_table(FWDB_data)) == row.names(tax_table(FWDB_data))) # OTU names are the same in the tax and otu tables.
 
 #Let's check out the taxonomy table 
-tax <- data.frame(tax_table(sub_FWDB))
-unique(tax$Class)
+tax <- data.frame(tax_table(FWDB_data))
+tax$OTU <- row.names(tax)
+tax_table(FWDB_data) <- tax_table(as.matrix(tax))
 
 #chloroplast <- subset(tax, Class == "Chloroplast")
 #unknown_tax <- subset(tax, Kingdom == "unknown")
@@ -169,33 +171,29 @@ unique(tax$Class)
 #archaea <- subset(tax, Kingdom == "Archaea")
 #mitochondria <- subset(tax, Strain == "Mitochondria")
 
-# Remove
-sub_FWDB <- subset_taxa(FWDB_data, Kingdom == "Bacteria" &
-              Class != "Chloroplast")
-
 
 #newtax <- sapply(tax, function(x) gsub(pattern = ".__", replacement = "", x)) # apply gsub over all the columns 
 #dim(tax); dim(newtax) # Same dimensions
 
 # Change some of the sample names to match our metadata sample names
-samplenames_FWDB <- sample_names(sub_FWDB)
+samplenames_FWDB <- sample_names(FWDB_data)
 names2_FWDB <- gsub("Gull", "GUL", samplenames_FWDB)
 names3_FWDB <- gsub("Long", "LON", names2_FWDB)
-sample_names(sub_FWDB) <- names3_FWDB
+sample_names(FWDB_data) <- names3_FWDB
 
-# Import metadata file and merge with sub_FWDB object
+# Import metadata file and merge with FWDB_data object
 mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
 map <- import_qiime_sample_data(mapfile)
 
 #Check the sample names 
-names_fw <- sample_names(sub_FWDB)
+names_fw <- sample_names(FWDB_data)
 names_map <- sample_names(map)
 length(names_fw); length(names_map)
 setdiff(names_fw, names_map)
 setdiff(names_map, names_fw)
 
 # Check the sequencing depth of each sample 
-sums_FWDB <- data.frame(colSums(otu_table(sub_FWDB)))
+sums_FWDB <- data.frame(colSums(otu_table(FWDB_data)))
 colnames(sums_FWDB) <- "Sample_TotalSeqs"
 sums_FWDB$sample <- row.names(sums_FWDB)
 sums_FWDB <- arrange(sums_FWDB, Sample_TotalSeqs)
@@ -204,14 +202,14 @@ ggplot(sums_FWDB, aes(x=reorder(sample, Sample_TotalSeqs), y = Sample_TotalSeqs)
   geom_bar(stat = "identity", colour="black",fill="cornflowerblue")  + xlab("Sample Name") + ggtitle("Sample Sums") + 
   theme(axis.text.x = element_text(colour = "black", size=8, angle=45, hjust = 1, vjust = 1))  #Set the x-axis labels
 
-pruned_sub_FWDB <- prune_samples(sample_sums(sub_FWDB) > 10000, sub_FWDB)
+pruned_FWDB <- prune_samples(sample_sums(FWDB_data) > 10000, FWDB_data)
 #names_fw_sub <- sample_names(FWDB_data_sub)
 #length(names_fw_sub); length(names_map)
 #setdiff(names_fw_sub, names_map)
 #setdiff(names_map, names_fw_sub)
 
 # Combine FWDB and mapfiles 
-FWDB_no_scale <- merge_phyloseq(pruned_sub_FWDB,map)
+FWDB_no_scale <- merge_phyloseq(pruned_FWDB,map)
 
 
 # lets look at only samples (removing blanks and mock and samples that didn't amplify)
@@ -248,15 +246,10 @@ data_dup_FWDB_sum_scale_matround_join <- sample_data(data_dup_FWDB_sum_scale_mat
 sum_scale_matround_otu <- otu_table(FWDB_sum_scale_matround)  # OTU table in our phyloseq object
 sum_scale_matround_tax <- tax_table(FWDB_sum_scale_matround)  # Taxonomy Table in our phyloseq object
 FWDB_sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, data_dup_FWDB_sum_scale_matround_join) #####  THIS IS OUR RAW MERGED SAMPLES PHYLOSEQ OBJECT.
-
-
-ggplot(data.frame(sum=sample_sums(matround_mean_merge)),aes(sum)) + ylab("Number of Sequences per Sample") +
-  geom_histogram(colour="black",fill="orangered3", binwidth = 500)  + xlab("Total Sequences") + 
-  ggtitle(expression(atop(bold("Mean and 'True' Rounding Samples Without Scaling the Reads"), atop("Binwidth = 500 Sequences", ""))))
 ```
 
 
-```{r Create the Scaled phyloseq object}
+```{r Create working phyloseq object}
 ##  Our phyloseq object!
 nowin_FWDB_scaled <- subset_samples(FWDB_sum_scale_matround, names != "WINH" & names != "WINH3um")
 nowin_FWDB_scaled <- prune_taxa(taxa_sums(nowin_FWDB_scaled) > 0, nowin_FWDB_scaled) # Remove any OTUs that are 0
@@ -287,10 +280,22 @@ tax_table(nowin_FWDB_scaled) <- t
 
 ```
 
-```{r rank abundance curve}
+```{r FWDB + Silva rank abundance curve}
+####  Obtain the top 100 most abundant OTUs
+topN <- 50
+most_abundant_taxa = sort(taxa_sums(nowin_FWDB_scaled), TRUE)[1:topN]
+print(most_abundant_taxa)
+FWDB_50_OTUs <- prune_taxa(names(most_abundant_taxa), nowin_FWDB_scaled)
 
+FWDB_sums <- data.frame(taxa_sums(FWDB_50_OTUs))
 
+ggplot(FWDB_sums,aes(x=row.names(FWDB_sums), y=taxa_sums.FWDB_50_OTUs.)) + ylab("Number of Sequences per OTU") + scale_x_discrete(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) + theme_classic() +
+  geom_bar(stat="identity",colour="black",fill="darkturquoise")  + xlab("OTU Rank") + 
+  ggtitle("FWDB+Silva DB: Rank Abundance Curve of Top 50 OTUs") + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 ```
+
 
 ```{r comparisons}
 silva <- c("Silva Raw", "Merged Silva", "Silva Scaled")
@@ -340,6 +345,231 @@ pander(compare_fwdb, caption="New Freshwater Database combined with the Silva Da
 ```
 
 
+```{r Figure 1: summed alpha diversity-rarefied }
+# Let's see what our alpha diversity looks like for a rarefied data set.
+#  We will use the mean AND floored data.  
+#FW_sum_reps  # Raw Merged Samples, we have 14,294 OTUs  
+#sample_data(FW_sum_reps) <- sample_data(FWDB_sum_scale_matround) # Fix the metadata from merge_samples function 
+#FW_sum_reps_nowin <- subset_samples(FW_sum_reps, names != "WINH" & names != "WINH3um") # Remove the 2 wintergreen samples that are actually from the metalimnion 
+#FW_sum_reps_nowin <- prune_taxa(taxa_sums(FW_sum_reps_nowin) > 0, FW_sum_reps_nowin)
+# Now, we have 14,105 OTUs !
+
+#Data Import for rarefied data 
+#FW_sum_reps_nowin  
+#sum_reps_nowin_min_minus1 <- min(sample_sums(FW_sum_reps_nowin)) - 1 # 14,924
+
+# Following code from Michelle's Butterflygut website: http://rstudio-pubs-static.s3.amazonaws.com/25722_9fc9bdc48f0d4f13b05fa61baeda57a0.html#alpha-diversity
+# Rarefy to 14924 reads with replacement 100 times to estimate species richness
+# Since we are rarefying to 14924 reads we need to remove samples with less than 14924 reads
+#raredata14924 <- prune_samples(sample_sums(FW_sum_reps_nowin) > sum_reps_nowin_min_minus1, FW_sum_reps_nowin)
+#  There should still be 41 samples 
+
+# Initialize matrices to store richness and evenness estimates
+#richness <- matrix(nrow = 41,ncol = 100)  # Store richness:  We have 41 samples 
+#row.names(richness) <- sample_names(raredata14924)
+#evenness <- matrix(nrow = 41,ncol = 100)  #Store evenness
+#row.names(evenness) <- sample_names(raredata14924)
+
+# We want to be reproducible - so let's set the seed.
+#set.seed(15879966) # Same seed as in the first chunk
+
+# For 100 replications, rarefy the OTU table to 14854 reads and store the richness and evennes estimates in our 2 matrices we just created.
+#The default for the rarefy_even_depth command is to pick with replacement so I set it to false. Picking without replacement is more computationally intensive 
+#for (i in 1:100) {
+#  r <- rarefy_even_depth(raredata14924, sample.size = sum_reps_nowin_min_minus1, verbose = FALSE, replace = FALSE)
+#  rich <- as.numeric(as.matrix(estimate_richness(r, measures="Observed")))
+#  richness[,i] <- rich
+#  even <- as.numeric(as.matrix(estimate_richness(r, measures="InvSimpson")))
+#  evenness[,i] <- even
+#}
+
+#write.table(richness, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/ObservedRichness100_summed", row.names = TRUE)
+#write.table(evenness, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/InvSimpson100_summed", row.names = TRUE)
+
+
+richness_summed <- read.table("~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/ObservedRichness100_summed", header = TRUE)
+evenness_summed <- read.table("~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/InvSimpson100_summed", header = TRUE)
+
+# Create a new matrix to hold the means and standard deviations of all the richness_summed estimates
+rich_stats_summed <- matrix(nrow= nrow(richness_summed), ncol=1)
+rich_stats_summed[,1] <- apply(richness_summed, 1, mean)
+#rich_stats_summed[,2] = apply(richness_summed, 1, sd)
+rich_stats_summed = data.frame(row.names(richness_summed), rich_stats_summed)
+colnames(rich_stats_summed) <- c("samples","mean_value")
+rich_stats_summed$Test <- "Observed Richness"
+
+# Create a new matrix to hold the means and standard deviations of the evenness_summed estimates
+even_stats_summed <- matrix(nrow = nrow(evenness_summed), ncol = 1)
+even_stats_summed[,1] <- apply(evenness_summed, 1, mean)
+#even_stats[,2] = apply(evenness_summed, 1, sd)
+even_stats_summed <- data.frame(row.names(evenness_summed), even_stats_summed)
+colnames(even_stats_summed) <- c("samples","mean_value")
+even_stats_summed$Test <- "Inverse Simpson"
+
+
+###  Add SIMPSON'S EVENNESS!
+simps_even_summed <- data.frame(matrix(nrow = nrow(evenness_summed), ncol = 3))
+colnames(simps_even_summed) = c("samples","mean_value", "Test")
+simps_even_summed$samples <- even_stats_summed$samples
+simps_even_summed$mean_value <-  even_stats_summed$mean_value/rich_stats_summed$mean_value
+simps_even_summed$Test <- "Simpson's Evenness"
+
+
+#Combine the rich.stats and the even.stats dataframes
+alpha_stats_summed <- rbind(rich_stats_summed, even_stats_summed, simps_even_summed)
+alpha_stats_summed$names <- alpha_stats_summed$samples
+alpha_stats_summed <- makeCategories_dups(alpha_stats_summed)
+alpha_stats_summed$ProdLevel <- as.character(alpha_stats_summed$trophicstate)
+alpha_stats_summed$ProdLevel[alpha_stats_summed$trophicstate == "Eutrophic"] <- "Productive"
+alpha_stats_summed$ProdLevel[alpha_stats_summed$trophicstate == "Mesotrophic"] <- "Productive"
+alpha_stats_summed$ProdLevel[alpha_stats_summed$trophicstate == "Oligotrophic"] <- "Unproductive"
+alpha_stats_summed$ProdLevel[alpha_stats_summed$lakenames == "Sherman"] <- "Mixed"
+alpha_stats_summed$trophicstate[alpha_stats_summed$lakenames == "Sherman"] <- "Mixed"
+
+
+####  Add all information together!
+for(i in 1:length(alpha_stats_summed$limnion)){
+  alpha_stats_summed$prod_lim[i]<-paste(as.character(alpha_stats_summed$ProdLevel[i]),
+                                  as.character(alpha_stats_summed$limnion[i]),
+                                  as.character(alpha_stats_summed$filter[i]))}
+
+
+summed_stats <- alpha_stats_summed %>%
+  group_by(prod_lim, Test) %>%
+  summarize(mean = mean(mean_value), 
+            SE = se(mean_value), 
+            SD = sd(mean_value), 
+            median = median(mean_value))
+
+final_summed_alpha_stats <- left_join(alpha_stats_summed, summed_stats, by = c("prod_lim", "Test"))
+
+final_summed_alpha_stats$ProdLevel <-factor(final_summed_alpha_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
+final_summed_alpha_stats$prod_lim <-factor(final_summed_alpha_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", 
+                                                                                      "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", 
+                                                                                      "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+final_summed_alpha_stats_plot <- ggplot(final_summed_alpha_stats, aes(x = prod_lim, y = mean_value, color = prod_lim)) + geom_point(size = 3, alpha = 0.7) +
+  ggtitle("Summed and Rarefied at 14,936 Sequences") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  #scale_y_continuous(breaks = seq(0,1500, 250)) + 
+  geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
+  layer(data = final_summed_alpha_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 7, color = "black") + 
+  layer(data = final_summed_alpha_stats, mapping = aes(x = prod_lim, y = mean), geom = "point", pch = 126, size = 7, color = "black") + 
+  facet_grid(Test ~ ProdLevel, scales="free", space="free_x") +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=8),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        plot.title = element_text(face="bold", size = 12),
+        strip.text.x = element_text(size=10, face="bold"),
+        strip.text.y = element_text(size=10, face="bold"),
+        legend.title = element_text(size=8, face="bold"),
+        legend.text = element_text(size = 8),
+        plot.margin = unit(c(0.1, -0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        strip.background = element_blank(),
+        legend.position="none")
+```
+
+```{r Figure 1:  sum and scaled Alpha diversity, fig.width = 12, fig.height = 15}
+### Using the SUM and then SCALED  and MATrounded data
+## remove the 2 wintergreen "hypolimnion" samples
+nowin_FWDB_scaled # 8,823 OTUs
+
+names <- sample_names(nowin_FWDB_scaled)
+sum_scaled_matround_rich <- as.numeric(as.matrix(estimate_richness(nowin_FWDB_scaled, measures="Observed")))
+sum_scaled_matround_even <- as.numeric(as.matrix(estimate_richness(nowin_FWDB_scaled, measures="InvSimpson")))
+sum_scaled_matround_simpseven <- sum_scaled_matround_even/sum_scaled_matround_rich
+
+#Create new data frame
+sum_scaled_matround_alpha <- data.frame(matrix(ncol = 0, nrow = length(names)))
+sum_scaled_matround_alpha$names <- names
+sum_scaled_matround_alpha$ObsRichness <- sum_scaled_matround_rich
+sum_scaled_matround_alpha$InvSimpson <- sum_scaled_matround_even
+sum_scaled_matround_alpha$Simps_Even <- sum_scaled_matround_simpseven
+
+# Reshape the data
+sum_scaled_matround_alpha <- gather(sum_scaled_matround_alpha, "Test", "Value", 2:4)
+sum_scaled_matround_alpha <- makeCategories_dups(sum_scaled_matround_alpha)
+sum_scaled_matround_alpha$ProdLevel <- as.character(sum_scaled_matround_alpha$trophicstate)
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Eutrophic"] <- "Productive"
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Mesotrophic"] <- "Productive"
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Oligotrophic"] <- "Unproductive"
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$lakenames == "Sherman"] <- "Mixed"
+sum_scaled_matround_alpha$trophicstate[sum_scaled_matround_alpha$lakenames == "Sherman"] <- "Mixed"
+# Change test 
+sum_scaled_matround_alpha$Test <- as.character(sum_scaled_matround_alpha$Test)
+sum_scaled_matround_alpha$Test[sum_scaled_matround_alpha$Test == "ObsRichness"] <- "Observed Richness"
+sum_scaled_matround_alpha$Test[sum_scaled_matround_alpha$Test == "InvSimpson"] <- "Inverse Simpson"
+sum_scaled_matround_alpha$Test[sum_scaled_matround_alpha$Test == "Simps_Even"] <- "Simpson's Evenness"
+
+for(i in 1:length(sum_scaled_matround_alpha$limnion)){
+  sum_scaled_matround_alpha$prod_lim[i]<-paste(as.character(sum_scaled_matround_alpha$ProdLevel[i]),
+                                  as.character(sum_scaled_matround_alpha$limnion[i]),
+                                  as.character(sum_scaled_matround_alpha$filter[i]))}
+
+# Calculate summary statistics 
+sum_scaled_matround_prod_stats <- sum_scaled_matround_alpha %>%
+  group_by(prod_lim, Test) %>%
+  summarize(mean = mean(Value), 
+            SE = se(Value), 
+            SD = sd(Value), 
+            median = median(Value))
+
+
+
+final_sum_scaled_matround_prod_stats <- left_join(sum_scaled_matround_alpha, sum_scaled_matround_prod_stats, by = c("prod_lim", "Test"))
+
+final_sum_scaled_matround_prod_stats$ProdLevel <-factor(final_sum_scaled_matround_prod_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
+final_sum_scaled_matround_prod_stats$prod_lim <-factor(final_sum_scaled_matround_prod_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+sum_scaled_matround_prod_alpha_plot <- ggplot(final_sum_scaled_matround_prod_stats, aes(x = prod_lim, y = Value, color = prod_lim)) + geom_point(size = 3, alpha = 0.7) +
+  ggtitle("Sum, Scaled and Rounded") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  #scale_y_continuous(breaks = seq(0,1500, 250)) + 
+  geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
+  layer(data = final_sum_scaled_matround_prod_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 7, color = "black") + 
+  layer(data = final_sum_scaled_matround_prod_stats, mapping = aes(x = prod_lim, y = mean), geom = "point", pch = 126, size = 7, color = "black") + 
+  facet_grid(Test ~ ProdLevel, scales="free", space="free_x") +
+  scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                                         "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
+                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
+                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
+                            "Particle", "Free")) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=8),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        plot.title = element_text(face="bold", size = 12),
+        strip.text.x = element_text(size=10, face="bold"),
+        strip.text.y = element_text(size=10, face="bold"),
+        legend.title = element_text(size=8, face="bold"),
+        legend.text = element_text(size = 8),
+        strip.background = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, -0.1), "cm"), #top, right, bottom, left
+        legend.position="none")
+
+
+multiplot(final_summed_alpha_stats_plot, sum_scaled_matround_prod_alpha_plot, cols = 2)
+```
 
 ```{r overall phylum abundance}
 ### Calculate the mean relative abundance based on ProdLevel + Quadrant for each PHYLUM 
@@ -467,7 +697,18 @@ top15plot <- ggplot(top15phy, aes(y=mean_abundance , x=Phylum, fill=Phylum)) + #
   facet_wrap(~ prod_quad, ncol = 8) + xlab("Top 15 Most Abundant Phyla") +
   scale_fill_manual(values = phy.colors.whew,name="Phylum") + 
   geom_errorbar(aes(ymin = mean_abundance -se, ymax = mean_abundance +se), width = 0.25, color = "black") + 
-  ylab("Mean Percent Relative Abundance (%)") + coord_flip() + theme_bw() 
+  ylab("Mean Percent Relative Abundance (%)") + coord_flip() + theme_bw() +
+  guides(fill = guide_legend(keywidth = 0.7, keyheight = 0.7)) + 
+  theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
+                                 strip.text.x = element_text(size=8),  #Set the facet titles on x-axis 
+                                 strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
+                                 axis.title.x = element_text(face="bold", size=12),  #Set the x-axis title
+                                 axis.title.y = element_text(face="bold", size=12),  #Set the y-axis title
+                                 axis.text.x = element_text(colour = "black", size=8),  #Set the x-axis labels
+                                 axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+                                 legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                                 legend.text = element_text(size = 8),  #Set the legend text
+                                 legend.position="right")
 
 
 z <- ggplot_gtable(ggplot_build(top15plot))
@@ -475,27 +716,27 @@ z <- ggplot_gtable(ggplot_build(top15plot))
 # add label for top strip
 z <- gtable_add_rows(z, z$heights[[3]], 2)
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
-                             textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("Free-Living", gp = gpar(fontsize = 8, col = "black"))),
                      3, 4, 3, 7, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
-                             textGrob("Particle-Associated", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("Particle-Associated", gp = gpar(fontsize = 8, col = "black"))),
                      3, 9, 3, 13, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.6))),
-                             textGrob("High-Nutrient", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("High-Nutrient", gp = gpar(fontsize = 8, col = "black"))),
                      2, 4, 2, 13, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
-                             textGrob("Free-Living", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("Free-Living", gp = gpar(fontsize = 8, col = "black"))),
                      3, 15, 3, 19, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype = 1, fill = gray(0.7))),
-                             textGrob("Particle-Associated", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("Particle-Associated", gp = gpar(fontsize = 8, col = "black"))),
                      3, 22, 3, 25, name = paste(runif(2)))
 
 z <- gtable_add_grob(z, list(rectGrob(gp = gpar(col = NA, linetype=1, fill = gray(0.6))),
-                             textGrob("Low-Nutrient", gp = gpar(fontsize = 14, col = "black"))),
+                             textGrob("Low-Nutrient", gp = gpar(fontsize = 8, col = "black"))),
                      2, 15, 2, 25, name = paste(runif(2)))
 
 # add margins
@@ -536,9 +777,14 @@ bicompare_phy$Phylum <- factor(bicompare_phy$Phylum,levels = c("Bacteroidetes", 
                                                      "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi"))
 
 
+bicompare_phy$ProdLevel <- as.character(bicompare_phy$ProdLevel)
+bicompare_phy$ProdLevel[bicompare_phy$ProdLevel == "Productive"] <- "High-Nutrient" 
+bicompare_phy$ProdLevel[bicompare_phy$ProdLevel == "Unproductive"] <- "Low-Nutrient" 
+
+bicompare_phy$ProdLevel<- factor(bicompare_phy$ProdLevel,levels = c("Low-Nutrient", "High-Nutrient"))
 
 g1 <- ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("15 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance (%)") + 
+  ggtitle("15 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
   scale_fill_manual(name="Filter Fraction", values = c("orangered", "orangered4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
                      plot.title = element_text(face="bold", size = 12),
@@ -546,21 +792,21 @@ g1 <- ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coor
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(0.1, 0.1, -1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.85, 0.7))
+                     legend.position = c(0.85, 0.7)) 
 
 g2 <- ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance (%)") + 
+  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
   scale_fill_manual(name="Lake Strata", values = c("palevioletred", "palevioletred4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
                      axis.title.y = element_text(face="bold", size=10),
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(-0.25, 0.1, -0.5, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.85, 0.7))
+                     legend.position = c(0.85, 0.7)) 
 
 
 g3 <- ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("") + xlab("Phylum") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance (%)") + 
+  ggtitle("") + xlab("Phylum") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
   scale_fill_manual(name="Productivity Level", values = c("cornflowerblue", "royalblue4")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
                      axis.title.x = element_text(face="bold", size=10),
@@ -569,7 +815,7 @@ g3 <- ggplot(bicompare_phy, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #c
                      legend.text = element_text(size = 8),  #Set the legend text
                      plot.margin = unit(c(-0.75, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
                      legend.position = c(0.85, 0.7))
-
+ 
 
 # Store ggplot graphical parameters
 g1 <- ggplotGrob(g1)
@@ -878,93 +1124,354 @@ pushViewport(viewport(layout=grid.layout(1,2,width=c(0.8,0.2))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(relabun_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
+```
+
+```{r OTU-level analysis}
+
+####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 6 and Figure S5
+####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 6 and Figure S5
+####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 6 and Figure S5
+### Subsetting Sherman lake for differences between particle and free living 
+sherm <- subset_samples(nowin_FWDB_scaled, lakenames == "Sherman")  
+shemeister <- deSEQ(sherm, ~ filter)
+sherm_plot <- plot_deSEQ(shemeister, "Sherman: OTU-Level")
+sherm_plots <- multiplot(physherm_plot,sherm_plot, cols = 2)
 
 
-#### Subsetting out the top 14 phyla. 
-phy14 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
-           "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes")
-phy14_dfrat <- subset(dfrat, Phylum %in% phy14)
-phy14_dfrat <- subset(phy14_dfrat, Habitat != "Mixed")
-
-phy14_dfrat$Phylum <- factor(phy14_dfrat$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
-                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes"))
-
-phy14_dfrat$Phylum = with(phy14_dfrat, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
+########## SUBSET OUT SHERMAN AND WINTERGREEN HYPOLIMNION
+good_samps_nosherwin <- subset_samples(nowin_FWDB_scaled, lakenames != "Sherman")
+#View(data.frame(sample_data(good_samps_nosherwin))) 
 
 
-phy_heat <- ggplot(phy14_dfrat, aes(Habitat, Phylum)) + geom_tile(aes(fill = log2FoldChange)) + 
-  scale_fill_gradient2(name = "Odds-Ratio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 1, barheight = 4)) + #scale_y_reverse() + 
-  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + 
-  ylab("Phylum") + xlab("Habitat") + 
+############################
+###########################################################PA VS FL
+#1. Top prod --> Model fit not typical
+topProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & limnion == "Epilimnion")
+de_topProd <- deSEQ(topProd, ~ filter) # fitType = "local"
+topProd_plot <- plot_deSEQ(de_topProd, "PA vs FL:  Surface Productive (OTU)")
+
+#2 Top Oligo 
+topUNProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & limnion == "Epilimnion")
+de_topUNProd <- deSEQ(topUNProd, ~ filter) # NOTHING SIGNIFICANT?!
+topUNProd_plot <- plot_deSEQ(de_topUNProd, "PA vs FL:  Surface Unproductive (OTU)")
+
+#3 Bottom Productive 
+botProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & limnion == "Hypolimnion") 
+de_botProd <- deSEQ(botProd, ~ filter)
+botProd_plot <- plot_deSEQ(de_botProd, "PA vs FL:  Bottom Productive (OTU)")
+
+#4 Bottom Unproductive 
+botUNProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & limnion == "Hypolimnion") 
+de_botUNProd <- deSEQ(botUNProd, ~ filter)
+botUNProd_plot <- plot_deSEQ(de_botUNProd, "PA vs FL:  Bottom Unproductive (OTU)")
+
+pafl_otu <- multiplot(topProd_plot, botProd_plot, botUNProd_plot,cols = 2)
+
+
+############################
+###########################################################TOP VS BOTTOM
+#1. Top prod 
+prodPA <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & filter == "Particle") 
+de_prodPA <- deSEQ(prodPA, ~ limnion)
+prodPA_plot <- plot_deSEQ(de_prodPA, "Surface vs Bottom:  PA Productive (OTU)")
+
+#2 Top Oligo 
+unprodPA <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & filter == "Particle") 
+de_unprodPA <- deSEQ(unprodPA, ~ limnion)
+unprodPA_plot <- plot_deSEQ(de_unprodPA, "Surface vs Bottom:  PA Unproductive (OTU)")
+
+#3 Bottom Productive 
+prodFL <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & filter == "Free") 
+de_prodFL <- deSEQ(prodFL, ~ limnion)
+prodFL_plot <- plot_deSEQ(de_prodFL, "Surface vs Bottom:  FL Productive (OTU)")
+
+#4 Bottom Unproductive 
+unprodFL <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & filter == "Free") 
+de_unprodFL <- deSEQ(unprodFL, ~ limnion)
+unprodFL_plot <- plot_deSEQ(de_unprodFL, "Surface vs Bottom:  FL Unproductive (OTU)")
+
+topbot_otu <- multiplot(prodPA_plot, prodFL_plot, unprodPA_plot, unprodFL_plot,cols = 2)
+
+############################
+###########################################################PROD VS OLIGO
+#1. Top prod 
+topPA <- subset_samples(good_samps_nosherwin, limnion == "Epilimnion" & filter == "Particle") 
+de_topPA <- deSEQ(topPA, ~ ProdLevel)
+topPA_plot <- plot_deSEQ(de_topPA, "Productive vs Unproductive:  PA Surface (OTU)")
+
+#2 Top Oligo 
+botPA <- subset_samples(good_samps_nosherwin, limnion == "Hypolimnion" & filter == "Particle") 
+de_botPA <- deSEQ(botPA, ~ ProdLevel)
+botPA_plot <- plot_deSEQ(de_botPA, "Productive vs Unproductive:  PA Bottom (OTU)")
+
+#3 Bottom Productive 
+topFL <- subset_samples(good_samps_nosherwin, limnion == "Epilimnion" & filter == "Free") 
+de_topFL <- deSEQ(topFL, ~ ProdLevel)
+topFL_plot <- plot_deSEQ(de_topFL, "Productive vs Unproductive:  FL Surface (OTU)")
+
+#4 Bottom Unproductive 
+botFL <- subset_samples(good_samps_nosherwin, limnion == "Hypolimnion" & filter == "Free") 
+de_botFL <- deSEQ(botFL, ~ ProdLevel)
+botFL_plot <- plot_deSEQ(de_botFL, "Productive vs Unproductive:  FL Bottom (OTU)")
+
+prodoligo_otu <- multiplot(topFL_plot, botFL_plot, topPA_plot, botPA_plot, cols = 2)
+
+
+
+#PA VS FL:  
+#Surface Productive
+pafl1 <- subset(de_topProd, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+pafl1$Habitat <- "PA vs. FL: Epilimnion \nHigh-Nutrient"
+#Bottom High-Nutrient 
+pafl2 <- subset(de_botProd, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+pafl2$Habitat <- "PA vs. FL: Epilimnion \nLow-Nutrient"
+#Surface Low-Nutrient --> nothing significant!!!
+#pafl3 <- subset(de_topUNProd, select = c(Phylum, Genus, Species,OTU, log2FoldChange, padj))
+#pafl3$Habitat <- "PA vs. FL: Hypolimnion \nHigh-Nutrient"
+#Bottom Low-Nutrient
+pafl4 <- subset(de_botUNProd, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+pafl4$Habitat <- "PA vs. FL: Hypolimnion \nLow-Nutrient"
+
+
+
+###Top vs Bottom:  
+otu_topbot1 <- subset(de_prodPA, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_topbot1$Habitat <- "Top vs. Bottom: High-Nutrient \n Particle-Associated"
+# Particle-Associated Low-Nutrient
+otu_topbot2 <- subset(de_unprodPA, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_topbot2$Habitat <- "Top vs. Bottom: Low-Nutrient \n Particle-Associated"
+# Free-Living High-Nutrient 
+otu_topbot3 <- subset(de_prodFL, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_topbot3$Habitat <- "Top vs. Bottom: High-Nutrient \n Free-Living"
+# Free-Living Low-Nutrient
+otu_topbot4 <- subset(de_unprodFL, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_topbot4$Habitat <- "Top vs. Bottom: Low-Nutrient \n Free-Living"
+
+
+
+#Prod vs Oligo:  
+otu_troph1 <- subset(de_topPA, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj)) 
+otu_troph1$Habitat <- "Prod vs. Unprod: Particle-Associated \n Epilimnion"
+# Particle-Associated BOTTOM
+otu_troph2 <- subset(de_botPA, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_troph2$Habitat <- "Prod vs. Unprod: Particle-Associated \n Hypolimnion"
+# Free-Living TOP 
+otu_troph3 <- subset(de_topFL, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_troph3$Habitat <- "Prod vs. Unprod: Free-Living \nEpilimnion"
+# Free-Living BOTTOM
+otu_troph4 <- subset(de_botFL, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_troph4$Habitat <- "Prod vs. Unprod: Free-Living \nHypolimnion"
+
+
+######  Combing all into one dataframe named out_ratio
+otu_trophs <- rbind(otu_troph1, otu_troph2, otu_troph3, otu_troph4)
+newlog2foldchange <- as.numeric(otu_trophs$log2FoldChange * -1) # To correlate with Top vs bottom
+otu_trophs$log2FoldChange <- newlog2foldchange
+
+otu_ratio <-rbind(pafl1, pafl2, pafl4,
+                  otu_topbot1, otu_topbot2, otu_topbot3, otu_topbot4,
+                  otu_trophs) #otu_troph1, otu_troph2, otu_troph3, otu_troph4)
+
+#What's the min and max ratios?
+paste(c("The range of the log2foldChange is", min(otu_ratio$log2FoldChange), "to",  max(otu_ratio$log2FoldChange)))
+
+
+#Split of the habitat column to 2 columns named comparison and habitat
+otu_cols <- colsplit(otu_ratio$Habitat, ":", c("Comparison", "Habitat"))
+otu_ratio$Habitat = NULL
+otu_ratios <- cbind(otu_ratio, otu_cols)
+```
+
+
+```{r genus heat map }
+mf_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="Comparison") { 
+    value[value=="PA vs. FL"] <- "Particle-Associated \n vs. \n Free-Living"
+    value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. \nEpilimnion"
+    value[value=="Prod vs. Unprod"]   <- "High-Nutrient \n vs. \nLow-Nutrient"
+  }
+  return(value)
+}
+
+#no_unclass_genus <- subset(otu_ratios, Genus != "unclassified")
+phy_otu <- otu_ratios 
+phy_otu$Phylum <- factor(phy_otu$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "Gemmatimonadetes", "WCHB1-60","Fusobacteria", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "SM2F11", "Hyd24-12", "Nitrospirae",
+                                               "SHA-109", "TA06", "OC31", "GOUTA4", "Caldiserica", "Candidate_division_JS1", "FGL7S", "unclassified"))
+
+phy_otu$Phylum = with(phy_otu, factor(Phylum, levels = rev(levels(Phylum)))) 
+
+
+
+########  GENUS LEVEL PLOT ORGANIZED BY PHYLUM
+## GENUS LEVEL HEAT PLOT
+sub_abund <- subset(abund, select = c("Phylum", "PercentPhy"))
+oturats_abund <- merge(otu_ratios, sub_abund, by = "Phylum")
+ordered_otu_ratios <- arrange(oturats_abund, desc(PercentPhy)) 
+
+#ordered_otu_ratios$Genus <- factor(ordered_otu_ratios$Genus,levels = c("vadinBC27_wastewater-sludge_group", "unclassified", "Pseudarcicella", "Solitalea", "Haliscomenobacter", "Ferruginibacter",
+#                                                   "Candidatus_Aquirestis", "Paludibacter", "Flavobacterium", "Sediminibacterium", "Fluviicola", "Pedobacter",
+#                                                   "Algoriphagus", "Owenweeksia", "Emticicia", "Chitinophaga", "Planktothrix","Synechococcus", "Snowella", "Anabaena",
+#                                                   "Pseudanabaena", "Luteolibacter","Opitutus","Candidatus_Methylacidiphilum", "LD28_freshwater_group","Iodobacter","Nitrosospira",
+#                                                   "Sterolibacterium","Dechloromonas","Sulfuritalea","Candidatus_Accumulibacter","PRD01a011B","Sideroxydans","MWH-UniP1_aquatic_group",
+#                                                   "Polynucleobacter","GKS98_freshwater_group",
+#                                                   "Candidatus_Branchiomonas","Candidatus_Planktophila","hgcI_clade","Candidatus_Microthrix","CL500-29_marine_group","Mycobacterium",
+#                                                   "Candidatus_Aquiluna","Candidatus_Limnoluna","Planctomyces","Pirellula","Candidatus_Anammoximicrobium","Candidatus_Nostocoida",
+#                                                   "CL500-3","Pir4_lineage","Roseospirillum","Magnetospirillum","Brevundimonas","Porphyrobacter", "Haematobacter",
+#                                                   "Roseomonas","Rhizomicrobium","Rickettsia","OM27_clade","Desulfobacula",
+#                                                   "Desulfobulbus","Syntrophus","Peredibacter","Desulfomonile","Desulfocapsa","Desulfatirhabdium","Geobacter",
+#                                                   "Desulfovibrio","Phaselicystis","Sorangium","Lamprocystis","Pseudospirillum",
+#                                                   "Thiodictyon","Thiocystis","Candidatus_Competibacter","Coxiella","Methylocaldum","Rheinheimera",
+#                                                   "Methylobacter","Crenothrix","Oscillochloris","Anaerolinea","Chloronema","Victivallis",
+#                                                   "Chlorobium","Ignavibacterium","Armatimonas","Fastidiosipila","Fonticella","Incertae_Sedis",
+#                                                   "Anaerofustis","marine_group","Geothrix","Treponema","Leptospira","Spirochaeta",
+#                                                   "Brevinema","Sulfurospirillum","Sulfurimonas","possible_genus_03","Gemmatimonas","Candidatus_Latescibacter","SC103"))
+#ordered_otu_ratios$Genus = with(ordered_otu_ratios, factor(Genus, levels = rev(levels(Genus)))) 
+
+sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
+
+
+#####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5  #####  Plotting FIGURE S5
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S5_genus_heat.tiff", width= 40, height=60, units= "cm", pointsize= 8, res=200)
+ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 3, barheight = 15)) + #scale_y_reverse() + 
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
   #geom_text(aes(fill = splif2$Transformed, label = splif2$Transformed, size = 8)) +
-  #scale_y_discrete(limits=phys) + xlab("Habitat") + ylab("Phylum") + 
+  xlab("Habitat") + ylab("Genus") + 
   facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
-  theme(axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
-        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
-        axis.text.x = element_text(colour = "black", size=8, angle = 30, hjust = 1, vjust = 1),  #Set the x-axis labels
-        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
-        legend.title = element_text(size=7, face="bold"),  #Set the legend title 
-        legend.text = element_text(size = 7),
-        strip.text.x = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
-        strip.text.y = element_text(size=8, face="bold"),  #Set the facet titles on x-axis 
-        legend.position = c(0.92, 0.75),#"left",
+  theme(axis.text.x = element_text(colour="black", size=14, angle = 30, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        legend.title = element_text(face="bold", size=12),
+        legend.text = element_text(size = 12),
+        legend.position = c(0.96, 0.06), #c(0.1, 0.93),
+        axis.title.y = element_text(face="bold", size=16),
         plot.margin = unit(c(0.5, 1, 0.5, 0.5), "cm"),
-        strip.text.x = element_text(size=14, face = "bold", colour = "black"),
-        strip.background = element_blank()); phy_heat
-ggsave(phy_heat, filename = "~/Final_PAFL_Trophicstate/phy14_heat.pdf", height = 4, width = 6.5, dpi = 300)
+        strip.text.x = element_text(size=16, face = "bold", colour = "black"),
+        strip.background = element_blank());  
+#dev.off()
+```
 
 
-#######  Making the abundance plot!
-newphy <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria","Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi","Armatimonadetes")
+```{r summed OTUs new attempt}
+########   Summed-OTU Plot 
+### PA (positive) vs FL (negative)
+### Top (negative) vs Bottom (positive)
+### Prod (positive) vs Unprod (negative)
 
-phy14_abund <- subset(abund, Phylum %in% newphy)
-phy14_abund$Phylum <- factor(phy14_abund$Phylum, levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", 
-                                                            "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi","Armatimonadetes"))  #"Lentisphaerae", "Chlorobi",  "Firmicutes"
+#head(otu_ratios)
+#subset out prod vs unprod
+sig_oturats <- otu_ratios
+pvu <- subset(sig_oturats, Comparison == "Prod vs. Unprod")
+tvb <- subset(sig_oturats, Comparison == "Top vs. Bottom")
+pvf <- subset(sig_oturats, Comparison == "PA vs. FL")
+#multiplot(plot_deSEQ(pvu, "Prod vs. Unprod"), plot_deSEQ(tvb, "Top vs Bottom"), plot_deSEQ(pvf, "PA vs FL"), cols = 3)
 
-phy14_abund$Phylum = with(phy14_abund, factor(Phylum, levels = rev(levels(Phylum)))) ### Reverse the order so its from the top down
+####  High vs Low nutrient
+pvu$Preference <- "NA"
+pvu_high <- filter(pvu, log2FoldChange > 0)
+pvu_high$Preference <- "High-Nutrient" # High-Nutrient is POSITIVE  
+pvu_low <- filter(pvu, log2FoldChange < 0)
+pvu_low$Preference <- "Low-Nutrient" # Low-Nutrient is NEGATIVE 
+pvu_pref <- rbind(pvu_low, pvu_high) %>% # Combine the PA and FL data frames
+  group_by(Phylum, Preference) %>%  # group by preference and phylum
+  tally() # count how many in each 
+pvu_pref$Comparison <- "Prod vs. Unprod"
+# Add a new column where the Low nutrient values are negative  
+pvu_pref$Count <-  ifelse(pvu_pref$Preference == "Low-Nutrient", pvu_pref$n*-1, pvu_pref$n)
+
+  
+#### Top (Epilimnion) vs Bottom (Hypolimnion) 
+tvb$Preference <- "NA"
+tvb_bottom <- filter(tvb, log2FoldChange > 0)
+tvb_bottom$Preference <- "Hypolimnion" # Hypolimnion is POSITIVE  
+tvb_top <- filter(tvb, log2FoldChange < 0)
+tvb_top$Preference <- "Epilimnion" # Epilimnion is NEGATIVE 
+tvb_pref <- rbind(tvb_top, tvb_bottom) %>% # Combine the PA and FL data frames
+  group_by(Phylum, Preference) %>%  # group by preference and phylum
+  tally() # count how many in each 
+tvb_pref$Comparison <- "Top vs. Bottom"
+#  Add a column where the Epilimnion values are negative in a new column name count
+tvb_pref$Count <-  ifelse(tvb_pref$Preference == "Epilimnion", tvb_pref$n*-1, tvb_pref$n)
+
+# Add a new column called count
+  
+###  Particle vs Free living 
+pvf$Preference <- "NA"
+pvf_particle <- filter(pvf, log2FoldChange > 0)
+pvf_particle$Preference <- "Particle-Associated"
+pvf_free <- filter(pvf, log2FoldChange < 0)
+pvf_free$Preference <- "Free-Living"
+pvf_pref <- rbind(pvf_free, pvf_particle) %>% # Combine the PA and FL data frames
+  group_by(Phylum, Preference) %>%  # group by preference and phylum
+  tally() # count how many in each 
+pvf_pref$Comparison <- "PA vs. FL"
+#  Add a new column called "count" where if the count is free-living we make it negative 
+pvf_pref$Count <-  ifelse(pvf_pref$Preference == "Free-Living", pvf_pref$n*-1, pvf_pref$n)
+
+  
+
+#  Combine into one data frame 
+otu_preference <- data.frame(rbind(pvf_pref, pvu_pref, tvb_pref))
+
+# Determine factor order  
+otu_preference$Preference <- factor(otu_preference$Preference,
+                                    levels = c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion")) 
+
+otu_preference$Phylum <- factor(otu_preference$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "Gemmatimonadetes", "WCHB1-60","Fusobacteria", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "SM2F11", "Hyd24-12", "Nitrospirae",
+                                               "SHA-109", "TA06", "OC31", "GOUTA4", "Caldiserica", "Candidate_division_JS1", "FGL7S", "unclassified"))
 
 
-phy14_relabnd <- ggplot(phy14_abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
-  geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
-  ylab("Mean Percent \n Relative Abundance") + coord_flip() + theme_bw() + 
-  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
-  scale_y_continuous(expand= c(0,0), limits = c(0,25)) +
-  theme(axis.title.x = element_text(face="bold", size=10),
-        axis.text.x = element_text(angle=0, colour = "black", size=8),
-        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
-        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
-        strip.background = element_rect(colour="black", fill = "black"),
-        #plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
-        #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
-        legend.position="none"); 
-ggsave(phy14_relabnd, filename = "~/Final_PAFL_Trophicstate/phy14_abundance.pdf", height = 3.5, width = 3, dpi = 300)
+otu_preference$Comparison <- factor(allOTU_results$Comparison,
+                                    levels = c("Particle-Associated \nvs. \nFree-Living", "High-Nutrient \n vs. \n Low-Nutrient","Hypolimnion \n vs. \n Epilimnion")) 
 
-horizontal_phy14 <-ggplot(phy14_abund, aes(y=PercentPhy , x=Phylum)) + #coord_cartesian(xlim = c(0, 30)) + 
-  geom_bar(stat="identity", position=position_dodge(),fill = "gray", colour = "black") +
-  ylab("Mean Percent \n Relative Abundance") + theme_bw() + 
-  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25, color = "black") + 
-  scale_y_continuous(expand= c(0,0), limits = c(0,25)) +
-  theme(axis.title.x = element_text(face="bold", size=10),
-        axis.text.x = element_text(angle=30, colour = "black", size=8, vjust = 1, hjust = 1),
-        axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
-        axis.title.y = element_text(face="bold", size=10, vjust=0.5),  #Set the y-axis title
-        strip.background = element_rect(colour="black", fill = "black"),
-        #plot.margin = unit(c(2.09, 2, 1.51, -1.25), "cm"), #top, right, bottom, left    it was (2, 2, 1.65, -1.25)
-        #panel.grid.minor=element_blank(), #panel.grid.major=element_blank(),
-        legend.position="none"); horizontal_phy14
-ggsave(horizontal_phy14, filename = "~/Final_PAFL_Trophicstate/phylum_abundance.pdf", height = 3, width = 4, dpi = 300)
+OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae", "unclassified")
 
+
+summed_16 <- otu_preference[otu_preference$Phylum %in% OTUtop16, ]
+
+summed_16$Phylum = with(summed_16, factor(Phylum, levels = rev(levels(Phylum))))
+
+
+#####  Plotting FIGURE 6  #####  Plotting FIGURE 6  #####  Plotting FIGURE 6  #####  Plotting FIGURE 6  #####  Plotting FIGURE 6
+### This plot is flipped!
+#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.6_summed_otus_top17.tiff",  width= 30, height=25, units= "cm", pointsize= 8, res=200)
+summed <- ggplot(summed_16, aes(y=Count, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() +  scale_y_continuous(breaks=seq(-30, 200, 30)) +
+  facet_grid(. ~ Comparison, scales = "free_x", labeller = mf_labeller) + theme_bw() +
+  ylab("Total Number of Significant OTUs") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                     values = c("firebrick1", "goldenrod1",  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
+  guides(fill = guide_legend(keywidth = 0.5, keyheight = 0.5)) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position="right"); summed
+#dev.off()
+```
+
+
+```{r sig OTUs discovery}
+all_otus <- data.frame(rbind(pvu_low, pvu_high, tvb_top, tvb_bottom, pvf_free, pvf_particle))
 
 
 
 ```
-
-
-
-
-
-
-
-
-
 
