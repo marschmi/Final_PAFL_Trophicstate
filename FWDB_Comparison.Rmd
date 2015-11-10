@@ -1392,6 +1392,126 @@ summed <- ggplot(summed_16, aes(y=Count, x=Phylum, fill=Preference)) +
 #dev.off()
 ```
 
+
+
+
+```{r OTU summed relative to its abundance}
+# summed relative to its abundance 
+pvf_0 <- rbind(pvf_free, pvf_particle)
+pvu_0 <- rbind(pvu_low, pvu_high)
+tvb_0 <- rbind(tvb_top, tvb_bottom)
+
+# 1st:  Get the abundance of each phylum for ALL PA/FL/High-Nutrient/Low-Nutrient/Epilimnion/Hypolimnion
+phy_glom <- tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
+phy_melt <- psmelt(goodsamps_phylum) %>%
+  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "Phylum","Abundance"))
+
+## Free-Living - 21 samples
+phy_melt_free <- subset(phy_melt, filter == "Free") %>% # Subset out the free-living samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_melt_free$SampleType <- "Free"
+
+#Particle-Associated - 20 Samples
+phy_abund_part <- subset(phy_melt, filter == "Particle") %>% # Subset out the particle-associated samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_part$SampleType <- "Particle"
+
+# Epilimnion - 19 samples 
+phy_abund_epi <- subset(phy_melt, limnion == "Epilimnion") %>% # Subset out the Epilimnion samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_epi$SampleType <- "Epilimnion"
+
+# Hypolimnion - 18 Samples 
+phy_abund_hypo <- subset(phy_melt, limnion == "Hypolimnion") %>% # Subset out the Hypolimnion samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_hypo$SampleType <- "Hypolimnion"
+
+# High-Nutrient - 26 Samples 
+phy_abund_high <- subset(phy_melt, ProdLevel == "Productive") %>% # Subset out the Productive samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_high$SampleType <- "Productive"
+
+# Low-Nutrient - 15 samples 
+phy_abund_low <- subset(phy_melt, ProdLevel == "Unproductive") %>% # Subset out the Unproductive samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_low$SampleType <- "Unproductive"
+
+
+
+
+##  Get the OTU abundance 
+otu_glom <- tax_glom(nowin_FWDB_scaled, taxrank = "OTU") # This command takes a long time to run!  
+otu_melt <- psmelt(otu_glom) %>%
+  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "OTU","Abundance"))
+#write.table(otu_melt, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", row.names = FALSE)
+
+
+## Free-Living - 21 samples
+otu_melt_free <- subset(otu_melt, filter == "Free") %>% # Subset out the free-living samples 
+  select(Sample, Abundance, otulum) %>% # select only the important columns 
+  group_by(otulum) %>% # Combine all the otula
+  summarize(otulum_sum = sum(Abundance)) # Sum each otulum abundance count
+otu_melt_free$SampleType <- "Free"
+
+#Particle-Associated - 20 Samples
+otu_abund_part <- subset(otu_melt, filter == "Particle") %>% # Subset out the particle-associated samples 
+  select(Sample, Abundance, otulum) %>% # select only the important columns 
+  group_by(otulum) %>% # Combine all the otula
+  summarize(otulum_sum = sum(Abundance)) # Sum each otulum abundance count
+otu_abund_part$SampleType <- "Particle"
+
+# Epilimnion - 19 samples 
+otu_abund_epi <- subset(otu_melt, limnion == "Epilimnion") %>% # Subset out the Epilimnion samples 
+  select(Sample, Abundance, otulum) %>% # select only the important columns 
+  group_by(otulum) %>% # Combine all the otula
+  summarize(otulum_sum = sum(Abundance)) # Sum each otulum abundance count
+otu_abund_epi$SampleType <- "Epilimnion"
+
+# Hypolimnion - 18 Samples 
+otu_abund_hypo <- subset(otu_melt, limnion == "Hypolimnion") %>% # Subset out the Hypolimnion samples 
+  select(Sample, Abundance, otulum) %>% # select only the important columns 
+  group_by(otulum) %>% # Combine all the otula
+  summarize(otulum_sum = sum(Abundance)) # Sum each otulum abundance count
+otu_abund_hypo$SampleType <- "Hypolimnion"
+
+# High-Nutrient - 26 Samples 
+otu_abund_high <- subset(otu_melt, ProdLevel == "Productive") %>% # Subset out the Productive samples 
+  select(Sample, Abundance, otulum) %>% # select only the important columns 
+  group_by(otulum) %>% # Combine all the otula
+  summarize(otulum_sum = sum(Abundance)) # Sum each otulum abundance count
+otu_abund_high$SampleType <- "Productive"
+
+# Low-Nutrient - 15 samples 
+otu_abund_low <- subset(otu_melt, ProdLevel == "Unproductive") %>% # Subset out the Unproductive samples 
+  select(Sample, Abundance, otulum) %>% # select only the important columns 
+  group_by(otulum) %>% # Combine all the otula
+  summarize(otulum_sum = sum(Abundance)) # Sum each otulum abundance count
+otu_abund_low$SampleType <- "Unproductive"
+
+
+
+
+
+
+
+
+
+
+```
+
+
 ```{r OTU-level analysis cutoff-148-alpha-0.01}
 ####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 6 and Figure S5
 ####################################################  OTU LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 6 and Figure S5
