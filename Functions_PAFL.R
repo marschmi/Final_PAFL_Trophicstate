@@ -179,16 +179,14 @@ makeCategories_dups <- function(dataframe){ # IMPORTANT!!!  dataframe MUST have 
 ## I wrote these 2 functions off of the following tutorial from the Phyloseq GitHub page:
 #http://joey711.github.io/phyloseq-extensions/DESeq2.html
 
-deSEQ <- function(data, valuetest){
-  data_pruned=prune_taxa(taxa_sums(data)>0,data)
-  de_data = phyloseq_to_deseq2(data_pruned, valuetest)
-  de_data2 = DESeq(de_data, test="Wald", fitType="parametric")
-  res_data = results(de_data2, cooksCutoff = FALSE)
-  alpha = 0.01
-  sig_data = res_data[which(res_data$padj < alpha), ]
-  sigtab_sherm = cbind(as(sig_data, "data.frame"), as(tax_table(data_pruned)[rownames(sig_data), ], "matrix"))
+deSEQ <- function(data, valuetest, cutoff = 0, alpha = 0.01){
+  data_pruned <- prune_taxa(taxa_sums(data) > cutoff, data)
+  de_data <- phyloseq_to_deseq2(data_pruned, valuetest)
+  de_data2 <- DESeq(de_data, test="Wald", fitType="parametric")
+  res_data <- results(de_data2, cooksCutoff = FALSE)
+  sig_data <- res_data[which(res_data$padj < alpha), ]
+  sigtab_sherm <- cbind(as(sig_data, "data.frame"), as(tax_table(data_pruned)[rownames(sig_data), ], "matrix"))
 } 
-
 
 plot_deSEQ <- function(deSEQdata, title){
   y = tapply(deSEQdata$log2FoldChange, deSEQdata$Genus, function(x) max(x))
