@@ -1669,40 +1669,170 @@ otu_abund_high # All OTUs and their abundance in the HIGH-NUTRIENT
 otu_abund_low # All OTUs and their abundance in the LOW-NUTRIENT
 
 otu_abund_free_pruned <- filter(otu_abund_free, OTU_sum > 0)
+colnames(otu_abund_free_pruned)[2] <- "OTU_sum_Free"
 
 otu_abund_particle_pruned <- filter(otu_abund_particle, OTU_sum > 0)
+colnames(otu_abund_particle_pruned)[2] <- "OTU_sum_Particle"
 
 otu_abund_epi_pruned <- filter(otu_abund_epi, OTU_sum > 0)
+colnames(otu_abund_epi_pruned)[2] <- "OTU_sum_Epi"
 
 otu_abund_hypo_pruned <- filter(otu_abund_hypo, OTU_sum > 0)
+colnames(otu_abund_hypo_pruned)[2] <- "OTU_sum_Hypo"
 
 otu_abund_high_pruned <- filter(otu_abund_high, OTU_sum > 0)
+colnames(otu_abund_high_pruned)[2] <- "OTU_sum_High"
 
 otu_abund_low_pruned <- filter(otu_abund_low, OTU_sum > 0)
+colnames(otu_abund_low_pruned)[2] <- "OTU_sum_Low"
 
-
+# Free-living and Particle-associated
 free_only <- anti_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") # Unique to free-living
 
 part_only <- anti_join(otu_abund_particle_pruned, otu_abund_free_pruned, by = "OTU") # Unique to particle-associated
 
-pvf_both <- semi_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") %>% # Overlap between PA and FL 
-  mutate(SampleType = "Both PA and FL")
+pvf_both <- inner_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") %>% # Overlap between PA and FL 
+  mutate(Comparison = "PA vs. FL",
+         Overlap = "Both PA and FL",
+         TotalSum = OTU_sum_Free + OTU_sum_Particle) %>%
+  select(-SampleType.x, -SampleType.y) # Delete unnecessary Columns
+  
 
 #  Epilimnion and Hypolimnion 
 epi_only <- anti_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") # Unique to epilimnion
 
 hypo_only <- anti_join(otu_abund_hypo_pruned, otu_abund_epi_pruned, by = "OTU") # Unique to hypolimnion 
 
-tvb_both <- semi_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
-  mutate(SampleType = "Both Epi and Hypo")
+tvb_both <- inner_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
+  mutate(Comparison = "Top vs. Bottom",
+         Overlap = "Both Epi and Hypo",
+         TotalSum = OTU_sum_Epi + OTU_sum_Hypo) %>%
+  select(-SampleType.x, -SampleType.y) 
 
 #  High and Low-Nutrient 
 low_only <- anti_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") # Unique to epilimnion
 
 high_only <- anti_join(otu_abund_high_pruned, otu_abund_low_pruned, by = "OTU") # Unique to hypolimnion 
 
-hvl_both <- semi_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
-  mutate(SampleType = "Both Epi and Hypo")
+hvl_both <- inner_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
+  mutate(Comparison = "Prod vs. Unprod",
+         Overlap = "Both Epi and Hypo",
+         TotalSum = OTU_sum_High + OTU_sum_Low) %>%
+  select(-SampleType.x, -SampleType.y) 
+
+
+otu_overlap <- data.frame(matrix(ncol = 1, nrow = 12))
+
+SampleType <- c("Particle-Associated", "Particle-Associated", "Free-Living", "Free-Living", 
+                "Epilimnion", "Epilimnion", "Hypolimnion", "Hypolimnion", 
+                "High-Nutrient", "High-Nutrient", "Low-Nutrient", "Low-Nutrient")
+
+Type <- c("Particle-Associated Only", "Shared", "Free-Living Only", "Shared", 
+          "Epilimnion Only", "Shared", "Hypolimnion Only", "Shared", 
+          "High-Nutrient Only", "Shared", "Low-Nutrient Only", "Shared")
+
+NumOTUs <- c(nrow(part_only), nrow(pvf_both), nrow(free_only), nrow(pvf_both), 
+             nrow(epi_only), nrow(tvb_both), nrow(hypo_only), nrow(tvb_both), 
+             nrow(high_only), nrow(hvl_both), nrow(low_only), nrow(hvl_both))
+
+Comparison <- c("PA vs. FL", "PA vs. FL", "PA vs. FL", "PA vs. FL", 
+                "Top vs. Bottom","Top vs. Bottom", "Top vs. Bottom", "Top vs. Bottom",
+                "Prod vs. Unprod","Prod vs. Unprod","Prod vs. Unprod","Prod vs. Unprod")
+
+Relative_OTU_Abund <- c(sum(part_only$OTU_sum_Particle), sum(pvf_both$OTU_sum_Particle), sum(free_only$OTU_sum_Free),  sum(pvf_both$OTU_sum_Free), 
+                        sum(epi_only$OTU_sum_Epi), sum(tvb_both$OTU_sum_Epi), sum(hypo_only$OTU_sum_Hypo), sum(tvb_both$OTU_sum_Hypo), 
+                        sum(high_only$OTU_sum_High), sum(hvl_both$OTU_sum_High), sum(low_only$OTU_sum_Low), sum(hvl_both$OTU_sum_Low))
+
+otu_overlap$SampleType<- SampleType
+otu_overlap$Type <- Type
+otu_overlap$NumOTUs <- NumOTUs
+otu_overlap$Comparison <- Comparison
+otu_overlap$Relative_OTU_Abund <- Relative_OTU_Abund
+otu_overlap[,-1]
+
+otu_overlap$SampleType <- factor(otu_overlap$SampleType,levels = c("Free-Living", "Particle-Associated", "Low-Nutrient", "High-Nutrient", "Epilimnion", "Hypolimnion"))
+otu_overlap$Type <- factor(otu_overlap$Type, levels = c("Shared","Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only"))
+
+
+####  Test for Significance
+PAFL_chisq <-matrix(c(nrow(part_only), nrow(pvf_both), nrow(free_only), nrow(pvf_both)),nrow=2)
+PAFL_chisq_res <- chisq.test(PAFL_chisq, correct = FALSE); PAFL_chisq_res
+
+prod_chisq <-matrix(c(nrow(high_only), nrow(hvl_both), nrow(low_only), nrow(hvl_both)),nrow=2)
+prod_chisq_res <- chisq.test(prod_chisq, correct = FALSE); prod_chisq_res
+
+limnion_chisq <-matrix(c(nrow(epi_only), nrow(tvb_both), nrow(hypo_only), nrow(tvb_both)),nrow=2)
+limnion_chisq_res <- chisq.test(limnion_chisq, correct = FALSE); limnion_chisq_res
+
+shared_chisq <- matrix(c(nrow(pvf_both),nrow(hvl_both), nrow(tvb_both)),nrow=1)
+shared_chisq_res <- chisq.test(shared_chisq, correct = FALSE); shared_chisq_res
+
+
+
+otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
+  facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
+  xlab("Sample Type ") + ylab("Sum of Shared or Unique Detected OTUs") + 
+  geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
+  scale_y_continuous(expand = c(0,0), breaks=seq(0, 7000, 1000), lim = c(0, 6500)) + 
+  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
+  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    values = c( "goldenrod1", "firebrick1", "turquoise3", "green4","palevioletred1","cornflowerblue", "gray39")) +
+  #values = c("orange", "red", "darkgreen", "limegreen", "deepskyblue", "blue4", "gray39")) +
+  theme_classic() +  guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
+  annotate("text",x = 1.5, y = 6300, label = "***") +
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        legend.position="none"); 
+#dev.off()
+
+###  RELATIVIZE IT!!!!  
+otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType, fill=Type, order=Type)) +
+  facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
+  xlab("Sample Type ") + ylab("Proportion of Shared or Unique OTUs") + 
+  geom_bar(stat="identity", position = "fill") +   geom_bar(stat="identity", position = "fill", colour="black", show_guide=FALSE) +  
+  scale_y_continuous(expand = c(0,0)) + #, breaks=seq(0, 6000, 1000), lim = c(0, 6000)) + 
+  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
+  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    values = c( "goldenrod1", "firebrick1", "turquoise3", "green4","palevioletred1","cornflowerblue", "gray39")) +
+  #values = c("orange", "red", "darkgreen", "limegreen", "deepskyblue", "blue4", "gray39")) +
+  theme_classic() +  guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        legend.position="right"); 
+
+
+#multiplot(otu_sum_plot, otu_relative_plot, cols =2)
+
+
+# Store ggplot graphical parameters
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf",  width= 12, height=6)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.45,0.55))))
+print(otu_sum_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(otu_relative_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
+
+
+
+
 
 
 
