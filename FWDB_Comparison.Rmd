@@ -286,8 +286,6 @@ tax_table(nowin_FWDB_scaled) <- t
 
 # Our phyloseq object!
 nowin_FWDB_scaled 
-
-
 ```
 
 
@@ -591,7 +589,7 @@ multiplot(final_summed_alpha_stats_plot, sum_scaled_matround_prod_alpha_plot, co
 ```
 
 
-```{r ordinations}
+```{r Figure 3: NMDS Ordinations}
 
 
 ####################################################  ORDINATIONS  ####################################################  Working up to Figure 3
@@ -779,9 +777,6 @@ pushViewport(viewport(layout=grid.layout(1,2,width=c(0.39,0.61))))
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
-
-
-
 ```
 
 
@@ -1014,10 +1009,12 @@ g1 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=filter
                      plot.margin = unit(c(0.1, 0.1, -1, 0.1), "cm"), #top, right, bottom, left
                      legend.position = c(0.85, 0.7)) 
 
-g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
-  scale_fill_manual(name="Lake Strata", values = c("palevioletred", "palevioletred4")) +
+
+g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("")  + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
+  scale_fill_manual(name="Productivity Level", values = c("cornflowerblue", "royalblue4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
+                     axis.title.y = element_blank(),
                      axis.title.y = element_text(face="bold", size=10),
                      axis.ticks.x = element_blank(), 
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
@@ -1026,9 +1023,10 @@ g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=limnio
                      legend.position = c(0.85, 0.7)) 
 
 
-g3 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("") + xlab("Phylum") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
-  scale_fill_manual(name="Productivity Level", values = c("cornflowerblue", "royalblue4")) +
+g3 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
+  scale_fill_manual(name="Lake Strata", values = c("limegreen", "darkgreen")) +
+  #scale_fill_manual(name="Lake Strata", values = c("palevioletred", "palevioletred4")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
                      axis.title.x = element_text(face="bold", size=10),
                      axis.title.y = element_text(face="bold", size=10),
@@ -1049,7 +1047,7 @@ g3 <- ggplotGrob(g3)
 
 # Draw everything
 
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Phy15_comparison_NOmixed.pdf",  width= 7, height=6.5)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Phy15_comparison_NOmixed_pink.pdf",  width= 7, height=6.5)
 grid.draw(rbind(g1, g2, g3, size = "last"))
 #dev.off()
 ```
@@ -1828,15 +1826,15 @@ sig_otus_relabund_0$Phylum = with(sig_otus_relabund_0, factor(Phylum, levels = r
 
 
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/SigOTUs_ALL_Relabund.pdf",  width= 7.5, height=8)
-ggplot(sig_otus_relabund_0, aes(y=sig_phylum_relabund, x=Phylum, fill=Preference)) + 
+sig_phy_relabund_plot <- ggplot(sig_otus_relabund_0, aes(y=sig_phylum_relabund, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
   theme_gray() +  #scale_y_continuous(breaks=seq(-30, 200, 30)) +
   ggtitle("All OTUs in the Data") +
   facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
   ylab("Within Phylum Relative Abundance of Significant OTUs") +  xlab("Phylum") + 
-  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
-                     values = c("firebrick1", "goldenrod1",  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
+  scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
   guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
@@ -1847,8 +1845,9 @@ ggplot(sig_otus_relabund_0, aes(y=sig_phylum_relabund, x=Phylum, fill=Preference
         strip.text.y = element_blank(),
         strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
         strip.background = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
-        legend.position="right"); 
+        legend.position="right"); sig_phy_relabund_plot
 #dev.off()
 
 
@@ -1861,16 +1860,16 @@ sig_otus_relabund_0$Phylum = with(sig_otus_relabund_0, factor(Phylum, levels = r
 
 
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/SigOTUs_Top16_Relabund.pdf",  width= 7.5, height=6)
-ggplot(sigotu_relabund_16, aes(y=sig_phylum_relabund, x=Phylum, fill=Preference)) + 
+sigotu_phy_relabund_plot <- ggplot(sigotu_relabund_16, aes(y=sig_phylum_relabund, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
   theme_gray() +  #scale_y_continuous(breaks=seq(-30, 200, 30)) +
-  ggtitle("All OTUs in the Top 16 Phyla in the Data") +
+  #ggtitle("All OTUs in the Top 16 Phyla in the Data") +
   facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
   ylab("Within Phylum Relative Abundance of Significant OTUs") +  xlab("Phylum") + 
-  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
-                     values = c("firebrick1", "goldenrod1",  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
-  guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
+  scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
+  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
         axis.text.y = element_text(colour = "black", size=8),
@@ -1880,8 +1879,9 @@ ggplot(sigotu_relabund_16, aes(y=sig_phylum_relabund, x=Phylum, fill=Preference)
         strip.text.y = element_blank(),
         strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
         strip.background = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
-        legend.position="right"); 
+        legend.position="right"); sigotu_phy_relabund_plot
 #dev.off()
 ```
 
@@ -2000,15 +2000,14 @@ shared_chisq_res <- chisq.test(shared_chisq, correct = FALSE); shared_chisq_res
 
 otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
-  xlab("Sample Type ") + ylab("Sum of Shared or Unique Detected OTUs") + 
+  xlab("Sample Type ") + ylab("Sum of Shared or Unique OTUs") + 
   geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 7000, 1000), lim = c(0, 6500)) + 
   guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
   scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
                     breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
-                    values = c( "goldenrod1", "firebrick1", "turquoise3", "green4","palevioletred1","cornflowerblue", "gray39")) +
-  #values = c("orange", "red", "darkgreen", "limegreen", "deepskyblue", "blue4", "gray39")) +
-  theme_classic() +  guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen", "gray39")) +
+  theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
   annotate("text",x = 1.5, y = 6300, label = "***") +
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
@@ -2032,9 +2031,8 @@ otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType
   guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
   scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
                     breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
-                    values = c( "goldenrod1", "firebrick1", "turquoise3", "green4","palevioletred1","cornflowerblue", "gray39")) +
-  #values = c("orange", "red", "darkgreen", "limegreen", "deepskyblue", "blue4", "gray39")) +
-  theme_classic() +  guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen", "gray39")) +
+  theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
         axis.text.y = element_text(colour = "black", size=8),
@@ -2186,22 +2184,22 @@ colnames(low_nutrient_sig_otus)
 rbind()
 
 otu_join_free <- inner_join(free_living_sig_otus, free_living_all_otus, by = "Phylum") %>%
-  mutate(Proportion_sig2total = -100* (SigOTU_Total/AllOTU_Total))
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
 
 otu_join_particle <- inner_join(particle_associated_sig_otus, particle_associated_all_otus, by = "Phylum") %>%
-  mutate(Proportion_sig2total = 100* (SigOTU_Total/AllOTU_Total))
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
 
 otu_join_epi <- inner_join(epilimnion_sig_otus, epilimnion_all_otus, by = "Phylum") %>%
-  mutate(Proportion_sig2total = -100* (SigOTU_Total/AllOTU_Total))
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
 
 otu_join_hypo <- inner_join(hypolimnion_sig_otus, hypolimnion_all_otus, by = "Phylum") %>%
-  mutate(Proportion_sig2total = 100* (SigOTU_Total/AllOTU_Total))
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
 
 otu_join_high <- inner_join(high_nutrient_sig_otus, high_nutrient_all_otus, by = "Phylum") %>%
-  mutate(Proportion_sig2total = 100* (SigOTU_Total/AllOTU_Total))
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
 
 otu_join_low <- inner_join(low_nutrient_sig_otus, low_nutrient_all_otus, by = "Phylum") %>%
-  mutate(Proportion_sig2total = -100* (SigOTU_Total/AllOTU_Total))
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
 
 otu_joined <- rbind(otu_join_free, otu_join_particle, otu_join_epi, otu_join_hypo, otu_join_high, otu_join_low)
 
@@ -2229,16 +2227,17 @@ otu_joined_16$Phylum = with(otu_joined_16, factor(Phylum, levels = rev(levels(Ph
 
 
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/PROPORTION_Top16_Relabund.pdf",  width= 7.5, height=6)
-ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Phylum, fill=Preference)) + 
+sigotu_proportion_plot <- ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
-  theme_gray() +  #scale_y_continuous(breaks=seq(-30, 200, 30)) +
-  ggtitle("All OTUs in the Top 16 Phyla in the Data") +
+  theme_gray() +  scale_y_continuous(breaks=seq(-0.5, 1, 0.1), lim = c(-0.1, 0.3)) + 
+  #ggtitle("All OTUs in the Top 16 Phyla in the Data") +
   facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
+  #scale_y_continuous(breaks=seq(-0.3, 1, 0.1)) +
   ylab("Proportion of Significant over Total OTUs by Phylum") +  xlab("Phylum") + 
-  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
-                     values = c("firebrick1", "goldenrod1",  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
-  guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
+  scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
+  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
         axis.text.y = element_text(colour = "black", size=8),
@@ -2249,9 +2248,24 @@ ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Phylum, fill=Preference)) +
         strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
         strip.background = element_blank(),
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
-        legend.position="right"); 
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        legend.position="right"); sigotu_proportion_plot
 #dev.off()
+```
 
+
+```{r Figure 6 Sig OTU plots}
+# COMBINE THE TWO PLOTS 
+
+b1 <- sigotu_proportion_plot + theme(legend.position="none", plot.margin = unit(c(0.1, 0.05, 0.1, 0.1), "cm")) #top, right, bottom, left
+b2 <- sigotu_phy_relabund_plot + xlab("") +theme(axis.text.y = element_blank(), plot.margin = unit(c(0.1, 0.1, 0.1, 0.05), "cm")) #top, right, bottom, left
+
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig6_proportion_relabund_Top16.pdf",  width= 12, height=6)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.45,0.55))))
+print(b1, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(b2, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
 ```
 
 
