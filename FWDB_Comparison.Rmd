@@ -710,8 +710,8 @@ nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "F
 nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*100, color = quadrant, shape = ProdLevel)) +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") + 
   geom_point(size= 4, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 1) +
-  annotate("text", label = "B", x = (min(nmds_bray$MDS1*100) + 0.8), y = (max(nmds_bray$MDS2*100) + 0.3), face = "bold",size = 6, colour = "black") +
-  annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*100)+0.2), y = (max(nmds_bray$MDS2*100) -0.02), size = 4, colour = "black") +
+  annotate("text", label = "B", x = (min(nmds_bray$MDS1*100) + 0.7), y = (max(nmds_bray$MDS2*100) + 0.), face = "bold",size = 6, colour = "black") +
+  annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*100)+0.3), y = (max(nmds_bray$MDS2*100) + 0), size = 4, colour = "black") +
   scale_color_manual(name = "Filter Fraction and Lake Layer", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
                      values = c("darkgreen", "mediumblue", "purple3", "green", "deepskyblue", "orchid1")) +
@@ -720,12 +720,14 @@ nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*100, color = quadrant, sha
                      values = c(15, 17)) +
   guides(shape = guide_legend(order=1), color = guide_legend(order=2)) +
   #scale_y_continuous(breaks=seq(-0.15, 0.15, 0.05), lim = c(-0.15,0.15)) +
-  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=10), 
-        axis.text.y = element_text(colour="black", vjust=0.5, size=10),
-        axis.title.x = element_text(face="bold", size=12),
-        axis.title.y = element_text(face="bold", size=12),
+  theme(axis.text.x = element_blank(), # text(colour="black", vjust=0.5, size=10), 
+        axis.text.y = element_blank(), #text(colour="black", vjust=0.5, size=10),
+        axis.title.x = element_text(face="bold", size=10),
+        axis.title.y = element_text(face="bold", size=10),
         legend.title = element_text(size=8, face="bold"),
         legend.text = element_text(size = 8),
+        axis.ticks = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         plot.title = element_text(size = 12, face="bold"),
         ###LEGEND TOP RIGHT CORNER
         legend.position = "right");   
@@ -746,7 +748,7 @@ nmds_soren$quadrant <- factor(nmds_soren$quadrant,levels = c("Free Epilimnion", 
 nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = ProdLevel)) +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Sørensen Dissimilarity") +
   geom_point(size= 4, alpha=0.9) + theme_bw() +   geom_point(colour="white", size = 1) +
-  annotate("text", label = "A", x = (min(nmds_soren$MDS1) + 0.05), y = (max(nmds_soren$MDS2) -0.02), face = "bold",size = 6, colour = "black") +
+  annotate("text", label = "A", x = (min(nmds_soren$MDS1) + 0.05), y = (max(nmds_soren$MDS2) -0.01), face = "bold",size = 6, colour = "black") +
   annotate("text", label = "Stress = 0.14", x = (max(nmds_soren$MDS1) -0.2), y = (max(nmds_soren$MDS2) -0.01), size = 4, colour = "black") +
   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
@@ -755,13 +757,15 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
                      labels = c("High", "Low"),
                      values = c(15, 17)) +
   guides(shape = guide_legend(order=1), color = guide_legend(order=2)) +
-  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=10), 
-        axis.text.y = element_text(colour="black", vjust=0.5, size=10),
-        axis.title.x = element_text(face="bold", size=12),
-        axis.title.y = element_text(face="bold", size=12),
+  theme(axis.text.x = element_blank(), # text(colour="black", vjust=0.5, size=10), 
+        axis.text.y = element_blank(), #text(colour="black", vjust=0.5, size=10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(face="bold", size=10),
+        axis.title.y = element_text(face="bold", size=10),
         legend.title = element_text(size=8, face="bold"),
         legend.text = element_text(size = 8),
         plot.title = element_text(size = 12, face="bold"),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         ###LEGEND TOP RIGHT CORNER
         legend.position = "none");  
 
@@ -769,12 +773,12 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
 #multiplot(nmds_bc_quad, nmds_soren_quad, cols = 2)
 
 #####  Plotting FIGURE 3  #####  Plotting FIGURE 3  #####  Plotting FIGURE 3  #####  Plotting FIGURE 3  #####  Plotting FIGURE 3
-pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig3_NMDS.pdf",  width= 10, height=4)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig3_NMDS.pdf",  width= 10, height=4)
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(1,2,width=c(0.4,0.6))))
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.39,0.61))))
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
-dev.off()
+#dev.off()
 
 
 
