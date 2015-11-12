@@ -993,11 +993,11 @@ bicompare_phy$ProdLevel[bicompare_phy$ProdLevel == "Unproductive"] <- "Low-Nutri
 
 bicompare_phy$ProdLevel<- factor(bicompare_phy$ProdLevel,levels = c("Low-Nutrient", "High-Nutrient"))
 
+bicompare_phy_nowin <- subset(bicompare_phy, Sample != "WINH" & Sample != "WINH3um")
 
-bicompare_phy_nosherwin <- subset(bicompare_phy, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um"
-                                  & Sample != "WINH" & Sample != "WINH3um")
+#bicompare_phy_nosherwin <- subset(bicompare_phy, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
 
-g1 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
+g1 <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("15 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
   scale_fill_manual(name="Filter Fraction", values = c("orangered", "orangered4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
@@ -1007,10 +1007,10 @@ g1 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=filter
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(0.1, 0.1, -1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.85, 0.7)) 
+                     legend.position = c(0.87, 0.7)) 
 
 
-g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
+g2 <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("")  + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
   scale_fill_manual(name="Productivity Level", values = c("cornflowerblue", "royalblue4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
@@ -1020,12 +1020,12 @@ g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=ProdLe
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(-0.25, 0.1, -0.5, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.85, 0.7)) 
+                     legend.position = c(0.87, 0.7)) 
 
 
-g3 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
+g3 <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
-  scale_fill_manual(name="Lake Strata", values = c("limegreen", "darkgreen")) +
+  scale_fill_manual(name="Lake Strata", values = c("limegreen", "darkgreen", "seagreen1")) +
   #scale_fill_manual(name="Lake Strata", values = c("palevioletred", "palevioletred4")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
                      axis.title.x = element_text(face="bold", size=10),
@@ -1033,7 +1033,7 @@ g3 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=limnio
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),  #Set the legend text
                      plot.margin = unit(c(-0.75, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.85, 0.7))
+                     legend.position = c(0.87, 0.62))
  
 
 # Store ggplot graphical parameters
@@ -1047,7 +1047,7 @@ g3 <- ggplotGrob(g3)
 
 # Draw everything
 
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Phy15_comparison_NOmixed_pink.pdf",  width= 7, height=6.5)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Phy15_comparison_mixed_green.pdf",  width= 7, height=6.5)
 grid.draw(rbind(g1, g2, g3, size = "last"))
 #dev.off()
 ```
@@ -1055,9 +1055,6 @@ grid.draw(rbind(g1, g2, g3, size = "last"))
 
 
 ```{r phylum level heat map}
-
-
-
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
@@ -2234,7 +2231,7 @@ sigotu_proportion_plot <- ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Ph
   #ggtitle("All OTUs in the Top 16 Phyla in the Data") +
   facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
   #scale_y_continuous(breaks=seq(-0.3, 1, 0.1)) +
-  ylab("Proportion of Significant over Total OTUs by Phylum") +  xlab("Phylum") + 
+  ylab("Proportion of Significant to Total OTUs by Phylum") +  xlab("Phylum") + 
   scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
                     values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
@@ -2262,7 +2259,7 @@ b2 <- sigotu_phy_relabund_plot + xlab("") +theme(axis.text.y = element_blank(), 
 
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig6_proportion_relabund_Top16.pdf",  width= 12, height=6)
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(1,2,width=c(0.45,0.55))))
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.46,0.54))))
 print(b1, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(b2, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
