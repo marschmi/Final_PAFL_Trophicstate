@@ -1997,7 +1997,7 @@ shared_chisq_res <- chisq.test(shared_chisq, correct = FALSE); shared_chisq_res
 
 otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
-  xlab("Sample Type ") + ylab("Sum of Shared or Unique OTUs") + 
+  xlab("Sample Type ") + ylab("Sum of Shared and Unique OTUs") + 
   geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 7000, 1000), lim = c(0, 6500)) + 
   guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
@@ -2022,7 +2022,7 @@ otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, ord
 ###  RELATIVIZE IT!!!!  
 otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
-  xlab("Sample Type ") + ylab("Proportion of Shared or Unique OTUs") + 
+  xlab("Sample Type ") + ylab("Relative Abundance of Shared and Unique OTUs") + 
   geom_bar(stat="identity", position = "fill") +   geom_bar(stat="identity", position = "fill", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 1, 0.1)) + 
   guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
@@ -2047,12 +2047,12 @@ otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType
 
 
 # Store ggplot graphical parameters
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf",  width= 12, height=6)
+pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf",  width= 12, height=6)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.45,0.55))))
 print(otu_sum_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(otu_relative_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
-#dev.off()
+dev.off()
 ```
 
 
