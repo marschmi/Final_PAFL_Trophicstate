@@ -891,11 +891,11 @@ phy_order <- as.character(abund_only_by_phylum$Phylum)  # THIS IS A VECTOR OF TH
 ### TOP 25 PHYLA!
 top15phy <- prod_phylum_FWDB_stats[prod_phylum_FWDB_stats$Phylum %in% phy_order[1:15], ]
 
-phy15_order <- as.character(abund_only_by_phylum$Phylum)[1:15]
+phy15_order <- as.character(abund_only_by_phylum$Phylum)[1:17]
 
 # ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
 top15phy$Phylum <- factor(top15phy$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
-                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi"))
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
   
 top15phy$quadrant <- factor(top15phy$quadrant,levels = c("Free Epilimnion", "Particle Epilimnion", "Free Hypolimnion", "Particle Hypolimnion"))
 
@@ -1001,7 +1001,7 @@ grid.draw(z)
 
 
 
-```{r boxplot abundance plots}
+```{r Fig 4 boxplot abundance plots}
 #  Prep the data frame 
 bicompare_phy <- subset(goodsamps_phy_melt, select = c("Sample", "filter", "ProdLevel", "limnion","quadrant", "Phylum","Abundance"))
 
@@ -1019,25 +1019,29 @@ bicompare_phy$PercentAbund <- bicompare_phy$RelAbundance * 100  ##  Calculate th
 #                                se   = sd / sqrt(N))
 
 
-bicompare_phy <- bicompare_phy[bicompare_phy$Phylum %in% phy_order[1:15], ]
+bicompare_phy <- bicompare_phy[bicompare_phy$Phylum %in% phy_order[1:17], ]
 
 # ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
 bicompare_phy$Phylum <- factor(bicompare_phy$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
                                                      "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
 
-
+## PROD LEVEL
 bicompare_phy$ProdLevel <- as.character(bicompare_phy$ProdLevel)
 bicompare_phy$ProdLevel[bicompare_phy$ProdLevel == "Productive"] <- "High-Nutrient" 
 bicompare_phy$ProdLevel[bicompare_phy$ProdLevel == "Unproductive"] <- "Low-Nutrient" 
+# FILTER 
+bicompare_phy$filter <- as.character(bicompare_phy$filter)
+bicompare_phy$filter[bicompare_phy$filter == "Free"] <- "Free-Living"
+bicompare_phy$filter[bicompare_phy$filter == "Particle"] <- "Particle-Associated"
 
 bicompare_phy$ProdLevel<- factor(bicompare_phy$ProdLevel,levels = c("Low-Nutrient", "High-Nutrient"))
 
 bicompare_phy_nowin <- subset(bicompare_phy, Sample != "WINH" & Sample != "WINH3um")
 
-#bicompare_phy_nosherwin <- subset(bicompare_phy, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
+bicompare_phy_nosherwin <- subset(bicompare_phy_nowin, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
 
-g1 <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("15 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
+g1 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
   scale_fill_manual(name="Filter Fraction", values = c("orangered", "orangered4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
                      plot.title = element_text(face="bold", size = 12),
@@ -1049,7 +1053,7 @@ g1 <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=filter)) +
                      legend.position = c(0.87, 0.7)) 
 
 
-g2 <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
+g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("")  + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
   scale_fill_manual(name="Productivity Level", values = c("cornflowerblue", "royalblue4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
@@ -1059,21 +1063,34 @@ g2 <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(-0.25, 0.1, -0.5, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.87, 0.7)) 
+                     legend.position = c(0.89, 0.7)) 
 
-
-g3 <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
+g3 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
-  scale_fill_manual(name="Lake Strata", values = c("limegreen", "darkgreen", "seagreen1")) +
-  #scale_fill_manual(name="Lake Strata", values = c("palevioletred", "palevioletred4")) +
+  scale_fill_manual(name="Lake Strata", values = c("limegreen", "darkgreen")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
                      axis.title.x = element_text(face="bold", size=10),
                      axis.title.y = element_text(face="bold", size=10),
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),  #Set the legend text
                      plot.margin = unit(c(-0.75, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.87, 0.62))
- 
+                     legend.position = c(0.89, 0.7)); 
+
+
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_mixed_green.pdf",  width= 6.5, height=3)
+supplemental_g3_MIXED <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("Top 17 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
+  scale_fill_manual(name="Lake Strata", values = c("limegreen", "darkgreen", "seagreen1")) +
+  theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
+                     axis.title.x = element_text(face="bold", size=10),
+                     axis.title.y = element_text(face="bold", size=10),
+                     plot.title = element_text(face = "bold", size = 12),
+                     legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                     legend.text = element_text(size = 8),  #Set the legend text
+                     plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+                     legend.position = c(0.9, 0.66)); #supplemental_g3_MIXED
+#dev.off() 
+
 
 # Store ggplot graphical parameters
 g1 <- ggplotGrob(g1)
@@ -1086,9 +1103,9 @@ g3 <- ggplotGrob(g3)
 
 # Draw everything
 
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Phy15_comparison_mixed_green.pdf",  width= 7, height=6.5)
+pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_notitle.pdf",  width= 6.5, height=6.5)
 grid.draw(rbind(g1, g2, g3, size = "last"))
-#dev.off()
+dev.off()
 ```
 
 
