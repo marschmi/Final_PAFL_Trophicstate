@@ -174,16 +174,6 @@ tax <- data.frame(tax_table(FWDB_data))
 tax$OTU <- row.names(tax)
 tax_table(FWDB_data) <- tax_table(as.matrix(tax))
 
-#chloroplast <- subset(tax, Class == "Chloroplast")
-#unknown_tax <- subset(tax, Kingdom == "unknown")
-#eukarya <- subset(tax, Kingdom == "Eukaryota")
-#archaea <- subset(tax, Kingdom == "Archaea")
-#mitochondria <- subset(tax, Strain == "Mitochondria")
-
-
-#newtax <- sapply(tax, function(x) gsub(pattern = ".__", replacement = "", x)) # apply gsub over all the columns 
-#dim(tax); dim(newtax) # Same dimensions
-
 # Change some of the sample names to match our metadata sample names
 samplenames_FWDB <- sample_names(FWDB_data)
 names2_FWDB <- gsub("Gull", "GUL", samplenames_FWDB)
@@ -212,14 +202,9 @@ ggplot(sums_FWDB, aes(x=reorder(sample, Sample_TotalSeqs), y = Sample_TotalSeqs)
   theme(axis.text.x = element_text(colour = "black", size=8, angle=45, hjust = 1, vjust = 1))  #Set the x-axis labels
 
 pruned_FWDB <- prune_samples(sample_sums(FWDB_data) > 10000, FWDB_data)
-#names_fw_sub <- sample_names(FWDB_data_sub)
-#length(names_fw_sub); length(names_map)
-#setdiff(names_fw_sub, names_map)
-#setdiff(names_map, names_fw_sub)
 
 # Combine FWDB and mapfiles 
 FWDB_no_scale <- merge_phyloseq(pruned_FWDB,map)
-
 
 # lets look at only samples (removing blanks and mock and samples that didn't amplify)
 FW_pruned <- prune_taxa(taxa_sums(FWDB_no_scale) > 0, FWDB_no_scale)
@@ -1207,6 +1192,253 @@ print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 dev.off()
 ```
+
+
+
+
+
+```{r PERMANOVA results }
+
+####################################################################################  ADONIS  ####################################################################################
+####################################################################################  ADONIS  ####################################################################################
+####################################################################################  ADONIS  ####################################################################################
+#  First we need to organize our environmental data
+nosherwin_FWDB_scaled 
+
+#nowin_merged
+environ <- sample_data(nosherwin_FWDB_scaled)
+environ <- subset(environ, select = c("names", "lakenames", "limnion", "filter", "trophicstate","ProdLevel", "totaldepth", "DO", "SpC", "temp", "pH")) # , "nitrate", "chla", "ammonia", "SRP", "TP", "Ncoord", "Wcoord"))
+environ <- data.frame(environ)
+## TO MAKE QUADRANT
+for(i in 1:length(environ$limnion)){
+  environ$quadrant[i]<-paste(as.character(environ$filter[i]),as.character(environ$limnion[i]))}
+## TO MAKE HABITAT
+for(i in 1:length(environ$limnion)){
+  environ$habitat[i]<-paste(as.character(environ$ProdLevel[i]),as.character(environ$filter[i]),as.character(environ$limnion[i]))}
+
+
+##  Calculate the BC dissimilarity and the Sorensen Dissimilarity
+nosherwinOTU <- otu_table(nosherwin_FWDB_scaled)  # This is our OTU table that we will use for Adonis
+set.seed(15879966)
+#BCdist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+
+df_nosherwinOTU <- data.frame(nosherwinOTU)
+otu_soren <- vegdist(df_nosherwinOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+BCdist <- otu_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for BCdist (BC vs sorensen???)
+##  Are you sure?!  
+
+# #Run an ADONIS test!
+adonis_PAFL_mult <- adonis(BCdist ~ limnion+filter +ProdLevel+ DO+temp + pH, data=environ); adonis_PAFL_mult # R2 = 0.36245
+#adonis_PAFL_hab <- adonis(BCdist ~ habitat, data=environ) # R2 = 0.36245
+
+#adonis_PAFL_quad <- adonis(BCdist~quadrant,data=environ) #  R2 = 
+#adonis_PAFL_filt <- adonis(BCdist~filter,data=environ)  #R2 = 
+#adonis_PAFL_limnion <- adonis(BCdist~limnion,data=environ) #R2 = 
+#adonis_PAFL_DO <- adonis(BCdist~DO,data=environ) # R2 = 
+#adonis_PAFL_trophicstate <- adonis(BCdist~trophicstate, data = environ) # R2 = 
+#adonis_PAFL_prod <- adonis(BCdist~ProdLevel, data = environ) # R2 = 
+#adonis_PAFL_temp <- adonis(BCdist~ temp,data=environ) # R2 = 
+#adonis_PAFL_pH <- adonis(BCdist~ pH,data=environ) # R2 = 
+
+
+adonis(BCdist~filter+limnion,data=environ) 
+
+# Particle-Associated!
+part <- subset_samples(nosherwin_merged, filter == "Particle")
+partOTU <- otu_table(part)
+set.seed(15879966)
+#part_BC <- vegdist(partOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+
+#df_partOTU <- data.frame(partOTU)
+#part_soren <- vegdist(df_partOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#part_BC <- part_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for part_BC (BC vs sorensen???)
+##  Are you sure?! 
+
+part_env <- subset(environ, filter == "Particle")  #Load Environmental Data
+
+part_adon_mult<- adonis(part_BC ~ limnion+ProdLevel+ DO + temp + pH, data=part_env); part_adon_mult #R2 = 
+#part_adon_limn <- adonis(part_BC ~ limnion, data=part_env) # R2 = 
+#part_adon_troph <- adonis(part_BC ~ trophicstate, data=part_env) # R2 =  
+#part_adon_prod <- adonis(part_BC ~ ProdLevel, data=part_env) # R2 =  
+#part_adon_DO <- adonis(part_BC ~ DO, data=part_env) # R2 = 0.086
+#part_adon_temp <- adonis(part_BC ~ temp, data=part_env) # R2 = 0.086
+#part_adon_pH <- adonis(part_BC ~ pH, data=part_env) # R2 = 0.086
+
+
+
+# FREE-LIVING!!!
+free <- subset_samples(nosherwin_merged, filter == "Free")
+set.seed(3)
+freeOTU <- otu_table(free)
+#free_BC <- vegdist(freeOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+
+df_freeOTU <- data.frame(freeOTU)
+free_soren <- vegdist(df_freeOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+free_BC <- free_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for free_BC (BC vs sorensen???)
+##  Are you sure?! 
+
+free_env <- subset(environ, filter == "Free")  #Load Environmental Data
+
+free_adon_mult<- adonis(free_BC ~ limnion+ProdLevel+ DO + temp + pH, data=free_env); free_adon_mult #R2 = 
+free_adon_limn <- adonis(free_BC ~ limnion, data=free_env) # R2 = 
+free_adon_troph <- adonis(free_BC ~ trophicstate, data=free_env) # R2 =  
+free_adon_prod <- adonis(free_BC ~ ProdLevel, data=free_env) # R2 =  
+free_adon_DO <- adonis(free_BC ~ DO, data=free_env) # R2 = 0.086
+free_adon_temp <- adonis(free_BC ~ temp, data=free_env) # R2 = 0.086
+free_adon_pH <- adonis(free_BC ~ pH, data=free_env) # R2 = 0.086
+
+
+
+# Epilimnion!
+epi <- subset_samples(nosherwin_merged, limnion == "Epilimnion")
+epiOTU <- otu_table(epi)
+set.seed(15879966)
+#epi_BC <- vegdist(epiOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+
+df_epiOTU <- data.frame(epiOTU)
+epi_soren <- vegdist(df_epiOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+epi_BC <- epi_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for epi_BC (BC vs sorensen???)
+##  Are you sure?! 
+
+epi_env <- subset(environ, limnion == "Epilimnion")  #Load Environmental Data
+
+epi_adon_mult<- adonis(epi_BC ~ filter+ProdLevel+ DO + temp + pH, data=epi_env); epi_adon_mult#R2 = 
+#epi_adon_filt <- adonis(epi_BC ~ filter, data=epi_env) # R2 = 
+#epi_adon_quad <- adonis(epi_BC ~ quadrant, data=epi_env) # R2 = 
+#epi_adon_troph <- adonis(epi_BC ~ trophicstate, data=epi_env) # R2 =  
+#epi_adon_prod <- adonis(epi_BC ~ ProdLevel, data=epi_env) # R2 =  
+#epi_adon_DO <- adonis(epi_BC ~ DO, data=epi_env) # R2 = 0.086
+#epi_adon_temp <- adonis(epi_BC ~ temp, data=epi_env) # R2 = 0.086
+#epi_adon_pH <- adonis(epi_BC ~ pH, data=epi_env) # R2 = 0.086
+
+
+# hypolimnion!
+hypo <- subset_samples(nosherwin_merged, limnion == "Hypolimnion")
+hypoOTU <- otu_table(hypo)
+set.seed(15879966)
+#hypo_BC <- vegdist(hypoOTU, method = "bray", binary = FALSE) # BRAY CURTIS!
+
+df_hypoOTU <- data.frame(hypoOTU)
+hypo_soren <- vegdist(df_hypoOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+hypo_BC <- hypo_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for hypo_BC (BC vs sorensen???)
+##  Are you sure?! 
+
+hypo_env <- subset(environ, limnion == "Hypolimnion") #Load Environmental Data
+
+hypo_adon_mult <- adonis(hypo_BC ~ filter+ProdLevel+DO + temp + pH, data=hypo_env); hypo_adon_mult # R2 = 
+#hypo_adon_filt <- adonis(hypo_BC ~ filter, data=hypo_env) # R2 = 
+#hypo_adon_quad <- adonis(hypo_BC ~ quadrant, data=hypo_env) # R2 = 
+#hypo_adon_troph <- adonis(hypo_BC ~ trophicstate, data=hypo_env) # R2 = 
+#hypo_adon_prod <- adonis(hypo_BC ~ ProdLevel, data=hypo_env) # R2 = 
+#hypo_adon_DO <- adonis(hypo_BC ~ DO, data=hypo_env) # R2 = 
+#hypo_adon_temp <- adonis(hypo_BC ~ temp, data=hypo_env) # R2 = 
+#hypo_adon_pH <- adonis(hypo_BC ~ pH, data=hypo_env) # R2 = 
+
+
+# Oligotrophic!!
+oligo <- subset_samples(nosherwin_merged, trophicstate == "Oligotrophic") 
+oligoOTU <- otu_table(oligo)
+set.seed(15879966)
+#oligo_BC <- vegdist(oligoOTU, method = "bray", binary = FALSE) # BRAY CURTIS!
+
+df_oligoOTU <- data.frame(oligoOTU)
+oligo_soren <- vegdist(df_oligoOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+oligo_BC <- oligo_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for oligo_BC (BC vs sorensen???)
+##  Are you sure?! 
+
+oligo_env <- subset(environ, trophicstate == "Oligotrophic")
+
+oligo_adon_mult <- adonis(oligo_BC ~ limnion+filter+DO + temp + pH, data=oligo_env); oligo_adon_mult # R2 = 
+#oligo_adon_filt <- adonis(oligo_BC ~ filter, data=oligo_env) # R2 = 
+#oligo_adon_quad <- adonis(oligo_BC ~ quadrant, data=oligo_env) # R2 = 
+#oligo_adon_limnion <- adonis(oligo_BC ~ limnion, data=oligo_env) # R2 = 
+#oligo_adon_DO <- adonis(oligo_BC ~ DO, data=oligo_env) # R2 = 
+#oligo_adon_temp <- adonis(oligo_BC ~ temp, data=oligo_env) # R2 = 
+#oligo_adon_pH <- adonis(oligo_BC ~ pH, data=oligo_env) # R2 = 
+
+
+# MESO + EUTROPHIC!!
+prod <- subset_samples(nosherwin_merged, ProdLevel == "Productive")
+prodOTU <- otu_table(prod)
+set.seed(15879966)
+#prod_BC <- vegdist(prodOTU, method = "bray", binary = FALSE) # BRAY CURTIS DISTANCE
+
+df_prodOTU <- data.frame(prodOTU)
+prod_soren <- vegdist(df_prodOTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+prod_BC <- prod_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for prod_BC (BC vs sorensen???)
+##  Are you sure?! 
+
+prod_env <- subset(environ, ProdLevel == "Productive")
+
+prod_adon_mult <- adonis(prod_BC ~ limnion+filter+DO + temp + pH, data=prod_env); prod_adon_mult # R2 = 
+#prod_adon_filt <- adonis(prod_BC ~ filter, data=prod_env) # R2 = 
+#prod_adon_quad <- adonis(prod_BC ~ quadrant, data=prod_env) # R2 = 
+#prod_adon_limnion <- adonis(prod_BC ~ limnion, data=prod_env) # R2 = 
+#prod_adon_DO <- adonis(prod_BC ~ DO, data=prod_env) # R2 = 
+#prod_adon_temp <- adonis(prod_BC ~ temp, data=prod_env) # R2 = 
+#prod_adon_pH <- adonis(prod_BC ~ pH, data=prod_env) # R2 = 
+
+
+#  First we need to organize our environmental data
+sherman_merged <- subset_samples(merged_final, lakenames == "Sherman")
+sherman_merged <- prune_taxa(taxa_sums(sherman_merged) > 0, sherman_merged)
+
+#nowin_merged
+sherm_environ <- sample_data(sherman_merged)
+sherm_environ <- subset(sherm_environ, select = c("names", "lakenames", "limnion", "filter", "trophicstate","ProdLevel", "totaldepth", "DO", "SpC", "temp", "pH")) # , "nitrate", "chla", "ammonia", "SRP", "TP", "Ncoord", "Wcoord"))
+sherm_environ <- data.frame(sherm_environ)
+sherm_environ$limnion <- as.character(sherm_environ$limnion)
+sherm_environ$limnion[sherm_environ$limnion == "Mixed" & sherm_environ$names == "SHEE"] <- "Surface"
+sherm_environ$limnion[sherm_environ$limnion == "Mixed" & sherm_environ$names == "SHEH"] <- "Bottom"
+sherm_environ$limnion[sherm_environ$limnion == "Mixed" & sherm_environ$names == "SHEE3um"] <- "Surface"
+sherm_environ$limnion[sherm_environ$limnion == "Mixed" & sherm_environ$names == "SHEH3um"] <- "Bottom"
+
+## TO MAKE QUADRANT
+for(i in 1:length(sherm_environ$limnion)){
+  sherm_environ$quadrant[i]<-paste(as.character(sherm_environ$filter[i]),as.character(sherm_environ$limnion[i]))}
+
+
+#########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
+sherm_OTU <- otu_table(sherman_merged) # This is our OTU table that we will use for Adonis 
+set.seed(3)
+sherm_BCdist <- vegdist(sherm_OTU, method = "bray", binary = FALSE)
+
+#df_sherm_OTU <- data.frame(sherm_OTU)
+#sherm_soren <- vegdist(df_sherm_OTU, method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+#sherm_BCdist <- sherm_soren  ### This way we don't need to re-type the code for adonis, BUT - **BE CAREFUL** with this!  
+
+##  Do you have the right object for sherm_BCdist (BC vs sorensen???)
+##  Are you sure?! 
+
+# 
+# #Run an ADONIS test!
+adonis_sherm_mult <- adonis(sherm_BCdist ~ filter+limnion+DO+temp+pH, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_filt <- adonis(sherm_BCdist ~ filter, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_limnion <- adonis(sherm_BCdist ~ limnion, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_quad <- adonis(sherm_BCdist ~ quadrant, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_temp <- adonis(sherm_BCdist ~ temp, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_pH <- adonis(sherm_BCdist ~ pH, data=sherm_environ, nperm = 999) # R2 = 0.36245
+adonis_sherm_DO <- adonis(sherm_BCdist ~ DO, data=sherm_environ, nperm = 999) # R2 = 0.36245
+
+
+
+
+```
+
 
 
 
