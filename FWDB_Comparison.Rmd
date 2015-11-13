@@ -396,7 +396,7 @@ pander(compare_fwdb, caption="New Freshwater Database combined with the Silva Da
 
 
 
-```{r Figure 1: summed alpha diversity-rarefied }
+```{r Figure S3: summed alpha diversity-rarefied }
 # Let's see what our alpha diversity looks like for a rarefied data set.
 #  We will use the mean AND floored data.  
 #FW_sum_reps  # Raw Merged Samples, we have 14,294 OTUs  
@@ -535,7 +535,7 @@ final_summed_alpha_stats_plot <- ggplot(final_summed_alpha_stats, aes(x = prod_l
 
 
 
-```{r Figure 1:  sum and scaled Alpha diversity, fig.width = 12, fig.height = 15}
+```{r Figure S3:  sum and scaled Alpha diversity, fig.width = 12, fig.height = 15}
 ### Using the SUM and then SCALED  and MATrounded data
 ## remove the 2 wintergreen "hypolimnion" samples
 nowin_FWDB_scaled # 8,823 OTUs
@@ -821,7 +821,7 @@ colnames(low_nutrient_all_otus)[2] <- "AllOTU_Total"
 
 
 
-```{r Fig2: OTU Overlap}
+```{r Fig1: OTU Overlap}
 # Free-living and Particle-associated
 free_only <- anti_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") # Unique to free-living
 
@@ -911,14 +911,16 @@ otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, ord
   geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 7000, 1000), lim = c(0, 6500)) + 
   guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
+  scale_x_discrete(breaks=c("Free-Living", "Particle-Associated", "Low-Nutrient", "High-Nutrient", "Epilimnion", "Hypolimnion"),
+                      labels=c("Free-Living (21)", "Particle-Associated (20)", "Low-Nutrient (15)", "High-Nutrient (26)", "Epilimnion (19)", "Hypolimnion (18)")) + 
   scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
                     breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
                     values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen", "gray39")) +
   theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
   annotate("text",x = 1.5, y = 6300, label = "***") +
   theme(axis.title.x = element_text(face="bold", size=12),
-        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
-        axis.text.y = element_text(colour = "black", size=8),
+        axis.text.x = element_text(colour = "black", size=10, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=10),
         axis.title.y = element_text(face="bold", size=12),
         legend.title = element_blank(),
         legend.text = element_text(size = 8),
@@ -926,6 +928,7 @@ otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, ord
         strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
         strip.background = element_blank(),
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         legend.position="none"); 
 #dev.off()
 
@@ -936,13 +939,15 @@ otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType
   geom_bar(stat="identity", position = "fill") +   geom_bar(stat="identity", position = "fill", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 1, 0.1)) + 
   guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
+  scale_x_discrete(breaks=c("Free-Living", "Particle-Associated", "Low-Nutrient", "High-Nutrient", "Epilimnion", "Hypolimnion"),
+                      labels=c("Free-Living (21)", "Particle-Associated (20)", "Low-Nutrient (15)", "High-Nutrient (26)", "Epilimnion (19)", "Hypolimnion (18)")) + 
   scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
                     breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
                     values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen", "gray39")) +
   theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
-        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
-        axis.text.y = element_text(colour = "black", size=8),
+        axis.text.x = element_text(colour = "black", size=10, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=10),
         axis.title.y = element_text(face="bold", size=12),
         legend.title = element_blank(),
         legend.text = element_text(size = 8),
@@ -950,6 +955,7 @@ otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType
         strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
         strip.background = element_blank(),
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         legend.position="right"); 
 
 
@@ -957,12 +963,12 @@ otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType
 
 
 # Store ggplot graphical parameters
-pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf",  width= 12, height=6)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf",  width= 12, height=6)
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(1,2,width=c(0.45,0.55))))
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.43,0.57))))
 print(otu_sum_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(otu_relative_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
-dev.off()
+#dev.off()
 ```
 
 
@@ -1092,18 +1098,7 @@ nmds_bray$ProdLevel[nmds_bray$trophicstate == "Mesotrophic"] <- "Productive"
 nmds_bray$ProdLevel[nmds_bray$trophicstate == "Oligotrophic"] <- "Unproductive"
 nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 
-### SCREEPLOT 
-#NMDS.scree<-function(x) { #where x is the name of the data frame variable
-#  plot(rep(1,10),replicate(10,metaMDS(x,autotransform=F,distance = "bray",k=1)$stress/100),xlim=c(1,nrow(x)),ylim=c(0,0.5),xlab="# of Dimensions",ylab="Stress",main="NMDS stress plot")
-#  for (i in 1:(nrow(x)-2)) {
-#  points(rep(i+1,10),replicate(10,metaMDS(x,autotransform=F,distance = "bray",k=i+1)$stress/100))
-#}
-#}
-
-#NMDS.scree(nowinOTU)
-
-
-nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*100, color = quadrant, shape = limnion, size = ProdLevel)) +
+nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*-100, color = quadrant, shape = limnion, size = ProdLevel)) +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") + 
   geom_point(alpha=0.9) + theme_bw() +   #geom_point(colour="white", size = 1) +
   annotate("text", label = "B", x = (min(nmds_bray$MDS1*100) + 0.7), y = (max(nmds_bray$MDS2*100) + 0.), face = "bold",size = 6, colour = "black") +
@@ -1116,8 +1111,8 @@ nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*100, color = quadrant, sha
   scale_size_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
                      labels = c("High-Nutrient", "Low-Nutrient"),
                      values = c(6, 4)) +
-  guides(shape = guide_legend(order=1, override.aes=list(size=5)), 
-         color = guide_legend(order=2, override.aes=list(size=5))) +
+  guides(shape = guide_legend(order=1, override.aes=list(size=4)), 
+         color = guide_legend(order=2, override.aes=list(size=4))) +
   theme(axis.text.x = element_blank(), # text(colour="black", vjust=0.5, size=10), 
         axis.text.y = element_blank(), #text(colour="black", vjust=0.5, size=10),
         axis.title.x = element_text(face="bold", size=10),
@@ -1156,8 +1151,8 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = quadrant, shape = 
   scale_size_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
                      labels = c("High-Nutrient", "Low-Nutrient"),
                      values = c(6, 4)) +
-  guides(shape = guide_legend(order=1, override.aes=list(size=5)), 
-         color = guide_legend(order=2, override.aes=list(size=5))) +
+  guides(shape = guide_legend(order=1, override.aes=list(size=4)), 
+         color = guide_legend(order=2, override.aes=list(size=4))) +
   theme(axis.text.x = element_blank(), # text(colour="black", vjust=0.5, size=10), 
         axis.text.y = element_blank(), #text(colour="black", vjust=0.5, size=10),
         axis.title.x = element_text(face="bold", size=10),
