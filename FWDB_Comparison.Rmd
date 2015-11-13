@@ -625,6 +625,348 @@ multiplot(final_summed_alpha_stats_plot, sum_scaled_matround_prod_alpha_plot, co
 ```
 
 
+
+
+```{r Calculating OTU and phylum abundances with dplyr}
+
+# 1st:  Get the abundance of each phylum for ALL PA/FL/High-Nutrient/Low-Nutrient/Epilimnion/Hypolimnion
+phy_glom <- tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
+phy_melt <- psmelt(goodsamps_phylum) %>%
+  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "Phylum","Abundance"))
+
+#Subset out sherman
+phy_melt_sherman <- subset(phy_melt, Sample == "SHEE" | Sample == "SHEH" | Sample == "SHEE3um" | Sample == "SHEH3um")
+# No sherman samples 
+phy_melt_nosher <- subset(phy_melt, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
+
+## Free-Living - 21 samples
+phy_abund_free <- subset(phy_melt_nosher, filter == "Free") %>% # Subset out the free-living samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_free$SampleType <- "Free-Living"
+
+#Particle-Associated - 20 Samples
+phy_abund_particle <- subset(phy_melt_nosher, filter == "Particle") %>% # Subset out the particle-associated samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_particle$SampleType <- "Particle-Associated"
+
+# Epilimnion - 19 samples 
+phy_abund_epi <- subset(phy_melt_nosher, limnion == "Epilimnion") %>% # Subset out the Epilimnion samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_epi$SampleType <- "Epilimnion"
+
+# Hypolimnion - 18 Samples 
+phy_abund_hypo <- subset(phy_melt_nosher, limnion == "Hypolimnion") %>% # Subset out the Hypolimnion samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_hypo$SampleType <- "Hypolimnion"
+
+# High-Nutrient - 26 Samples 
+phy_abund_high <- subset(phy_melt_nosher, ProdLevel == "Productive") %>% # Subset out the Productive samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_high$SampleType <- "Productive"
+
+# Low-Nutrient - 15 samples 
+phy_abund_low <- subset(phy_melt_nosher, ProdLevel == "Unproductive") %>% # Subset out the Unproductive samples 
+  select(Sample, Abundance, Phylum) %>% # select only the important columns 
+  group_by(Phylum) %>% # Combine all the phyla
+  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
+phy_abund_low$SampleType <- "Unproductive"
+
+
+
+
+##  Get the OTU abundance 
+#otu_glom <- tax_glom(nowin_FWDB_scaled, taxrank = "OTU") # This command takes a long time to run!  
+#otu_melt <- psmelt(otu_glom) %>%
+#  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "OTU","Abundance"))
+#write.table(otu_melt, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", row.names = FALSE)
+
+
+otu_melt <- read.table( "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", header = TRUE)
+otu_melt_nosherwin <- subset(otu_melt, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
+#length(unique(otu_melt_nosherwin$Sample)) # Sanity check
+
+# The below data frames do not include SHERMAN (Mixed lake) OR Wintergreen "hypolimnion" samples 
+## Free-Living - 21 samples
+# All OTUs and their abundance in the FREE LIVING 
+otu_abund_free <- subset(otu_melt_nosherwin, filter == "Free") %>% # Subset out the free-living samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_free$SampleType <- "Free-Living"
+
+#Particle-Associated - 20 Samples
+# All OTUs and their abundance in the PARTICLE-ASSOCIATED
+otu_abund_particle <- subset(otu_melt_nosherwin, filter == "Particle") %>% # Subset out the particle-associated samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_particle$SampleType <- "Particle-Associated"
+
+# Epilimnion - 19 samples 
+# All OTUs and their abundance in the EPILIMNION
+otu_abund_epi <- subset(otu_melt_nosherwin, limnion == "Epilimnion") %>% # Subset out the Epilimnion samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_epi$SampleType <- "Epilimnion"
+
+# Hypolimnion - 18 Samples 
+# All OTUs and their abundance in the HYPOLIMNION 
+otu_abund_hypo <- subset(otu_melt_nosherwin, limnion == "Hypolimnion") %>% # Subset out the Hypolimnion samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_hypo$SampleType <- "Hypolimnion"
+
+# High-Nutrient - 26 Samples 
+# All OTUs and their abundance in the HIGH-NUTRIENT 
+otu_abund_high <- subset(otu_melt_nosherwin, ProdLevel == "Productive") %>% # Subset out the Productive samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_high$SampleType <- "Productive"
+
+# Low-Nutrient - 15 samples 
+# All OTUs and their abundance in the LOW-NUTRIENT
+otu_abund_low <- subset(otu_melt_nosherwin, ProdLevel == "Unproductive") %>% # Subset out the Unproductive samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_low$SampleType <- "Unproductive"
+
+
+
+otu_abund_free_pruned <- filter(otu_abund_free, OTU_sum > 0)
+colnames(otu_abund_free_pruned)[2] <- "OTU_sum_Free"
+
+otu_abund_particle_pruned <- filter(otu_abund_particle, OTU_sum > 0)
+colnames(otu_abund_particle_pruned)[2] <- "OTU_sum_Particle"
+
+otu_abund_epi_pruned <- filter(otu_abund_epi, OTU_sum > 0)
+colnames(otu_abund_epi_pruned)[2] <- "OTU_sum_Epi"
+
+otu_abund_hypo_pruned <- filter(otu_abund_hypo, OTU_sum > 0)
+colnames(otu_abund_hypo_pruned)[2] <- "OTU_sum_Hypo"
+
+otu_abund_high_pruned <- filter(otu_abund_high, OTU_sum > 0)
+colnames(otu_abund_high_pruned)[2] <- "OTU_sum_High"
+
+otu_abund_low_pruned <- filter(otu_abund_low, OTU_sum > 0)
+colnames(otu_abund_low_pruned)[2] <- "OTU_sum_Low"
+
+
+### Combing get all of the 
+###  Need to add the taxonomy to the OTU information
+nosherwin_FWDB_scaled <- subset_samples(nowin_FWDB_scaled, names != "SHEE" & names != "SHEH" & names != "SHEE3um" & names != "SHEH3um")
+nosherwin_FWDB_scaled <- prune_taxa(taxa_sums(nosherwin_FWDB_scaled) > 0, nosherwin_FWDB_scaled)
+
+taxa <- data.frame(tax_table(nosherwin_FWDB_scaled)) %>%
+  select(Phylum, OTU)
+
+free_living_all_otus <- inner_join(otu_abund_free_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Free) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(free_living_all_otus)[2] <- "AllOTU_Total"
+
+particle_associated_all_otus <- inner_join(otu_abund_particle_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Particle) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(particle_associated_all_otus)[2] <- "AllOTU_Total"
+
+
+epilimnion_all_otus <- inner_join(otu_abund_epi_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Epi) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(epilimnion_all_otus)[2] <- "AllOTU_Total"
+
+hypolimnion_all_otus <- inner_join(otu_abund_hypo_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Hypo) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(hypolimnion_all_otus)[2] <- "AllOTU_Total"
+
+high_nutrient_all_otus <- inner_join(otu_abund_high_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_High) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(high_nutrient_all_otus)[2] <- "AllOTU_Total"
+
+low_nutrient_all_otus <- inner_join(otu_abund_low_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Low) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(low_nutrient_all_otus)[2] <- "AllOTU_Total"
+```
+
+
+
+
+
+```{r Fig2: OTU Overlap}
+# Free-living and Particle-associated
+free_only <- anti_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") # Unique to free-living
+
+part_only <- anti_join(otu_abund_particle_pruned, otu_abund_free_pruned, by = "OTU") # Unique to particle-associated
+
+pvf_both <- inner_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") %>% # Overlap between PA and FL 
+  mutate(Comparison = "PA vs. FL",
+         Overlap = "Both PA and FL",
+         TotalSum = OTU_sum_Free + OTU_sum_Particle) %>%
+  select(-SampleType.x, -SampleType.y) # Delete unnecessary Columns
+  
+
+#  Epilimnion and Hypolimnion 
+epi_only <- anti_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") # Unique to epilimnion
+
+hypo_only <- anti_join(otu_abund_hypo_pruned, otu_abund_epi_pruned, by = "OTU") # Unique to hypolimnion 
+
+tvb_both <- inner_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
+  mutate(Comparison = "Top vs. Bottom",
+         Overlap = "Both Epi and Hypo",
+         TotalSum = OTU_sum_Epi + OTU_sum_Hypo) %>%
+  select(-SampleType.x, -SampleType.y) 
+
+#  High and Low-Nutrient 
+low_only <- anti_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") # Unique to epilimnion
+
+high_only <- anti_join(otu_abund_high_pruned, otu_abund_low_pruned, by = "OTU") # Unique to hypolimnion 
+
+hvl_both <- inner_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
+  mutate(Comparison = "Prod vs. Unprod",
+         Overlap = "Both Epi and Hypo",
+         TotalSum = OTU_sum_High + OTU_sum_Low) %>%
+  select(-SampleType.x, -SampleType.y) 
+
+
+otu_overlap <- data.frame(matrix(ncol = 1, nrow = 12))
+
+SampleType <- c("Particle-Associated", "Particle-Associated", "Free-Living", "Free-Living", 
+                "Epilimnion", "Epilimnion", "Hypolimnion", "Hypolimnion", 
+                "High-Nutrient", "High-Nutrient", "Low-Nutrient", "Low-Nutrient")
+
+Type <- c("Particle-Associated Only", "Shared", "Free-Living Only", "Shared", 
+          "Epilimnion Only", "Shared", "Hypolimnion Only", "Shared", 
+          "High-Nutrient Only", "Shared", "Low-Nutrient Only", "Shared")
+
+NumOTUs <- c(nrow(part_only), nrow(pvf_both), nrow(free_only), nrow(pvf_both), 
+             nrow(epi_only), nrow(tvb_both), nrow(hypo_only), nrow(tvb_both), 
+             nrow(high_only), nrow(hvl_both), nrow(low_only), nrow(hvl_both))
+
+Comparison <- c("PA vs. FL", "PA vs. FL", "PA vs. FL", "PA vs. FL", 
+                "Top vs. Bottom","Top vs. Bottom", "Top vs. Bottom", "Top vs. Bottom",
+                "Prod vs. Unprod","Prod vs. Unprod","Prod vs. Unprod","Prod vs. Unprod")
+
+Relative_OTU_Abund <- c(sum(part_only$OTU_sum_Particle), sum(pvf_both$OTU_sum_Particle), sum(free_only$OTU_sum_Free),  sum(pvf_both$OTU_sum_Free), 
+                        sum(epi_only$OTU_sum_Epi), sum(tvb_both$OTU_sum_Epi), sum(hypo_only$OTU_sum_Hypo), sum(tvb_both$OTU_sum_Hypo), 
+                        sum(high_only$OTU_sum_High), sum(hvl_both$OTU_sum_High), sum(low_only$OTU_sum_Low), sum(hvl_both$OTU_sum_Low))
+
+otu_overlap$SampleType<- SampleType
+otu_overlap$Type <- Type
+otu_overlap$NumOTUs <- NumOTUs
+otu_overlap$Comparison <- Comparison
+otu_overlap$Relative_OTU_Abund <- Relative_OTU_Abund
+otu_overlap <- otu_overlap[,-1]
+
+otu_overlap$SampleType <- factor(otu_overlap$SampleType,levels = c("Free-Living", "Particle-Associated", "Low-Nutrient", "High-Nutrient", "Epilimnion", "Hypolimnion"))
+otu_overlap$Type <- factor(otu_overlap$Type, levels = c("Shared","Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only"))
+
+
+####  Test for Significance
+PAFL_chisq <-matrix(c(nrow(part_only), nrow(pvf_both), nrow(free_only), nrow(pvf_both)),nrow=2)
+PAFL_chisq_res <- chisq.test(PAFL_chisq, correct = FALSE); PAFL_chisq_res
+
+prod_chisq <-matrix(c(nrow(high_only), nrow(hvl_both), nrow(low_only), nrow(hvl_both)),nrow=2)
+prod_chisq_res <- chisq.test(prod_chisq, correct = FALSE); prod_chisq_res
+
+limnion_chisq <-matrix(c(nrow(epi_only), nrow(tvb_both), nrow(hypo_only), nrow(tvb_both)),nrow=2)
+limnion_chisq_res <- chisq.test(limnion_chisq, correct = FALSE); limnion_chisq_res
+
+shared_chisq <- matrix(c(nrow(pvf_both),nrow(hvl_both), nrow(tvb_both)),nrow=1)
+shared_chisq_res <- chisq.test(shared_chisq, correct = FALSE); shared_chisq_res
+
+
+
+otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
+  facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
+  xlab("Sample Type ") + ylab("Sum of Shared and Unique OTUs") + 
+  geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
+  scale_y_continuous(expand = c(0,0), breaks=seq(0, 7000, 1000), lim = c(0, 6500)) + 
+  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
+  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen", "gray39")) +
+  theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
+  annotate("text",x = 1.5, y = 6300, label = "***") +
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        legend.position="none"); 
+#dev.off()
+
+###  RELATIVIZE IT!!!!  
+otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType, fill=Type, order=Type)) +
+  facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
+  xlab("Sample Type ") + ylab("Relative Abundance of Shared and Unique OTUs") + 
+  geom_bar(stat="identity", position = "fill") +   geom_bar(stat="identity", position = "fill", colour="black", show_guide=FALSE) +  
+  scale_y_continuous(expand = c(0,0), breaks=seq(0, 1, 0.1)) + 
+  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
+  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen", "gray39")) +
+  theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        legend.position="right"); 
+
+
+#multiplot(otu_sum_plot, otu_relative_plot, cols =2)
+
+
+# Store ggplot graphical parameters
+pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf",  width= 12, height=6)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.45,0.55))))
+print(otu_sum_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(otu_relative_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+dev.off()
+```
+
+
+
 ```{r Figure 3: NMDS Ordinations}
 
 
@@ -1110,6 +1452,8 @@ supplemental_g3_MIXED <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phyl
 ```
 
 
+
+
 ```{r Figure S* - phylum level heat map}
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
@@ -1404,118 +1748,6 @@ print(relabun_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 
 
 
-```{r Calculating OTU and phylum abundances dplyr}
-
-# 1st:  Get the abundance of each phylum for ALL PA/FL/High-Nutrient/Low-Nutrient/Epilimnion/Hypolimnion
-phy_glom <- tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
-phy_melt <- psmelt(goodsamps_phylum) %>%
-  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "Phylum","Abundance"))
-
-#Subset out sherman
-phy_melt_sherman <- subset(phy_melt, Sample == "SHEE" | Sample == "SHEH" | Sample == "SHEE3um" | Sample == "SHEH3um")
-# No sherman samples 
-phy_melt_nosher <- subset(phy_melt, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
-
-## Free-Living - 21 samples
-phy_abund_free <- subset(phy_melt_nosher, filter == "Free") %>% # Subset out the free-living samples 
-  select(Sample, Abundance, Phylum) %>% # select only the important columns 
-  group_by(Phylum) %>% # Combine all the phyla
-  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
-phy_abund_free$SampleType <- "Free-Living"
-
-#Particle-Associated - 20 Samples
-phy_abund_particle <- subset(phy_melt_nosher, filter == "Particle") %>% # Subset out the particle-associated samples 
-  select(Sample, Abundance, Phylum) %>% # select only the important columns 
-  group_by(Phylum) %>% # Combine all the phyla
-  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
-phy_abund_particle$SampleType <- "Particle-Associated"
-
-# Epilimnion - 19 samples 
-phy_abund_epi <- subset(phy_melt_nosher, limnion == "Epilimnion") %>% # Subset out the Epilimnion samples 
-  select(Sample, Abundance, Phylum) %>% # select only the important columns 
-  group_by(Phylum) %>% # Combine all the phyla
-  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
-phy_abund_epi$SampleType <- "Epilimnion"
-
-# Hypolimnion - 18 Samples 
-phy_abund_hypo <- subset(phy_melt_nosher, limnion == "Hypolimnion") %>% # Subset out the Hypolimnion samples 
-  select(Sample, Abundance, Phylum) %>% # select only the important columns 
-  group_by(Phylum) %>% # Combine all the phyla
-  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
-phy_abund_hypo$SampleType <- "Hypolimnion"
-
-# High-Nutrient - 26 Samples 
-phy_abund_high <- subset(phy_melt_nosher, ProdLevel == "Productive") %>% # Subset out the Productive samples 
-  select(Sample, Abundance, Phylum) %>% # select only the important columns 
-  group_by(Phylum) %>% # Combine all the phyla
-  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
-phy_abund_high$SampleType <- "Productive"
-
-# Low-Nutrient - 15 samples 
-phy_abund_low <- subset(phy_melt_nosher, ProdLevel == "Unproductive") %>% # Subset out the Unproductive samples 
-  select(Sample, Abundance, Phylum) %>% # select only the important columns 
-  group_by(Phylum) %>% # Combine all the phyla
-  summarize(phylum_sum = sum(Abundance)) # Sum each phylum abundance count
-phy_abund_low$SampleType <- "Unproductive"
-
-
-
-
-##  Get the OTU abundance 
-#otu_glom <- tax_glom(nowin_FWDB_scaled, taxrank = "OTU") # This command takes a long time to run!  
-#otu_melt <- psmelt(otu_glom) %>%
-#  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "OTU","Abundance"))
-#write.table(otu_melt, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", row.names = FALSE)
-otu_melt <- read.table( "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", header = TRUE)
-
-otu_melt_sherman <- subset(otu_melt, Sample == "SHEE" | Sample == "SHEH" | Sample == "SHEE3um" | Sample == "SHEH3um")
-
-otu_melt_nosherwin <- subset(otu_melt, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
-
-
-## Free-Living - 21 samples
-otu_abund_free <- subset(otu_melt_nosherwin, filter == "Free") %>% # Subset out the free-living samples 
-  select(Sample, Abundance, OTU) %>% # select only the important columns 
-  group_by(OTU) %>% # Combine all the OTUs
-  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
-otu_abund_free$SampleType <- "Free-Living"
-
-#Particle-Associated - 20 Samples
-otu_abund_particle <- subset(otu_melt_nosherwin, filter == "Particle") %>% # Subset out the particle-associated samples 
-  select(Sample, Abundance, OTU) %>% # select only the important columns 
-  group_by(OTU) %>% # Combine all the OTUs
-  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
-otu_abund_particle$SampleType <- "Particle-Associated"
-
-# Epilimnion - 19 samples 
-otu_abund_epi <- subset(otu_melt_nosherwin, limnion == "Epilimnion") %>% # Subset out the Epilimnion samples 
-  select(Sample, Abundance, OTU) %>% # select only the important columns 
-  group_by(OTU) %>% # Combine all the OTUs
-  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
-otu_abund_epi$SampleType <- "Epilimnion"
-
-# Hypolimnion - 18 Samples 
-otu_abund_hypo <- subset(otu_melt_nosherwin, limnion == "Hypolimnion") %>% # Subset out the Hypolimnion samples 
-  select(Sample, Abundance, OTU) %>% # select only the important columns 
-  group_by(OTU) %>% # Combine all the OTUs
-  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
-otu_abund_hypo$SampleType <- "Hypolimnion"
-
-# High-Nutrient - 26 Samples 
-otu_abund_high <- subset(otu_melt_nosherwin, ProdLevel == "Productive") %>% # Subset out the Productive samples 
-  select(Sample, Abundance, OTU) %>% # select only the important columns 
-  group_by(OTU) %>% # Combine all the OTUs
-  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
-otu_abund_high$SampleType <- "Productive"
-
-# Low-Nutrient - 15 samples 
-otu_abund_low <- subset(otu_melt_nosherwin, ProdLevel == "Unproductive") %>% # Subset out the Unproductive samples 
-  select(Sample, Abundance, OTU) %>% # select only the important columns 
-  group_by(OTU) %>% # Combine all the OTUs
-  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
-otu_abund_low$SampleType <- "Unproductive"
-```
-
 
 
 ```{r OTU-level analysis cutoff-0-alpha-0.01}
@@ -1785,7 +2017,10 @@ summed <- ggplot(summed_16, aes(y=Count, x=Phylum, fill=Preference)) +
 ```
 
 
-```{r OTU summed relative to its abundance - alpha = 0.01, cutoff = 0 }
+
+
+
+```{r Fig 6 right panel - OTU summed relative to its abundance - alpha = 0.01, cutoff = 0 }
 # Get the significant OTUs 
 # summed relative to its abundance 
 ### Free-living
@@ -1865,12 +2100,12 @@ sig_otus_relabund_0 <- rbind(sigotu_free_unique, sigotu_particle_unique, sigotu_
 sig_otus_relabund_0$Preference <- factor(sig_otus_relabund_0$Preference,
                                     levels = c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion")) 
 
-sig_otus_relabund_0$Phylum <- factor(sig_otus_relabund_0$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+sig_otus_relabund_0$Phylum <- factor(sig_otus_relabund_0$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria","unclassified", "Deltaproteobacteria",
                                                "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
                                                "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae", "Fibrobacteres", "Candidate_division_SR1", 
                                                "Candidate_division_BRC1", "BD1-5", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "Gemmatimonadetes", "WCHB1-60","Fusobacteria", "Deferribacteres", 
                                                "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "SM2F11", "Hyd24-12", "Nitrospirae",
-                                               "SHA-109", "TA06", "OC31", "GOUTA4", "Caldiserica", "Candidate_division_JS1", "FGL7S", "unclassified"))
+                                               "SHA-109", "TA06", "OC31", "GOUTA4", "Caldiserica", "Candidate_division_JS1", "FGL7S"))
 
 
 sig_otus_relabund_0$Comparison <- factor(sig_otus_relabund_0$Comparison,
@@ -1906,8 +2141,8 @@ sig_phy_relabund_plot <- ggplot(sig_otus_relabund_0, aes(y=sig_phylum_relabund, 
 #dev.off()
 
 
-OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
-                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae", "unclassified")
+OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified","Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae")
 
 
 sigotu_relabund_16 <- sig_otus_relabund_0[sig_otus_relabund_0$Phylum %in% OTUtop16, ]
@@ -1943,7 +2178,7 @@ sigotu_phy_relabund_plot <- ggplot(sigotu_relabund_16, aes(y=sig_phylum_relabund
 
 
 
-```{r Panel A of "summed OTU plot"}
+```{r Fig 6 left panel - proportion of sig over total OTUs per phylum}
 # PANEL A - 
 #### NUMBER OF SIG OTUs VERSUS TOTAL OTUS IN THAT HABITAT
 #otu_melt_nosherwin
@@ -2088,19 +2323,19 @@ otu_joined <- rbind(otu_join_free, otu_join_particle, otu_join_epi, otu_join_hyp
 otu_joined$Preference <- factor(otu_joined$Preference,
                                     levels = c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion")) 
 
-otu_joined$Phylum <- factor(otu_joined$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+otu_joined$Phylum <- factor(otu_joined$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified", "Deltaproteobacteria",
                                                "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
                                                "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae", "Fibrobacteres", "Candidate_division_SR1", 
                                                "Candidate_division_BRC1", "BD1-5", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "Gemmatimonadetes", "WCHB1-60","Fusobacteria", "Deferribacteres", 
                                                "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "SM2F11", "Hyd24-12", "Nitrospirae",
-                                               "SHA-109", "TA06", "OC31", "GOUTA4", "Caldiserica", "Candidate_division_JS1", "FGL7S", "unclassified"))
+                                               "SHA-109", "TA06", "OC31", "GOUTA4", "Caldiserica", "Candidate_division_JS1", "FGL7S"))
 
 
 otu_joined$Comparison <- factor(otu_joined$Comparison, levels = c("PA vs. FL", "Prod vs. Unprod","Top vs. Bottom")) 
 
 
-OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
-                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae", "unclassified")
+OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria","unclassified", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae")
 
 
 otu_joined_16 <- otu_joined[otu_joined$Phylum %in% OTUtop16, ]
@@ -2134,6 +2369,8 @@ sigotu_proportion_plot <- ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Ph
         legend.position="right"); sigotu_proportion_plot
 #dev.off()
 ```
+
+
 
 
 ```{r Figure 6 Sig OTU plots}
@@ -2531,149 +2768,143 @@ sigotu_phy_relabund_plot0_05 <- ggplot(sigotu_relabund_160_05, aes(y=sig_phylum_
 
 
 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+######################  PROPORTION PLOT 0.05 p-value cutoff 
+
+
+pvu0_05 <- subset(otus0_05, Comparison == "Prod vs. Unprod")
+tvb0_05 <- subset(otus0_05, Comparison == "Top vs. Bottom")
+pvf0_05 <- subset(otus0_05, Comparison == "PA vs. FL")
+
+
+#  Let's make data frames of a tally of the significant OTUs by habitat and by phylum 
+
+free_living_sig_otus0_05 <- pvf0_05 %>% # Make a data frame with significant OTUs unique to free living 
+  filter(log2FoldChange < 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Free-Living", Comparison =  "PA vs. FL")
+colnames(free_living_sig_otus0_05)[2] <- "SigOTU_Total"
+
+particle_associated_sig_otus0_05 <- pvf0_05 %>% # Make a data frame with significant OTUs unique to free living 
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Particle-Associated", Comparison =  "PA vs. FL")
+colnames(particle_associated_sig_otus0_05)[2] <- "SigOTU_Total"
+
+epilimnion_sig_otus0_05 <- tvb0_05 %>% # Make a data frame with significant OTUs unique to Epilimnion
+  filter(log2FoldChange < 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Epilimnion", Comparison =  "Top vs. Bottom")
+colnames(epilimnion_sig_otus0_05)[2] <- "SigOTU_Total"
+
+
+hypolimnion_sig_otus0_05 <- tvb0_05 %>% # Make a data frame with significant OTUs unique to Hypolimnion
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Hypolimnion", Comparison =  "Top vs. Bottom")
+colnames(hypolimnion_sig_otus0_05)[2] <- "SigOTU_Total"
+
+
+high_nutrient_sig_otus0_05 <- pvu0_05 %>% # Make a data frame with significant OTUs unique to high-nutrient
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "High-Nutrient", Comparison =  "Prod vs. Unprod")
+colnames(high_nutrient_sig_otus0_05)[2] <- "SigOTU_Total"
+
+
+low_nutrient_sig_otus0_05 <- pvu0_05 %>% # Make a data frame with significant OTUs unique to low-nutrient
+  filter(log2FoldChange < 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Low-Nutrient", Comparison =  "Prod vs. Unprod")
+colnames(low_nutrient_sig_otus0_05)[2] <- "SigOTU_Total"
 
 
 
-```
+
+
+#######  Combine the above data frames with the "all_otus" data frames calculated earlier in the file 
+
+otu_join_free0_05 <- inner_join(free_living_sig_otus0_05, free_living_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_particle0_05 <- inner_join(particle_associated_sig_otus0_05, particle_associated_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_epi0_05 <- inner_join(epilimnion_sig_otus0_05, epilimnion_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_hypo0_05 <- inner_join(hypolimnion_sig_otus0_05, hypolimnion_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_high0_05<- inner_join(high_nutrient_sig_otus0_05, high_nutrient_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_low0_05 <- inner_join(low_nutrient_sig_otus0_05, low_nutrient_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
+
+otu_joined0_05 <- rbind(otu_join_free0_05, otu_join_particle0_05, otu_join_epi0_05, otu_join_hypo0_05, otu_join_high0_05, otu_join_low0_05)
+
+otu_joined0_05$Preference <- factor(otu_joined0_05$Preference,
+                                    levels = c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion")) 
+
+otu_joined0_05$Phylum <- factor(otu_joined0_05$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria",  "unclassified", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "Gemmatimonadetes", "WCHB1-60","Fusobacteria", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "SM2F11", "Hyd24-12", "Nitrospirae",
+                                               "SHA-109", "TA06", "OC31", "GOUTA4", "Caldiserica", "Candidate_division_JS1", "FGL7S"))
+
+
+otu_joined0_05$Comparison <- factor(otu_joined0_05$Comparison, levels = c("PA vs. FL", "Prod vs. Unprod","Top vs. Bottom")) 
+
+
+OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria",  "unclassified", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae")
+
+
+otu_joined_16_0_05 <- otu_joined0_05[otu_joined0_05$Phylum %in% OTUtop16, ]
+otu_joined_16_0_05$Phylum = with(otu_joined_16_0_05, factor(Phylum, levels = rev(levels(Phylum)))) # Reverse the order of the phyla so it plots logically 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r Fig2: OTU Overlap}
-#  The below data frames do not include SHERMAN (Mixed lake) OR Wintergreen "hypolimnion" samples 
-#otu_abund_free # All OTUs and their abundance in the FREE LIVING 
-#otu_abund_particle # All OTUs and their abundance in the PARTICLE-ASSOCIATED
-#otu_abund_epi # All OTUs and their abundance in the EPILIMNION
-#otu_abund_hypo # All OTUs and their abundance in the HYPOLIMNION 
-#otu_abund_high # All OTUs and their abundance in the HIGH-NUTRIENT 
-#otu_abund_low # All OTUs and their abundance in the LOW-NUTRIENT
-
-otu_abund_free_pruned <- filter(otu_abund_free, OTU_sum > 0)
-colnames(otu_abund_free_pruned)[2] <- "OTU_sum_Free"
-
-otu_abund_particle_pruned <- filter(otu_abund_particle, OTU_sum > 0)
-colnames(otu_abund_particle_pruned)[2] <- "OTU_sum_Particle"
-
-otu_abund_epi_pruned <- filter(otu_abund_epi, OTU_sum > 0)
-colnames(otu_abund_epi_pruned)[2] <- "OTU_sum_Epi"
-
-otu_abund_hypo_pruned <- filter(otu_abund_hypo, OTU_sum > 0)
-colnames(otu_abund_hypo_pruned)[2] <- "OTU_sum_Hypo"
-
-otu_abund_high_pruned <- filter(otu_abund_high, OTU_sum > 0)
-colnames(otu_abund_high_pruned)[2] <- "OTU_sum_High"
-
-otu_abund_low_pruned <- filter(otu_abund_low, OTU_sum > 0)
-colnames(otu_abund_low_pruned)[2] <- "OTU_sum_Low"
-
-# Free-living and Particle-associated
-free_only <- anti_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") # Unique to free-living
-
-part_only <- anti_join(otu_abund_particle_pruned, otu_abund_free_pruned, by = "OTU") # Unique to particle-associated
-
-pvf_both <- inner_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") %>% # Overlap between PA and FL 
-  mutate(Comparison = "PA vs. FL",
-         Overlap = "Both PA and FL",
-         TotalSum = OTU_sum_Free + OTU_sum_Particle) %>%
-  select(-SampleType.x, -SampleType.y) # Delete unnecessary Columns
-  
-
-#  Epilimnion and Hypolimnion 
-epi_only <- anti_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") # Unique to epilimnion
-
-hypo_only <- anti_join(otu_abund_hypo_pruned, otu_abund_epi_pruned, by = "OTU") # Unique to hypolimnion 
-
-tvb_both <- inner_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
-  mutate(Comparison = "Top vs. Bottom",
-         Overlap = "Both Epi and Hypo",
-         TotalSum = OTU_sum_Epi + OTU_sum_Hypo) %>%
-  select(-SampleType.x, -SampleType.y) 
-
-#  High and Low-Nutrient 
-low_only <- anti_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") # Unique to epilimnion
-
-high_only <- anti_join(otu_abund_high_pruned, otu_abund_low_pruned, by = "OTU") # Unique to hypolimnion 
-
-hvl_both <- inner_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
-  mutate(Comparison = "Prod vs. Unprod",
-         Overlap = "Both Epi and Hypo",
-         TotalSum = OTU_sum_High + OTU_sum_Low) %>%
-  select(-SampleType.x, -SampleType.y) 
-
-
-otu_overlap <- data.frame(matrix(ncol = 1, nrow = 12))
-
-SampleType <- c("Particle-Associated", "Particle-Associated", "Free-Living", "Free-Living", 
-                "Epilimnion", "Epilimnion", "Hypolimnion", "Hypolimnion", 
-                "High-Nutrient", "High-Nutrient", "Low-Nutrient", "Low-Nutrient")
-
-Type <- c("Particle-Associated Only", "Shared", "Free-Living Only", "Shared", 
-          "Epilimnion Only", "Shared", "Hypolimnion Only", "Shared", 
-          "High-Nutrient Only", "Shared", "Low-Nutrient Only", "Shared")
-
-NumOTUs <- c(nrow(part_only), nrow(pvf_both), nrow(free_only), nrow(pvf_both), 
-             nrow(epi_only), nrow(tvb_both), nrow(hypo_only), nrow(tvb_both), 
-             nrow(high_only), nrow(hvl_both), nrow(low_only), nrow(hvl_both))
-
-Comparison <- c("PA vs. FL", "PA vs. FL", "PA vs. FL", "PA vs. FL", 
-                "Top vs. Bottom","Top vs. Bottom", "Top vs. Bottom", "Top vs. Bottom",
-                "Prod vs. Unprod","Prod vs. Unprod","Prod vs. Unprod","Prod vs. Unprod")
-
-Relative_OTU_Abund <- c(sum(part_only$OTU_sum_Particle), sum(pvf_both$OTU_sum_Particle), sum(free_only$OTU_sum_Free),  sum(pvf_both$OTU_sum_Free), 
-                        sum(epi_only$OTU_sum_Epi), sum(tvb_both$OTU_sum_Epi), sum(hypo_only$OTU_sum_Hypo), sum(tvb_both$OTU_sum_Hypo), 
-                        sum(high_only$OTU_sum_High), sum(hvl_both$OTU_sum_High), sum(low_only$OTU_sum_Low), sum(hvl_both$OTU_sum_Low))
-
-otu_overlap$SampleType<- SampleType
-otu_overlap$Type <- Type
-otu_overlap$NumOTUs <- NumOTUs
-otu_overlap$Comparison <- Comparison
-otu_overlap$Relative_OTU_Abund <- Relative_OTU_Abund
-otu_overlap <- otu_overlap[,-1]
-
-otu_overlap$SampleType <- factor(otu_overlap$SampleType,levels = c("Free-Living", "Particle-Associated", "Low-Nutrient", "High-Nutrient", "Epilimnion", "Hypolimnion"))
-otu_overlap$Type <- factor(otu_overlap$Type, levels = c("Shared","Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only"))
-
-
-####  Test for Significance
-PAFL_chisq <-matrix(c(nrow(part_only), nrow(pvf_both), nrow(free_only), nrow(pvf_both)),nrow=2)
-PAFL_chisq_res <- chisq.test(PAFL_chisq, correct = FALSE); PAFL_chisq_res
-
-prod_chisq <-matrix(c(nrow(high_only), nrow(hvl_both), nrow(low_only), nrow(hvl_both)),nrow=2)
-prod_chisq_res <- chisq.test(prod_chisq, correct = FALSE); prod_chisq_res
-
-limnion_chisq <-matrix(c(nrow(epi_only), nrow(tvb_both), nrow(hypo_only), nrow(tvb_both)),nrow=2)
-limnion_chisq_res <- chisq.test(limnion_chisq, correct = FALSE); limnion_chisq_res
-
-shared_chisq <- matrix(c(nrow(pvf_both),nrow(hvl_both), nrow(tvb_both)),nrow=1)
-shared_chisq_res <- chisq.test(shared_chisq, correct = FALSE); shared_chisq_res
-
-
-
-otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
-  facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
-  xlab("Sample Type ") + ylab("Sum of Shared and Unique OTUs") + 
-  geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
-  scale_y_continuous(expand = c(0,0), breaks=seq(0, 7000, 1000), lim = c(0, 6500)) + 
-  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
-  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
-                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
-                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen", "gray39")) +
-  theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
-  annotate("text",x = 1.5, y = 6300, label = "***") +
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/PROPORTION_Top16_Relabund.pdf",  width= 7.5, height=6)
+sigotu_proportion_plot0_05 <- ggplot(otu_joined_16_0_05, aes(y=Proportion_sig2total, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() +  scale_y_continuous(breaks=seq(-0.5, 1, 0.1), lim = c(-0.1, 0.3)) + 
+  #ggtitle("All OTUs in the Top 16 Phyla in the Data") +
+  facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
+  #scale_y_continuous(breaks=seq(-0.3, 1, 0.1)) +
+  ylab("Proportion of Significant to Total OTUs by Phylum") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
+  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
         axis.text.y = element_text(colour = "black", size=8),
@@ -2684,43 +2915,9 @@ otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, ord
         strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
         strip.background = element_blank(),
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
-        legend.position="none"); 
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        legend.position="right"); sigotu_proportion_plot0_05
 #dev.off()
-
-###  RELATIVIZE IT!!!!  
-otu_relative_plot <- ggplot(otu_overlap, aes(y=Relative_OTU_Abund , x=SampleType, fill=Type, order=Type)) +
-  facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
-  xlab("Sample Type ") + ylab("Relative Abundance of Shared and Unique OTUs") + 
-  geom_bar(stat="identity", position = "fill") +   geom_bar(stat="identity", position = "fill", colour="black", show_guide=FALSE) +  
-  scale_y_continuous(expand = c(0,0), breaks=seq(0, 1, 0.1)) + 
-  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
-  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
-                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
-                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen", "gray39")) +
-  theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
-  theme(axis.title.x = element_text(face="bold", size=12),
-        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
-        axis.text.y = element_text(colour = "black", size=8),
-        axis.title.y = element_text(face="bold", size=12),
-        legend.title = element_blank(),
-        legend.text = element_text(size = 8),
-        strip.text.y = element_blank(),
-        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
-        strip.background = element_blank(),
-        plot.title = element_text(size = 12, face = "bold", colour = "black"),
-        legend.position="right"); 
-
-
-#multiplot(otu_sum_plot, otu_relative_plot, cols =2)
-
-
-# Store ggplot graphical parameters
-pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf",  width= 12, height=6)
-grid.newpage()
-pushViewport(viewport(layout=grid.layout(1,2,width=c(0.45,0.55))))
-print(otu_sum_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
-print(otu_relative_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
-dev.off()
 ```
 
 
