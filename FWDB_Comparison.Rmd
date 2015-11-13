@@ -984,92 +984,92 @@ norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN I
 
 ########  NMDS + PCoA Plots
 #########  PLOT ORDINATIONS FOR BOTH SCALED AND MANUAL
-# bray_pcoa <- pcoa(norm_bray)
-# bray_pcoa2 <- bray_pcoa$vectors
-# bray_pcoa3 <- data.frame(bray_pcoa2[, 1:3])
-# bray_pcoa3$names <- row.names(bray_pcoa3)
-# bray_pcoa4 <- makeCategories_dups(bray_pcoa3)
-# bray_pcoa4$quadrant <- factor(bray_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
-# ### Let's extract the values of each axis for the pcoa
-# bray_values <- bray_pcoa$values
-# bray_rel_eigens <- bray_values$Relative_eig
-# bray_rel_eigen1 <- bray_rel_eigens[1]
-# bray_rel_eigen1_percent <- round(bray_rel_eigen1 * 100, digits = 1)
-# bray_rel_eigen2 <- bray_rel_eigens[2]
-# bray_rel_eigen2_percent <- round(bray_rel_eigen2 * 100, digits = 1)
-# bray_axis1 <- paste("PCoA1:",bray_rel_eigen1_percent,"%")
-# bray_axis2 <- paste("PCoA2:",bray_rel_eigen2_percent,"%")
-# 
-# pcoa_bray <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape = ProdLevel)) +
-#   xlab(bray_axis1) + ylab(bray_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
-#   geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
-#   ggtitle("Bray-Curtis Dissimilarity") + 
-#   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
-#                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
-#                      values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
-#   scale_fill_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
-#                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
-#                      values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +  
-#   stat_ellipse(geom = "polygon", alpha = 1/2, aes(fill = quadrant)) +#geom_polygon(alpha=.5) +
-#   scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
-#                      labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
-#                      values = c(15, 19, 17)) +
-#   theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
-#         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
-#         axis.title.x = element_text(face="bold", size=16),
-#         axis.title.y = element_text(face="bold", size=16),
-#         legend.title = element_text(size=12, face="bold"),
-#         legend.text = element_text(size = 12),
-#         ###LEGEND TOP RIGHT CORNER
-#         legend.position = "none"); pcoa_bray
-# 
-# 
-# 
-# ##########  SORENSEN'S DISSIMILARITY
-# soren_pcoa <- pcoa(norm_soren)
-# soren_pcoa2 <- soren_pcoa$vectors
-# soren_pcoa3 <- data.frame(soren_pcoa2[, 1:3])
-# soren_pcoa3$names <- row.names(soren_pcoa3)
-# soren_pcoa4 <- makeCategories_dups(soren_pcoa3)
-# soren_pcoa4$quadrant <- factor(soren_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
-# ### Let's extract the values of each axis for the pcoa
-# soren_values <- soren_pcoa$values
-# soren_rel_eigens <- soren_values$Relative_eig
-# soren_rel_eigen1 <- soren_rel_eigens[1]
-# soren_rel_eigen1_percent <- round(soren_rel_eigen1 * 100, digits = 1)
-# soren_rel_eigen2 <- soren_rel_eigens[2]
-# soren_rel_eigen2_percent <- round(soren_rel_eigen2 * 100, digits = 1)
-# soren_axis1 <- paste("PCoA1:",soren_rel_eigen1_percent,"%")
-# soren_axis2 <- paste("PCoA2:",soren_rel_eigen2_percent,"%")
-# 
-# pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1 * -1, Axis.2 * -1, color = quadrant, fill = quadrant,  shape = ProdLevel)) +
-#   xlab(soren_axis1) + ylab(soren_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
-#   geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
-#   ggtitle("Sørensen Dissimilarity") + 
-#   scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
-#                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
-#                      values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
-#   scale_fill_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
-#                      labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
-#                      values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +  
-#   stat_ellipse(geom = "polygon", alpha = 1/2, aes(fill = quadrant)) +#geom_polygon(alpha=.5) +
-#   scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
-#                      labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
-#                      values = c(15, 19, 17)) +
-#   theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
-#         axis.text.y = element_text(colour="black", vjust=0.5, size=14),
-#         axis.title.x = element_text(face="bold", size=16),
-#         axis.title.y = element_text(face="bold", size=16),
-#         legend.title = element_text(size=12, face="bold"),
-#         legend.text = element_text(size = 12),
-#         ###LEGEND TOP RIGHT CORNER
-#         legend.position = "right"); pcoa_soren
-# 
-# #jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.2_NMDS_bc+soren.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
-# grid.newpage()
-# pushViewport(viewport(layout=grid.layout(1,2,width=c(0.4,0.6))))
-# print(pcoa_bray, vp=viewport(layout.pos.row=1,layout.pos.col=1))
-# print(pcoa_soren, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+bray_pcoa <- pcoa(norm_bray)
+bray_pcoa2 <- bray_pcoa$vectors
+bray_pcoa3 <- data.frame(bray_pcoa2[, 1:3])
+bray_pcoa3$names <- row.names(bray_pcoa3)
+bray_pcoa4 <- makeCategories_dups(bray_pcoa3)
+bray_pcoa4$quadrant <- factor(bray_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+### Let's extract the values of each axis for the pcoa
+bray_values <- bray_pcoa$values
+bray_rel_eigens <- bray_values$Relative_eig
+bray_rel_eigen1 <- bray_rel_eigens[1]
+bray_rel_eigen1_percent <- round(bray_rel_eigen1 * 100, digits = 1)
+bray_rel_eigen2 <- bray_rel_eigens[2]
+bray_rel_eigen2_percent <- round(bray_rel_eigen2 * 100, digits = 1)
+bray_axis1 <- paste("PCoA1:",bray_rel_eigen1_percent,"%")
+bray_axis2 <- paste("PCoA2:",bray_rel_eigen2_percent,"%")
+
+pcoa_bray <- ggplot(bray_pcoa4, aes(Axis.1, Axis.2 * -1, color = quadrant, shape = ProdLevel)) +
+  xlab(bray_axis1) + ylab(bray_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
+  ggtitle("Bray-Curtis Dissimilarity") + 
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
+  scale_fill_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +  
+  #stat_ellipse(geom = "polygon", alpha = 1/2, aes(fill = quadrant)) +#geom_polygon(alpha=.5) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+                     values = c(15, 19, 17)) +
+  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "none"); pcoa_bray
+
+
+
+##########  SORENSEN'S DISSIMILARITY
+soren_pcoa <- pcoa(norm_soren)
+soren_pcoa2 <- soren_pcoa$vectors
+soren_pcoa3 <- data.frame(soren_pcoa2[, 1:3])
+soren_pcoa3$names <- row.names(soren_pcoa3)
+soren_pcoa4 <- makeCategories_dups(soren_pcoa3)
+soren_pcoa4$quadrant <- factor(soren_pcoa4$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+### Let's extract the values of each axis for the pcoa
+soren_values <- soren_pcoa$values
+soren_rel_eigens <- soren_values$Relative_eig
+soren_rel_eigen1 <- soren_rel_eigens[1]
+soren_rel_eigen1_percent <- round(soren_rel_eigen1 * 100, digits = 1)
+soren_rel_eigen2 <- soren_rel_eigens[2]
+soren_rel_eigen2_percent <- round(soren_rel_eigen2 * 100, digits = 1)
+soren_axis1 <- paste("PCoA1:",soren_rel_eigen1_percent,"%")
+soren_axis2 <- paste("PCoA2:",soren_rel_eigen2_percent,"%")
+
+pcoa_soren <- ggplot(soren_pcoa4, aes(Axis.1 * -1, Axis.2 * -1, color = quadrant, fill = quadrant,  shape = ProdLevel)) +
+  xlab(soren_axis1) + ylab(soren_axis2) + #ggtitle("Bray-Curtis: Trophic State") +
+  geom_point(size= 6, alpha=0.9) + theme_bw() + #ylim(1, -1) + xlim(1, -1) +
+  ggtitle("Sørensen Dissimilarity") + 
+  scale_color_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +
+  scale_fill_manual(name = "Habitat", breaks=c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"),
+                     labels = c("Free-Living Epilimnion", "Free-Living Mixed",  "Free-Living Hypolimnion", "Particle-Associated Epilimnion", "Particle-Associated Mixed", "Particle-Associated Hypolimnion"), 
+                     values = c("purple3", "mediumblue", "darkgreen", "orchid1", "deepskyblue", "green")) +  
+  #stat_ellipse(geom = "polygon", alpha = 1/2, aes(fill = quadrant)) +#geom_polygon(alpha=.5) +
+  scale_shape_manual(name = "Trophic State", breaks = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"), 
+                     labels = c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"),
+                     values = c(15, 19, 17)) +
+  theme(axis.text.x = element_text(colour="black", vjust=0.5, size=14), 
+        axis.text.y = element_text(colour="black", vjust=0.5, size=14),
+        axis.title.x = element_text(face="bold", size=16),
+        axis.title.y = element_text(face="bold", size=16),
+        legend.title = element_text(size=12, face="bold"),
+        legend.text = element_text(size = 12),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "right"); pcoa_soren
+
+#jpeg(filename="~/Final_PAFL_Trophicstate/Figures/Fig.2_NMDS_bc+soren.jpeg", width= 45, height=18, units= "cm", pointsize= 14, res=500)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.4,0.6))))
+print(pcoa_bray, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(pcoa_soren, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 # #dev.off()
 set.seed(15879966)
 
@@ -1082,6 +1082,20 @@ nmds_bray$ProdLevel[nmds_bray$trophicstate == "Eutrophic"] <- "Productive"
 nmds_bray$ProdLevel[nmds_bray$trophicstate == "Mesotrophic"] <- "Productive"
 nmds_bray$ProdLevel[nmds_bray$trophicstate == "Oligotrophic"] <- "Unproductive"
 nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+
+### SCREEPLOT 
+#NMDS.scree<-function(x) { #where x is the name of the data frame variable
+#  plot(rep(1,10),replicate(10,metaMDS(x,autotransform=F,distance = "bray",k=1)$stress/100),xlim=c(1,nrow(x)),ylim=c(0,0.5),xlab="# of Dimensions",ylab="Stress",main="NMDS stress plot")
+#  for (i in 1:(nrow(x)-2)) {
+#  points(rep(i+1,10),replicate(10,metaMDS(x,autotransform=F,distance = "bray",k=i+1)$stress/100))
+#}
+#}
+
+#NMDS.scree(nowinOTU)
+
+
+
+
 
 nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*100, color = quadrant, shape = ProdLevel)) +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") + 
@@ -1381,7 +1395,9 @@ bicompare_phy_nosherwin <- subset(bicompare_phy_nowin, Sample != "SHEE" & Sample
 
 g1 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
-  scale_fill_manual(name="Filter Fraction", values = c("orangered", "orangered4")) +
+  scale_fill_manual(name = "Filter Fraction", breaks=c("Free-Living", "Particle-Associated"),
+                     labels = c("Free-Living (21)","Particle-Associated (20)"), 
+                      values = c("orangered", "orangered4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
                      plot.title = element_text(face="bold", size = 12),
                      axis.title.y = element_text(face="bold", size=10),
@@ -1389,12 +1405,14 @@ g1 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=filter
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(0.1, 0.1, -1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.87, 0.7)) 
+                     legend.position = c(0.85, 0.7)) 
 
 
 g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("")  + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
-  scale_fill_manual(name="Productivity Level", values = c("cornflowerblue", "royalblue4")) +
+  ggtitle("")  + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") +
+  scale_fill_manual(name = "Productivity Level", breaks=c("Low-Nutrient", "High-Nutrient"),
+                     labels = c("Low-Nutrient (15)","High-Nutrient (26)"), 
+                     values = c("cornflowerblue", "royalblue4")) +
   theme_bw() + theme(axis.text.x = element_blank(),
                      axis.title.y = element_blank(),
                      axis.title.y = element_text(face="bold", size=10),
@@ -1402,18 +1420,20 @@ g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=ProdLe
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(-0.25, 0.1, -0.5, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.89, 0.7)) 
+                     legend.position = c(0.88, 0.7)) 
 
 g3 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
-  scale_fill_manual(name="Lake Strata", values = c("limegreen", "darkgreen")) +
+   scale_fill_manual(name = "Lake Strata", breaks=c("Epilimnion", "Hypolimnion"),
+                     labels = c("Epilimnion (19)","Hypolimnion (18)"), 
+                     values = c("limegreen", "darkgreen")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
                      axis.title.x = element_text(face="bold", size=10),
                      axis.title.y = element_text(face="bold", size=10),
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),  #Set the legend text
                      plot.margin = unit(c(-0.75, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.89, 0.7)); 
+                     legend.position = c(0.88, 0.7)); 
 
 # Store ggplot graphical parameters
 g1 <- ggplotGrob(g1)
@@ -1426,9 +1446,9 @@ g3 <- ggplotGrob(g3)
 
 
 ####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_notitle.pdf",  width= 6.5, height=6.5)
+pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_notitle.pdf",  width= 6.5, height=6.5)
 grid.draw(rbind(g1, g2, g3, size = "last"))
-#dev.off()
+dev.off()
 ```
 
 
@@ -1438,7 +1458,9 @@ grid.draw(rbind(g1, g2, g3, size = "last"))
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_mixed_green.pdf",  width= 6.5, height=3)
 supplemental_g3_MIXED <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("Top 17 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
-  scale_fill_manual(name="Lake Strata", values = c("limegreen", "darkgreen", "seagreen1")) +
+  scale_fill_manual(name = "Lake Strata", breaks=c("Epilimnion", "Hypolimnion", "Mixed"),
+                     labels = c("Epilimnion (19)","Hypolimnion (18)", "Mixed (4)"), 
+                     values = c("limegreen", "darkgreen", "seagreen1")) +
   theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
                      axis.title.x = element_text(face="bold", size=10),
                      axis.title.y = element_text(face="bold", size=10),
@@ -1446,7 +1468,7 @@ supplemental_g3_MIXED <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phyl
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),  #Set the legend text
                      plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.9, 0.66)); supplemental_g3_MIXED
+                     legend.position = c(0.88, 0.7)); supplemental_g3_MIXED
 
 #dev.off()
 ```
@@ -2158,6 +2180,7 @@ sigotu_phy_relabund_plot <- ggplot(sigotu_relabund_16, aes(y=sig_phylum_relabund
   facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
   ylab("Within Phylum Relative Abundance of Significant OTUs") +  xlab("Phylum") + 
   scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    labels = c("Free-Living (21)","Particle-Associated (20)","Low-Nutrient (15)","High-Nutrient (26)","Epilimnion (19)", "Hypolimnion (18)"), 
                     values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
@@ -2171,7 +2194,7 @@ sigotu_phy_relabund_plot <- ggplot(sigotu_relabund_16, aes(y=sig_phylum_relabund
         strip.background = element_blank(),
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
-        legend.position="right"); sigotu_phy_relabund_plot
+        legend.position="right"); 
 #dev.off()
 ```
 
@@ -2353,6 +2376,7 @@ sigotu_proportion_plot <- ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Ph
   #scale_y_continuous(breaks=seq(-0.3, 1, 0.1)) +
   ylab("Proportion of Significant to Total OTUs by Phylum") +  xlab("Phylum") + 
   scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    labels = c("Free-Living (21)","Particle-Associated (20)","Low-Nutrient (15)","High-Nutrient (26)","Epilimnion (19)", "Hypolimnion (18)"), 
                     values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
@@ -2366,7 +2390,7 @@ sigotu_proportion_plot <- ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Ph
         strip.background = element_blank(),
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
-        legend.position="right"); sigotu_proportion_plot
+        legend.position="right"); 
 #dev.off()
 ```
 
@@ -2386,9 +2410,6 @@ print(b1, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(b2, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
 ```
-
-
-
 
 
 
@@ -2765,15 +2786,6 @@ sigotu_phy_relabund_plot0_05 <- ggplot(sigotu_relabund_160_05, aes(y=sig_phylum_
 
 
 
-
-
-
-######################  PROPORTION PLOT 0.05 p-value cutoff 
-######################  PROPORTION PLOT 0.05 p-value cutoff 
-######################  PROPORTION PLOT 0.05 p-value cutoff 
-######################  PROPORTION PLOT 0.05 p-value cutoff 
-######################  PROPORTION PLOT 0.05 p-value cutoff 
-######################  PROPORTION PLOT 0.05 p-value cutoff 
 ######################  PROPORTION PLOT 0.05 p-value cutoff 
 ######################  PROPORTION PLOT 0.05 p-value cutoff 
 ######################  PROPORTION PLOT 0.05 p-value cutoff 
@@ -2893,11 +2905,11 @@ otu_joined_16_0_05$Phylum = with(otu_joined_16_0_05, factor(Phylum, levels = rev
 
 
 
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/PROPORTION_Top16_Relabund.pdf",  width= 7.5, height=6)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig6_0.05_pval.pdf",  width= 7.5, height=6)
 sigotu_proportion_plot0_05 <- ggplot(otu_joined_16_0_05, aes(y=Proportion_sig2total, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
-  theme_gray() +  scale_y_continuous(breaks=seq(-0.5, 1, 0.1), lim = c(-0.1, 0.3)) + 
+  theme_gray() +  scale_y_continuous(breaks=seq(-0.5, 1, 0.1), lim = c(-0.15, .35)) + 
   #ggtitle("All OTUs in the Top 16 Phyla in the Data") +
   facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
   #scale_y_continuous(breaks=seq(-0.3, 1, 0.1)) +
@@ -2916,11 +2928,44 @@ sigotu_proportion_plot0_05 <- ggplot(otu_joined_16_0_05, aes(y=Proportion_sig2to
         strip.background = element_blank(),
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
-        legend.position="right"); sigotu_proportion_plot0_05
+        legend.position="right"); 
 #dev.off()
 ```
 
 
+
+```{r attemt 2 fig 6 with 0.05 pval cutoff}
+b1_0_05 <- sigotu_proportion_plot0_05 +   ggtitle("P-Value Cutoff of 0.05") + 
+  theme(legend.position="none", plot.margin = unit(c(0.1, 0.05, 0.1, 0.1), "cm")) #top, right, bottom, left
+b2_0_05 <- sigotu_phy_relabund_plot0_05 + xlab("") +
+  ggtitle("P-Value Cutoff of 0.05") + 
+  theme(axis.text.y = element_blank(), plot.margin = unit(c(0.1, 0.1, 0.1, 0.05), "cm")) #top, right, bottom, left
+
+pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig6_pval_0.05.pdf",  width= 12, height=6)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.46,0.54))))
+print(b1_0_05, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(b2_0_05, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+dev.off()
+
+
+
+
+
+####  Looking at OTUs that are different between 0.01 and 0.05 analyses 
+
+dim(tvb); dim(tvb0_05)
+colnames(tvb0_05)
+
+semi_join
+
+View(anti_join(tvb0_05, tvb, by = "OTU"))
+
+View(anti_join(pvf0_05, pvf, by = "OTU"))
+
+
+
+```
 
 
 
