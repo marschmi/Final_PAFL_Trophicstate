@@ -2182,6 +2182,46 @@ grid.draw(z)
 
 
 ```{r Fig 4 boxplot abundance plots, fig.width= 6.5, fig.height=6.5}
+######################################################## DESeq on the six habitats 
+########################################################
+########################################################
+#View(data.frame(tax_table(merged_final)))  #Sanity check
+good_phylum <-tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
+good_phylum_nosherwin <- subset_samples(good_phylum, lakenames != "Sherman")
+#View(data.frame(sample_data(good_phylum_nosherwin))) #Sanity check
+
+
+###########################################################  HIGH vs LOWnutrient lakes
+DESeq_prodLevel <- deSEQ(good_phylum_nosherwin, ~ ProdLevel)
+DESeq_prodLevel_plot <- plot_phylum_deSEQ(DESeq_prodLevel, "Productivity Level")
+
+
+###########################################################  Epilimnion vs Hypolimnion
+DESeq_limnion <- deSEQ(good_phylum_nosherwin, ~ limnion)
+DESeq_limnion_plot <- plot_phylum_deSEQ(DESeq_limnion, "Lake Layer")
+
+
+###########################################################  Particle vs Free
+DESeq_filter <- deSEQ(good_phylum_nosherwin, ~ filter)
+DESeq_filter_plot <- plot_phylum_deSEQ(DESeq_filter, "Filter Fraction")
+
+
+DESeq_habitats <- multiplot(DESeq_prodLevel_plot + theme(legend.position = "none"), 
+                            DESeq_limnion_plot +theme(legend.position = "none"),
+                            DESeq_filter_plot + theme(legend.position = "none"), cols = 3)
+
+DESeq_hab1 <- subset(DESeq_filter, select = c(Phylum, log2FoldChange, padj)) %>%
+  mutate(Habitat = "PA vs. FL",
+         sig_lab = "*")
+DESeq_hab2 <- subset(DESeq_limnion, select = c(Phylum, log2FoldChange, padj)) %>%
+  mutate(Habitat = "Top vs. Bottom", 
+         sig_lab = "*")
+DESeq_hab3 <- subset(DESeq_prodLevel, select = c(Phylum, log2FoldChange, padj)) %>%
+  mutate(Habitat = "Prod vs. UnProd", 
+         log2FoldChange = log2FoldChange *-1,
+         sig_lab = "*")#
+
+
 #  Prep the data frame 
 bicompare_phy <- subset(goodsamps_phy_melt, select = c("Sample", "filter", "ProdLevel", "limnion","quadrant", "Phylum","Abundance"))
 
@@ -2220,47 +2260,77 @@ bicompare_phy_nowin <- subset(bicompare_phy, Sample != "WINH" & Sample != "WINH3
 
 bicompare_phy_nosherwin <- subset(bicompare_phy_nowin, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
 
-g1 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
+#geom_text(data = DESeq_hab1, aes(label = sig_lab, x = Phylum, y = 50), size =3) +
+
+
+filter_phy_boxplot <- full_join(bicompare_phy_nosherwin, DESeq_hab1, by = "Phylum")
+
+filter_phy_boxplot <- filter_phy_boxplot[filter_phy_boxplot$Phylum %in% phy_order[1:17], ]
+
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+filter_phy_boxplot$Phylum <- factor(filter_phy_boxplot$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
+
+g1 <- ggplot(filter_phy_boxplot, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
   scale_fill_manual(name = "Filter Fraction", breaks=c("Free-Living", "Particle-Associated"),
                      labels = c("Free-Living (21)","Particle-Associated (20)"), 
                       values = c("orangered", "orangered4")) +
-  theme_bw() + theme(axis.text.x = element_blank(),
+  theme_bw() + geom_text(aes(label = sig_lab, x = Phylum, y = 50, color = "red"), size =4) +
+  scale_colour_hue(guide = "none") +
+  theme(axis.text.x = element_blank(),
                      plot.title = element_text(face="bold", size = 12),
                      axis.title.y = element_text(face="bold", size=10),
                      axis.ticks.x = element_blank(), 
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(0.1, 0.1, -1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.85, 0.7)) 
+                     legend.position = c(0.85, 0.67)) 
 
+prodlevel_phy_boxplot <- full_join(bicompare_phy_nosherwin, DESeq_hab3, by = "Phylum")
+prodlevel_phy_boxplot <- prodlevel_phy_boxplot[prodlevel_phy_boxplot$Phylum %in% phy_order[1:17], ]
 
-g2 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+prodlevel_phy_boxplot$Phylum <- factor(prodlevel_phy_boxplot$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
+g2 <- ggplot(prodlevel_phy_boxplot, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("")  + xlab("") + geom_boxplot() +  
   ylab("Mean Percent \nRelative Abundance") +
   scale_fill_manual(name = "Productivity Level", breaks=c("Low-Nutrient", "High-Nutrient"),
                      labels = c("Low-Nutrient (15)","High-Nutrient (26)"), 
                      values = c("cornflowerblue", "royalblue4")) +
-  theme_bw() + theme(axis.text.x = element_blank(),
+  theme_bw() + geom_text(aes(label = sig_lab, x = Phylum, y = 50, color = "red"), size =4) +
+  scale_colour_hue(guide = "none") +
+  theme(axis.text.x = element_blank(),
                      axis.title.y = element_text(face="bold", size=10),
                      axis.ticks.x = element_blank(), 
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),
                      plot.margin = unit(c(-0.25, 0.1, -0.5, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.88, 0.7)) 
+                     legend.position = c(0.88, 0.67)) 
 
-g3 <- ggplot(bicompare_phy_nosherwin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
+limnion_phy_boxplot <- full_join(bicompare_phy_nosherwin, DESeq_hab2, by = "Phylum")
+limnion_phy_boxplot <- limnion_phy_boxplot[limnion_phy_boxplot$Phylum %in% phy_order[1:17], ]
+
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+limnion_phy_boxplot$Phylum <- factor(limnion_phy_boxplot$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
+
+
+g3 <- ggplot(limnion_phy_boxplot, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
    scale_fill_manual(name = "Lake Strata", breaks=c("Epilimnion", "Hypolimnion"),
                      labels = c("Epilimnion (19)","Hypolimnion (18)"), 
                      values = c("limegreen", "darkgreen")) +
-  theme_bw() + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
+  theme_bw() + geom_text(aes(label = sig_lab, x = Phylum, y = 50, color = "red"), size =4) +
+  scale_colour_hue(guide = "none") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
                      axis.title.x = element_text(face="bold", size=10),
                      axis.title.y = element_text(face="bold", size=10),
                      legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
                      legend.text = element_text(size = 8),  #Set the legend text
                      plot.margin = unit(c(-0.75, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
-                     legend.position = c(0.88, 0.7)); 
+                     legend.position = c(0.88, 0.67)); 
 
 # Store ggplot graphical parameters
 g1 <- ggplotGrob(g1)
@@ -2273,64 +2343,9 @@ g3 <- ggplotGrob(g3)
 
 
 ####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_notitle.pdf",  width= 6.5, height=6.5)
+pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_sigs.pdf",  width= 6.5, height=6.5)
 grid.draw(rbind(g1, g2, g3, size = "last"))
-#dev.off()
-
-
-
-######################################################## 
-########################################################
-########################################################
-######################################################## DESeq on the six habitats 
-########################################################
-########################################################
-#View(data.frame(tax_table(merged_final)))  #Sanity check
-good_phylum <-tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
-good_phylum_nosherwin <- subset_samples(good_phylum, lakenames != "Sherman")
-#View(data.frame(sample_data(good_phylum_nosherwin))) #Sanity check
-
-
-###########################################################  HIGH vs LOWnutrient lakes
-#DESeq_prodLevel <- deSEQ(good_phylum_nosherwin, ~ ProdLevel)
-#DESeq_prodLevel_plot <- plot_phylum_deSEQ(DESeq_prodLevel, "Productivity Level")
-
-
-###########################################################  Epilimnion vs Hypolimnion
-#DESeq_limnion <- deSEQ(good_phylum_nosherwin, ~ limnion)
-#DESeq_limnion_plot <- plot_phylum_deSEQ(DESeq_limnion, "Lake Layer")
-
-
-###########################################################  Particle vs Free
-#DESeq_filter <- deSEQ(good_phylum_nosherwin, ~ filter)
-#DESeq_filter_plot <- plot_phylum_deSEQ(DESeq_filter, "Filter Fraction")
-
-
-#DESeq_habitats <- multiplot(DESeq_prodLevel_plot + theme(legend.position = "none"), 
-#                            DESeq_limnion_plot +theme(legend.position = "none"),
-#                            DESeq_filter_plot + theme(legend.position = "none"), cols = 3)
-
-#DESeq_hab1 <- subset(DESeq_filter, select = c(Phylum, log2FoldChange, padj)) %>%
-#  mutate(Habitat = "PA vs. FL",
-#         Preference = )
-#DESeq_hab2 <- subset(DESeq_limnion, select = c(Phylum, log2FoldChange, padj)) %>%
-#  mutate(Habitat = "Top vs. Bottom")
-#DESeq_hab3 <- subset(DESeq_prodLevel, select = c(Phylum, log2FoldChange, padj)) %>%
-#  mutate(Habitat = "Prod vs. UnProd", 
-#         log2FoldChange = log2FoldChange *-1)#
-#
-#DESeq_hab_all <- rbind(DESeq_hab1, DESeq_hab2, DESeq_hab3)#
-#
-#DESeq_split_cols <- colsplit(DESeq_hab_all$Habitat, ":", c("Comparison", "Habitat"))
-#df_ratio$Habitat = NULL
-#dfrat <- cbind(df_ratio, split_cols)
-
-
-
-
-
-
-
+dev.off()
 
 ```
 
