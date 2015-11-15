@@ -2343,9 +2343,9 @@ g3 <- ggplotGrob(g3)
 
 
 ####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5
-pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_sigs.pdf",  width= 6.5, height=6.5)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_sigs.pdf",  width= 6.5, height=6.5)
 grid.draw(rbind(g1, g2, g3, size = "last"))
-dev.off()
+#dev.off()
 
 ```
 
@@ -2824,6 +2824,69 @@ otu_cols <- colsplit(otu_ratio$Habitat, ":", c("Comparison", "Habitat"))
 otu_ratio$Habitat = NULL
 otu_ratios <- cbind(otu_ratio, otu_cols)
 
+####  GENUS LEVEL! 
+phy_otu <- otu_ratios 
+phy_otu$Phylum <- factor(phy_otu$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Chlorobi", "Armatimonadetes", "Firmicutes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "TM6", "Chlamydiae", "Epsilonproteobacteria", "TA18", "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Gemmatimonadetes", "Fusobacteria", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "WCHB1-60", "Deferribacteres", 
+                                               "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "unclassified"))
+phy_otu$Phylum = with(phy_otu, factor(Phylum, levels = rev(levels(Phylum)))) 
+
+
+
+########  GENUS LEVEL PLOT ORGANIZED BY PHYLUM
+## GENUS LEVEL HEAT PLOT
+sub_abund <- subset(abund, select = c("Phylum", "PercentPhy"))
+oturats_abund <- merge(otu_ratios, sub_abund, by = "Phylum")
+ordered_otu_ratios <- arrange(oturats_abund, desc(PercentPhy)) 
+
+#unique(ordered_otu_ratios$Genus) # manually place order in the next line to make sure the Genera are in the right order
+ordered_otu_ratios$Genus <- factor(ordered_otu_ratios$Genus,levels = c("unclassified", "bacIV-B", "vadinBC27_wastewater-sludge_group", "bacII-A", "Paludibacter","bacIV-A",
+                                                                       "bacIII-A", "bacI-A", "Emticicia", "bacVI-B", "Solitalea", "bacIII-B", "Synechococcus", "Anabaena", 
+                                                                       "Snowella", "Planktothrix", "Pseudanabaena", "Luteolibacter", "CandidatusXiphinematobacter", "Pnec",
+                                                                       "betIV-A", "betI-A", "Dechloromonas", "Iodobacter", "betVII-B", "Sterolibacterium", "Sideroxydans", 
+                                                                       "Sulfuritalea", "PRD01a011B", "Candidatus_Branchiomonas", "betIII-A", "Nitrosospira", "acIV-A", "acIV-D", 
+                                                                       "acTH1-A", "acI-A", "acI-B", "Myco", "acI-C", "Luna1-A", "acSTL-A", "Pirellula", "Candidatus_Nostocoida", 
+                                                                       "CL500-3", "Planctomyces", "Candidatus_Anammoximicrobium", "Pir4_lineage", "Phenylobacterium", "Rickettsia", 
+                                                                       "Azospirillum", "alfI-B", "alfII-A", "Haematobacter", "Magnetospirillum", "Rubellimicrobium", "Roseomonas",
+                                                                       "Rhizomicrobium", "alfIV-A", "Roseospirillum", "OM27_clade", "Desulfomonile", "Peredibacter", "Desulfatirhabdium",
+                                                                       "Syntrophus", "Desulfocapsa", "Sorangium", "Desulfobulbus", "Smithella", "Desulfobacula", "Phaselicystis",
+                                                                       "Desulfovibrio", "Methylobacter", "Thiocystis", "Coxiella", "Crenothrix", "Thiodictyon", "Lamprocystis",
+                                                                       "Candidatus_Competibacter", "Oscillochloris", "Chloronema", "Anaerolinea", "Leptolinea", "Victivallis", 
+                                                                       "Chlorobium", "Armatimonas", "Incertae_Sedis", "Fastidiosipila", "Fonticella", "Clostridium_sensu_stricto_9",
+                                                                       "Anaerofustis", "Geothrix", "Treponema", "Spirochaeta", "Leptospira", "Brevinema", "Sulfurospirillum", 
+                                                                       "Sulfurimonas", "possible_genus_03", "Gemmatimonas", "SC103"))
+
+
+ordered_otu_ratios$Genus = with(ordered_otu_ratios, factor(Genus, levels = rev(levels(Genus)))) 
+
+sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
+
+
+#####  Plotting FIGURE S7  #####  Plotting FIGURE S7  #####  Plotting FIGURE S7  #####  Plotting FIGURE S7  #####  Plotting FIGURE S7
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig.S7_genus_heat.pdf",  width= 7.5, height=11)
+ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 1, barheight = 4.5)) +
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
+  xlab("Habitat") + ylab("Genus or Freshwater Tribe") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position = c(0.94, 0.07), #c(0.1, 0.93),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"));  
+#dev.off()
+
+```
+  
+```{r Fig }
 
 ########   Summed-OTU Plot 
 ### PA (positive) vs FL (negative)
@@ -2880,7 +2943,6 @@ pvf_pref$Comparison <- "PA vs. FL"
 #  Add a new column called "count" where if the count is free-living we make it negative 
 pvf_pref$Count <-  ifelse(pvf_pref$Preference == "Free-Living", pvf_pref$n*-1, pvf_pref$n)
 
-  
 
 #  Combine into one data frame 
 otu_preference <- data.frame(rbind(pvf_pref, pvu_pref, tvb_pref))
@@ -2909,9 +2971,8 @@ summed_16 <- otu_preference[otu_preference$Phylum %in% OTUtop16, ]
 summed_16$Phylum = with(summed_16, factor(Phylum, levels = rev(levels(Phylum))))
 
 
-#####  Plotting FIGURE 6  #####  Plotting FIGURE 6  #####  Plotting FIGURE 6  #####  Plotting FIGURE 6  #####  Plotting FIGURE 6
-### This plot is flipped!
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/summed_ALL_otus_.pdf",  width= 7.5, height=6)
+#####  Plotting FIGURE S8  #####  Plotting FIGURE S8  #####  Plotting FIGURE S8  #####  Plotting FIGURE S8  #####  Plotting FIGURE S8
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS8_summed_ALL_otus.pdf",  width= 7.5, height=6)
 summed <- ggplot(summed_16, aes(y=Count, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
