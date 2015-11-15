@@ -955,7 +955,7 @@ proportion_limnion_chisq_res <- chisq.test(proportion_limnion_chisq, correct = F
 
 otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
-  xlab("Sample Type ") + ylab("Sum of Shared and Unique OTUs") + 
+  xlab("Habitat") + ylab("Sum of Shared and Unique OTUs") + 
   geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 7000, 1000), lim = c(0, 6500)) + 
   guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
@@ -983,7 +983,7 @@ otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, ord
 ###  RELATIVIZE IT!!!!  
 otu_relative_plot <- ggplot(otu_overlap, aes(y=proportion , x=SampleType, fill=Type, order=Type)) +
   facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
-  xlab("Sample Type ") + ylab("Relative Abundance of Shared and Unique OTUs") + 
+  xlab("Habitat") + ylab("Relative Abundance of Shared and Unique OTUs") + 
   geom_bar(stat="identity", position = "fill") +   geom_bar(stat="identity", position = "fill", colour="black", show_guide=FALSE) +  
   scale_y_continuous(expand = c(0,0), breaks=seq(0, 1, 0.1)) + 
   guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
@@ -2292,23 +2292,23 @@ good_phylum_nosherwin <- subset_samples(good_phylum, lakenames != "Sherman")
 
 
 ###########################################################  HIGH vs LOWnutrient lakes
-DESeq_prodLevel <- deSEQ(good_phylum_nosherwin, ~ ProdLevel)
-DESeq_prodLevel_plot <- plot_phylum_deSEQ(DESeq_prodLevel, "Productivity Level")
+#DESeq_prodLevel <- deSEQ(good_phylum_nosherwin, ~ ProdLevel)
+#DESeq_prodLevel_plot <- plot_phylum_deSEQ(DESeq_prodLevel, "Productivity Level")
 
 
 ###########################################################  Epilimnion vs Hypolimnion
-DESeq_limnion <- deSEQ(good_phylum_nosherwin, ~ limnion)
-DESeq_limnion_plot <- plot_phylum_deSEQ(DESeq_limnion, "Lake Layer")
+#DESeq_limnion <- deSEQ(good_phylum_nosherwin, ~ limnion)
+#DESeq_limnion_plot <- plot_phylum_deSEQ(DESeq_limnion, "Lake Layer")
 
 
 ###########################################################  Particle vs Free
-DESeq_filter <- deSEQ(good_phylum_nosherwin, ~ filter)
-DESeq_filter_plot <- plot_phylum_deSEQ(DESeq_filter, "Filter Fraction")
+#DESeq_filter <- deSEQ(good_phylum_nosherwin, ~ filter)
+#DESeq_filter_plot <- plot_phylum_deSEQ(DESeq_filter, "Filter Fraction")
 
 
-DESeq_habitats <- multiplot(DESeq_prodLevel_plot + theme(legend.position = "none"), 
-                            DESeq_limnion_plot +theme(legend.position = "none"),
-                            DESeq_filter_plot + theme(legend.position = "none"), cols = 3)
+#DESeq_habitats <- multiplot(DESeq_prodLevel_plot + theme(legend.position = "none"), 
+#                            DESeq_limnion_plot +theme(legend.position = "none"),
+#                            DESeq_filter_plot + theme(legend.position = "none"), cols = 3)
 
 #DESeq_hab1 <- subset(DESeq_filter, select = c(Phylum, log2FoldChange, padj)) %>%
 #  mutate(Habitat = "PA vs. FL",
