@@ -75,7 +75,7 @@ panderOptions('table.style', 'rmarkdown')
 
 
 
-```{r data import of Original Mothur data}
+```{r data import of Original Mothur data classified with Silva DB only}
 ### Data import
 #sharedfile = "mothur.normalized.shared"
 sharedfile <- "~/Final_PAFL_Trophicstate/raw_data/stability.trim.contigs.good.unique.good.filter.precluster.pick.pick.pick.an.unique_list.shared"
@@ -268,7 +268,7 @@ scaled_historgram <- ggplot(nowin_data, aes(x = TotalSeqs_Scaled, fill = filter)
   #geom_histogram(binwidth=20, alpha=.75, position="identity") +
   #geom_density(alpha=.5) + 
   xlab("Total Sequences per Sample") + #fill="thistle1",
-  ggtitle(expression(atop(bold("Scaled Samples"), atop("Binwidth = 20"), ""))) +
+  ggtitle(expression(atop(bold("Scaled Samples"), atop("Bin-Width = 20"), ""))) +
   scale_fill_manual(name="Filter Fraction", 
                     breaks = c("Free", "Particle"),
                     values = c("orangered", "orangered4")) +
@@ -290,7 +290,7 @@ merged_histogram <- ggplot(nowin_data, aes(x = TotalSeqs_Summed, fill = filter))
     scale_fill_manual(name="Filter Fraction", 
                     breaks = c("Free", "Particle"),
                     values = c("orangered", "orangered4")) +
-  ggtitle(expression(atop(bold("Summed Replicate Samples"), atop("Binwidth = 1500"), ""))) +
+  ggtitle(expression(atop(bold("Summed Replicate Samples"), atop("Bin-Width = 1500"), ""))) +
   scale_color_manual(breaks = c("Free", "Particle"),
                     values = c("orangered", "orangered4")) +
   geom_vline(data=mean_summed_dat, aes(xintercept=summed.mean,  colour=filter),
@@ -400,7 +400,7 @@ pander(compare_fwdb, caption="New Freshwater Database combined with the Silva Da
 
 
 
-```{r Figure S3: summed alpha diversity-rarefied }
+```{r Figure S3: alpha diversity-rarefied }
 # Let's see what our alpha diversity looks like for a rarefied data set.
 #  We will use the mean AND floored data.  
 #FW_sum_reps  # Raw Merged Samples, we have 14,294 OTUs  
@@ -498,16 +498,20 @@ summed_stats <- alpha_stats_summed %>%
 
 final_summed_alpha_stats <- left_join(alpha_stats_summed, summed_stats, by = c("prod_lim", "Test"))
 
-final_summed_alpha_stats$ProdLevel <-factor(final_summed_alpha_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
-final_summed_alpha_stats$prod_lim <-factor(final_summed_alpha_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", 
-                                                                                      "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
-                                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", 
-                                                                                      "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
+final_summed_alpha_stats$ProdLevel[final_summed_alpha_stats$trophicstate == "Eutrophic"] <- "High-Nutrient"
+final_summed_alpha_stats$ProdLevel[final_summed_alpha_stats$trophicstate == "Mesotrophic"] <- "High-Nutrient"
+final_summed_alpha_stats$ProdLevel[final_summed_alpha_stats$trophicstate == "Oligotrophic"] <- "Low-Nutrient"
+
+final_summed_alpha_stats$ProdLevel <-factor(final_summed_alpha_stats$ProdLevel,levels=c("High-Nutrient", "Low-Nutrient", "Mixed"))
+final_summed_alpha_stats$Test <-factor(final_summed_alpha_stats$Test,levels=c("Inverse Simpson", "Simpson's Evenness","Observed Richness"))
+final_summed_alpha_stats$prod_lim <-factor(final_summed_alpha_stats$prod_lim,levels=c("Productive Epilimnion Free", "Productive Epilimnion Particle",
+                                                                                      "Productive Hypolimnion Free","Productive Hypolimnion Particle",
+                                                                                      "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", 
+                                                                                      "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle",
                                                                                       "Mixed Mixed Particle", "Mixed Mixed Free"))
 
 final_summed_alpha_stats_plot <- ggplot(final_summed_alpha_stats, aes(x = prod_lim, y = mean_value, color = prod_lim)) + geom_point(size = 3, alpha = 0.7) +
-  ggtitle("Summed and Rarefied at 14,936 Sequences") + theme_bw() +   xlab("Habitat") + ylab("") + 
-  #scale_y_continuous(breaks = seq(0,1500, 250)) + 
+  ggtitle("Sub-Sampled at 14,924 Sequences") + theme_bw() +   xlab("Habitat") + ylab("") + 
   geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
   layer(data = final_summed_alpha_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 7, color = "black") + 
   layer(data = final_summed_alpha_stats, mapping = aes(x = prod_lim, y = mean), geom = "point", pch = 126, size = 7, color = "black") + 
@@ -515,14 +519,14 @@ final_summed_alpha_stats_plot <- ggplot(final_summed_alpha_stats, aes(x = prod_l
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
                                          "Mixed Mixed Particle", "Mixed Mixed Free"), 
-                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
-                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
-  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
-                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
-                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
-                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
-                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
-                            "Particle", "Free")) + 
+                     values = c("gray60", "gray60", "gray60", "gray60",
+                                "gray60","gray60","gray60","gray60", "gray60", "gray60"))+
+    scale_x_discrete(breaks=c("Productive Epilimnion Free", "Productive Epilimnion Particle", "Productive Hypolimnion Free","Productive Hypolimnion Particle",
+                            "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"),
+                   labels=c("Epilimnion \nFree-Living", "Epilimnion \nParticle-Associated", "Hypolimnion \nFree-Living", "Hypolimnion \nParticle-Associated",
+                            "Epilimnion \nFree-Living", "Epilimnion \nParticle-Associated", "Hypolimnion \nFree-Living", "Hypolimnion \nParticle-Associated",
+                            "Particle-Associated", "Free-Living")) + 
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=8),
         axis.text.y = element_text(colour = "black", size=8),
@@ -585,16 +589,21 @@ sum_scaled_matround_prod_stats <- sum_scaled_matround_alpha %>%
             median = median(Value))
 
 
-
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Eutrophic"] <- "High-Nutrient"
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Mesotrophic"] <- "High-Nutrient"
+sum_scaled_matround_alpha$ProdLevel[sum_scaled_matround_alpha$trophicstate == "Oligotrophic"] <- "Low-Nutrient"
 final_sum_scaled_matround_prod_stats <- left_join(sum_scaled_matround_alpha, sum_scaled_matround_prod_stats, by = c("prod_lim", "Test"))
 
-final_sum_scaled_matround_prod_stats$ProdLevel <-factor(final_sum_scaled_matround_prod_stats$ProdLevel,levels=c("Productive", "Unproductive", "Mixed"))
-final_sum_scaled_matround_prod_stats$prod_lim <-factor(final_sum_scaled_matround_prod_stats$prod_lim,levels=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
-                                                                      "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
-                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
+final_sum_scaled_matround_prod_stats$ProdLevel <-factor(final_sum_scaled_matround_prod_stats$ProdLevel,levels=c("High-Nutrient", "Low-Nutrient", "Mixed"))
+final_sum_scaled_matround_prod_stats$Test <-factor(final_sum_scaled_matround_prod_stats$Test,levels=c("Inverse Simpson", "Simpson's Evenness","Observed Richness"))
+final_sum_scaled_matround_prod_stats$prod_lim <-factor(final_sum_scaled_matround_prod_stats$prod_lim,levels=c("Productive Epilimnion Free", "Productive Epilimnion Particle",
+                                                                                      "Productive Hypolimnion Free","Productive Hypolimnion Particle",
+                                                                                      "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", 
+                                                                                      "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle",
+                                                                                      "Mixed Mixed Particle", "Mixed Mixed Free"))
 
 sum_scaled_matround_prod_alpha_plot <- ggplot(final_sum_scaled_matround_prod_stats, aes(x = prod_lim, y = Value, color = prod_lim)) + geom_point(size = 3, alpha = 0.7) +
-  ggtitle("Sum, Scaled and Rounded") + theme_bw() +   xlab("Habitat") + ylab("") + 
+  ggtitle("Scaled to 14,925 Sequences and Rounded") + theme_bw() +   xlab("Habitat") + ylab("") + 
   #scale_y_continuous(breaks = seq(0,1500, 250)) + 
   geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
   layer(data = final_sum_scaled_matround_prod_stats, mapping = aes(x = prod_lim, y = median), geom = "point", pch = 95, size = 7, color = "black") + 
@@ -603,14 +612,14 @@ sum_scaled_matround_prod_alpha_plot <- ggplot(final_sum_scaled_matround_prod_sta
   scale_color_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
                                          "Mixed Mixed Particle", "Mixed Mixed Free"), 
-                     values = c("deeppink", "deeppink", "deeppink", "deeppink",
-                                "turquoise3","turquoise3","turquoise3","turquoise3", "blue", "blue"))+
-  scale_x_discrete(breaks=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
-                            "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free",
-                            "Mixed Mixed Particle", "Mixed Mixed Free"), 
-                   labels=c("Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
-                            "Epilimnion \nParticle-Associated", "Epilimnion \nFree-Living", "Hypolimnion \nParticle-Associated", "Hypolimnion \nFree-Living",
-                            "Particle", "Free")) + 
+                     values = c("gray60", "gray60", "gray60", "gray60",
+                                "gray60","gray60","gray60","gray60", "gray60", "gray60"))+
+    scale_x_discrete(breaks=c("Productive Epilimnion Free", "Productive Epilimnion Particle", "Productive Hypolimnion Free","Productive Hypolimnion Particle",
+                            "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle",
+                            "Mixed Mixed Particle", "Mixed Mixed Free"),
+                   labels=c("Epilimnion \nFree-Living", "Epilimnion \nParticle-Associated", "Hypolimnion \nFree-Living", "Hypolimnion \nParticle-Associated",
+                            "Epilimnion \nFree-Living", "Epilimnion \nParticle-Associated", "Hypolimnion \nFree-Living", "Hypolimnion \nParticle-Associated",
+                            "Particle-Associated", "Free-Living")) + 
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=8),
         axis.text.y = element_text(colour = "black", size=8),
@@ -624,8 +633,9 @@ sum_scaled_matround_prod_alpha_plot <- ggplot(final_sum_scaled_matround_prod_sta
         plot.margin = unit(c(0.1, 0.1, 0.1, -0.1), "cm"), #top, right, bottom, left
         legend.position="none")
 
-
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS3_alpha_diversity.pdf",  width= 10.5, height=6)
 multiplot(final_summed_alpha_stats_plot, sum_scaled_matround_prod_alpha_plot, cols = 2)
+#dev.off()
 ```
 
 
@@ -2046,7 +2056,7 @@ ggplot(abund, aes(y=PercentPhy , x=Phylum))  +
 
 
 
-```{r abundance bar plots}
+```{r Fig S5 abundance bar plots}
 ##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
 ##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
 ##################################################################################### ABUNDANCE PLOTS ##################  Working up to FIGURE S3 and FIGURE S4
@@ -2067,7 +2077,7 @@ abund_only_by_phylum <-arrange(abund_only_by_phylum, desc(phylum_mean)) # abund_
 phy_order <- as.character(abund_only_by_phylum$Phylum)  # THIS IS A VECTOR OF THE PHYLUM IN THE ORDER THAT WE WANT
 
 ### TOP 25 PHYLA!
-top15phy <- prod_phylum_FWDB_stats[prod_phylum_FWDB_stats$Phylum %in% phy_order[1:15], ]
+top15phy <- prod_phylum_FWDB_stats[prod_phylum_FWDB_stats$Phylum %in% phy_order[1:17], ]
 
 phy15_order <- as.character(abund_only_by_phylum$Phylum)[1:17]
 
@@ -2075,6 +2085,7 @@ phy15_order <- as.character(abund_only_by_phylum$Phylum)[1:17]
 top15phy$Phylum <- factor(top15phy$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
                                                      "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
   
+top15phy <- subset(top15phy, quadrant != "Free Mixed" & quadrant != "Particle Mixed")
 top15phy$quadrant <- factor(top15phy$quadrant,levels = c("Free Epilimnion", "Particle Epilimnion", "Free Hypolimnion", "Particle Hypolimnion"))
 
 top15phy$Phylum = with(top15phy, factor(Phylum, levels = rev(levels(Phylum))))
@@ -2170,11 +2181,11 @@ z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
 #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3
-#tiff(filename="~/Final_PAFL_Trophicstate/Final_Figures/Fig.S3_Abundance_top15_gtable.tiff", width= 40, height=25, units= "cm", pointsize= 10, res=200)
+pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_phyabund_quadrants.pdf", width= 10, height=6)
 # draw it
 grid.newpage()
 grid.draw(z)
-#dev.off()
+dev.off()
 ```
 
 
@@ -2352,7 +2363,7 @@ grid.draw(rbind(g1, g2, g3, size = "last"))
 
 
 
-```{r Figure S* - boxplot with mixed lake, fig.width=6.5, fig.height=3}
+```{r Figure S4 - boxplot with mixed lake, fig.width=6.5, fig.height=3}
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_mixed_green.pdf",  width= 6.5, height=3)
 supplemental_g3_MIXED <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("Top 17 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
@@ -2374,7 +2385,7 @@ supplemental_g3_MIXED <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phyl
 
 
 
-```{r Figure S* - phylum level heat map}
+```{r Figure S6 - phylum level heat map}
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
 ####################################################  PHYLUM LEVEL LOG-2-FOLD RATIO ANALYSIS  ####################################################  Working up to FIGURE 5
@@ -2886,7 +2897,10 @@ ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2Fold
 
 ```
   
-```{r Fig }
+  
+  
+  
+```{r Fig S8}
 
 ########   Summed-OTU Plot 
 ### PA (positive) vs FL (negative)
