@@ -2279,6 +2279,54 @@ grid.draw(rbind(g1, g2, g3, size = "last"))
 
 
 
+######################################################## 
+########################################################
+########################################################
+######################################################## DESeq on the six habitats 
+########################################################
+########################################################
+#View(data.frame(tax_table(merged_final)))  #Sanity check
+good_phylum <-tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
+good_phylum_nosherwin <- subset_samples(good_phylum, lakenames != "Sherman")
+#View(data.frame(sample_data(good_phylum_nosherwin))) #Sanity check
+
+
+###########################################################  HIGH vs LOWnutrient lakes
+DESeq_prodLevel <- deSEQ(good_phylum_nosherwin, ~ ProdLevel)
+DESeq_prodLevel_plot <- plot_phylum_deSEQ(DESeq_prodLevel, "Productivity Level")
+
+
+###########################################################  Epilimnion vs Hypolimnion
+DESeq_limnion <- deSEQ(good_phylum_nosherwin, ~ limnion)
+DESeq_limnion_plot <- plot_phylum_deSEQ(DESeq_limnion, "Lake Layer")
+
+
+###########################################################  Particle vs Free
+DESeq_filter <- deSEQ(good_phylum_nosherwin, ~ filter)
+DESeq_filter_plot <- plot_phylum_deSEQ(DESeq_filter, "Filter Fraction")
+
+
+DESeq_habitats <- multiplot(DESeq_prodLevel_plot + theme(legend.position = "none"), 
+                            DESeq_limnion_plot +theme(legend.position = "none"),
+                            DESeq_filter_plot + theme(legend.position = "none"), cols = 3)
+
+#DESeq_hab1 <- subset(DESeq_filter, select = c(Phylum, log2FoldChange, padj)) %>%
+#  mutate(Habitat = "PA vs. FL",
+#         Preference = )
+#DESeq_hab2 <- subset(DESeq_limnion, select = c(Phylum, log2FoldChange, padj)) %>%
+#  mutate(Habitat = "Top vs. Bottom")
+#DESeq_hab3 <- subset(DESeq_prodLevel, select = c(Phylum, log2FoldChange, padj)) %>%
+#  mutate(Habitat = "Prod vs. UnProd", 
+#         log2FoldChange = log2FoldChange *-1)#
+#
+#DESeq_hab_all <- rbind(DESeq_hab1, DESeq_hab2, DESeq_hab3)#
+#
+#DESeq_split_cols <- colsplit(DESeq_hab_all$Habitat, ":", c("Comparison", "Habitat"))
+#df_ratio$Habitat = NULL
+#dfrat <- cbind(df_ratio, split_cols)
+
+
+
 
 
 
