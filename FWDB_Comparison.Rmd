@@ -1147,9 +1147,9 @@ nmds_bray$ProdLevel[nmds_bray$trophicstate == "Oligotrophic"] <- "Unproductive"
 nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
 nmds_bray$ProdLevel <- factor(nmds_bray$ProdLevel,levels = c("Productive", "Unproductive"))
                              
-nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*-100, color = filter, shape = limnion, fill = ProdLevel)) +
+nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*100, MDS2*-100, color = filter, shape = limnion, fill = ProdLevel)) +
   annotate("text", label = "B", x = (min(nmds_bray$MDS1*100) + 0.7), y = (max(nmds_bray$MDS2*100) + 0.1), face = "bold",size = 6, colour = "black") +
-  annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*100)+0.3), y = (max(nmds_bray$MDS2*100) + 0.1), size = 4, colour = "black") +
+  annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*100)-2.5), y = (max(nmds_bray$MDS2*100) + 0.1), size = 4, colour = "black") +
   xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") +
   geom_point(size = 4, alpha=0.9) + theme_bw() + # Draw the points
   geom_point(aes(size=6, shape = limnion), show_guide = FALSE )+ # Make the points have a thicker outline 
@@ -1159,7 +1159,7 @@ nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*-100, color = filter, shap
   scale_fill_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
                      labels = c("High-Nutrient", "Low-Nutrient"),
                      values = c("gray", "white")) +
-  scale_shape_manual(name = "Lake Strata", breaks = c("Epilimnion", "Hypolimnion", "Mixed"), 
+  scale_shape_manual(name = "Lake Layer", breaks = c("Epilimnion", "Hypolimnion", "Mixed"), 
                      values = c(21, 22, 24)) +
   guides(shape = guide_legend(order=1, override.aes=list(size=4)), # Manually set the legends 
          fill = guide_legend(order=2, override.aes=list(size=4, fill = c("gray", "white"))),
@@ -1225,12 +1225,12 @@ nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = filter, shape = li
 multiplot(nmds_soren_quad, nmds_soren_quad_limnion, cols = 2)
 
 #####  Plotting FIGURE 3  #####  Plotting FIGURE 3  #####  Plotting FIGURE 3  #####  Plotting FIGURE 3  #####  Plotting FIGURE 3
-pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig3_NMDS_binary_color.pdf",  width= 10, height=4)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig3_NMDS_binary_color2.pdf",  width= 10, height=4)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.41,0.59))))
 print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
-dev.off()
+#dev.off()
 ```
 
 
@@ -4583,7 +4583,7 @@ profile_labeller <- function(var, value){
 
 #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1
 ## All LAKES
-pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS1_depth_profile.pdf",  width= 6.5, height=6.5)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS1_depth_profile.pdf",  width= 6.5, height=6.5)
 ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
   geom_path(size=1, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
   theme_bw() +  geom_point(size=2, alpha = 0.8) + geom_hline(h=0) +
@@ -4604,7 +4604,7 @@ ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +
         plot.title = element_text(size = 12, face = "bold", colour = "black"),
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         legend.position="right"); #c(0.225, 0.22));
-dev.off()
+#dev.off()
 ```
 
 
