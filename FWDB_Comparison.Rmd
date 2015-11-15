@@ -258,10 +258,6 @@ nowin_FWDB_scaled <- subset_samples(FWDB_sum_scale_matround, names != "WINH" & n
 nowin_FWDB_scaled <- prune_taxa(taxa_sums(nowin_FWDB_scaled) > 0, nowin_FWDB_scaled) # Remove any OTUs that are 0
 
 nowin_data <- data.frame(sample_data(nowin_FWDB_scaled))
-str(nowin_data)
-
-ggplot(data.frame(sum=sample_sums(FW_sum_reps)),aes(sum))
-
 
 
 mean_scaled_dat <- ddply(nowin_data, "filter", summarise, scaled.mean=mean(TotalSeqs_Scaled))
@@ -1700,9 +1696,14 @@ bray_try$troph_lim1 <-factor(bray_try$troph_lim1,levels=c( "Productive Epilimnio
                                                              "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle"))
 
 
+bray_sigs <- bray_try %>%
+  select(trophicstate1, troph_lim1, siglabel) %>%
+  distinct()
+
 bray_boxplot <- ggplot(bray_try, aes(x = troph_lim1, y = value, fill = troph_lim1)) + geom_point(size = 2) +
   #geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
   geom_boxplot() +
+  geom_text(data = bray_sigs,  aes(label = siglabel, x = troph_lim1, y = 0.92), size =3) +
   scale_fill_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
                      values = c("royalblue4", "royalblue4", "royalblue4", "royalblue4",
@@ -1713,7 +1714,7 @@ bray_boxplot <- ggplot(bray_try, aes(x = troph_lim1, y = value, fill = troph_lim
                             "Epilimnion \nFree-Living (12)", "Epilimnion \nParticle-Associated (6)", "Hypolimnion \nFree-Living (12)", "Hypolimnion \nParticle-Associated (12)")) + 
   xlab("Habitat") + ylab("Bray-Curtis \nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
-  geom_text(aes(label = siglabel, x = troph_lim1, y = 0.92), size =3) +
+ # geom_text(aes(label = siglabel, x = troph_lim1, y = 0.92), size =3) +
   theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
                                  strip.text.x = element_blank(),  #Set the facet titles on x-axis 
                                  strip.text.y = element_blank(),  #Set the facet titles on x-axis 
@@ -1938,9 +1939,14 @@ soren_try <- merge(prod_soren, soren_sigs_dataframe, by = "troph_lim1")
 soren_try$troph_lim1 <-factor(soren_try$troph_lim1,levels=c( "Productive Epilimnion Free", "Productive Epilimnion Particle", "Productive Hypolimnion Free","Productive Hypolimnion Particle",
                                                              "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle"))
 
+soren_sigs <- soren_try %>%
+  select(trophicstate1, troph_lim1, siglabel) %>%
+  distinct()
+
 soren_boxplot <- ggplot(soren_try, aes(x = troph_lim1, y = value, fill = troph_lim1)) + geom_point(size = 2) +
   #geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.9)) +
   geom_boxplot() +
+  geom_text(data = soren_sigs, aes(label = siglabel, x = troph_lim1, y = 0.73), size =3) +
   scale_fill_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
                                          "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
                      values = c("royalblue4", "royalblue4", "royalblue4", "royalblue4",
@@ -1951,7 +1957,6 @@ soren_boxplot <- ggplot(soren_try, aes(x = troph_lim1, y = value, fill = troph_l
                             "Epilimnion \nFree-Living", "Epilimnion \nParticle-Associated", "Hypolimnion \nFree-Living", "Hypolimnion \nParticle-Associated")) + 
   xlab("Habitat") + ylab("Sørensen \nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
   facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
-  geom_text(aes(label = siglabel, x = troph_lim1, y = 0.73), size =3) +
   theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
                                  strip.text.x = element_text(face="bold", size=10),  #Set the facet titles on x-axis 
                                  strip.text.y = element_blank(),  #Set the facet titles on x-axis 
@@ -2271,6 +2276,14 @@ g3 <- ggplotGrob(g3)
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_notitle.pdf",  width= 6.5, height=6.5)
 grid.draw(rbind(g1, g2, g3, size = "last"))
 #dev.off()
+
+
+
+
+
+
+
+
 ```
 
 
@@ -2844,7 +2857,7 @@ summed <- ggplot(summed_16, aes(y=Count, x=Phylum, fill=Preference)) +
   facet_grid(. ~ Comparison, scales = "free_x", labeller = mf_labeller) + theme_bw() +
   ylab("Total Number of Significant OTUs") +  xlab("Phylum") + 
   scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
-                     values = c("firebrick1", "goldenrod1",  "turquoise3", "green4","palevioletred1","cornflowerblue"))+
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
   guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
   theme(axis.title.x = element_text(face="bold", size=12),
         axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
@@ -3214,6 +3227,29 @@ sigotu_proportion_plot <- ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Ph
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
         legend.position="right"); 
 #dev.off()
+
+
+
+
+####  OVERLAP BETWEEN HYPO AND HIGH NUTRIENT 
+
+
+hypo_otus <- tvb %>% # Make a data frame with significant OTUs unique to Hypolimnion
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct()
+
+high_otus <- pvu %>% # Make a data frame with significant OTUs unique to high-nutrient
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() 
+
+dim(hypo_otus); dim(high_otus)
+shared_hypo_high <- inner_join(hypo_otus, high_otus, by = "OTU")
+dim(shared_hypo_high)
+View(shared_hypo_high)
+
+anti_join(high_otus, hypo_otus, by = "OTU")
 ```
 
 
@@ -3233,6 +3269,47 @@ print(b2, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 #dev.off()
 ```
 
+
+
+
+```{r table 3 - top 5 sig OTUs in each habitat}
+
+top5_sig_OTUs <- function(log2fold_data){
+  log2fold_data %>%
+  arrange(log2FoldChange) %>%
+  select(Phylum, Genus, OTU, log2FoldChange, Habitat, Preference) %>%
+  head(n=5)
+}
+
+low_top5 <- top5_sig_OTUs(pvu_low)
+
+high_top5 <- top5_sig_OTUs(pvu_high)
+
+top_top5 <- top5_sig_OTUs(tvb_top)
+bottom_top5 <- top5_sig_OTUs(tvb_bottom)
+
+free_top5 <- top5_sig_OTUs(pvf_free)
+particle_top5 <- top5_sig_OTUs(pvf_particle)
+
+top5_otus_combined <- rbind(free_top5, particle_top5, low_top5, high_top5, top_top5, bottom_top5)
+top5_otus_combined$log2FoldChange <- abs(top5_otus_combined$log2FoldChange)
+top5_otus_combined$Habitat <- as.character(top5_otus_combined$Habitat)
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " Epilimnion \nLow-Nutrient"] <- "Epilimnion Low-Nutrient"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " Epilimnion \nHigh-Nutrient"] <- "Epilimnion High-Nutrient"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " Free-Living \nEpilimnion"] <- "Free-Living Epilimnion"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " Particle-Associated \n Hypolimnion"] <- "Particle-Associated Hypolimnion"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " Particle-Associated \n Epilimnion"] <- "Particle-Associated Epilimnion"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " Free-Living \nHypolimnion"] <- "Free-Living Hypolimnion"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " Low-Nutrient \n Free-Living"] <- "Low-Nutrient Free-Living"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " Low-Nutrient \n Particle-Associated"] <- "Low-Nutrient Particle-Associated"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " High-Nutrient \n Free-Living"] <- "High-Nutrient Free-Living"
+top5_otus_combined$Habitat[top5_otus_combined$Habitat == " High-Nutrient \n Particle-Associated"] <- "High-Nutrient Particle-Associated"
+
+colnames(top5_otus_combined)[5] <- "Specific Habitat"
+colnames(top5_otus_combined)[5] <- "Habitat Preference"
+
+write.csv(top5_otus_combined, file = "~/Final_PAFL_Trophicstate/FWDB_Figures/Table3_top5_SigOTUs.csv", row.names = FALSE)
+```
 
 
 
@@ -3756,7 +3833,7 @@ sigotu_proportion_plot0_05 <- ggplot(otu_joined_16_0_05, aes(y=Proportion_sig2to
 
 
 
-```{r attemt 2 fig 6 with 0.05 pval cutoff}
+```{r attemt 2 fig 5 with 0.05 pval cutoff}
 b1_0_05 <- sigotu_proportion_plot0_05 +   ggtitle("P-Value Cutoff of 0.05") + 
   theme(legend.position="none", plot.margin = unit(c(0.1, 0.05, 0.1, 0.1), "cm")) #top, right, bottom, left
 b2_0_05 <- sigotu_phy_relabund_plot0_05 + xlab("") +
