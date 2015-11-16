@@ -510,6 +510,11 @@ final_summed_alpha_stats$prod_lim <-factor(final_summed_alpha_stats$prod_lim,lev
                                                                                       "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle",
                                                                                       "Mixed Mixed Particle", "Mixed Mixed Free"))
 
+rare_alpha_stats <- final_summed_alpha_stats %>%
+  group_by(Test) %>%
+  summarize(max = max(mean_value),
+            min = min(mean_value))
+
 final_summed_alpha_stats_plot <- ggplot(final_summed_alpha_stats, aes(x = prod_lim, y = mean_value, color = prod_lim)) + geom_point(size = 3, alpha = 0.7) +
   ggtitle("Sub-Sampled at 14,924 Sequences") + theme_bw() +   xlab("Habitat") + ylab("") + 
   geom_errorbar(aes(ymin= mean-SD, ymax=mean+SD), color = "black", width=.1, position=position_dodge(.9)) +
@@ -601,6 +606,11 @@ final_sum_scaled_matround_prod_stats$prod_lim <-factor(final_sum_scaled_matround
                                                                                       "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", 
                                                                                       "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle",
                                                                                       "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+scaled_alpha_stats <- final_sum_scaled_matround_prod_stats %>%
+  group_by(Test) %>%
+  summarize(max = max(Value),
+            min = min(Value))
 
 sum_scaled_matround_prod_alpha_plot <- ggplot(final_sum_scaled_matround_prod_stats, aes(x = prod_lim, y = Value, color = prod_lim)) + geom_point(size = 3, alpha = 0.7) +
   ggtitle("Scaled to 14,925 Sequences and Rounded") + theme_bw() +   xlab("Habitat") + ylab("") + 
@@ -2330,7 +2340,7 @@ limnion_phy_boxplot$Phylum <- factor(limnion_phy_boxplot$Phylum,levels = c("Bact
 
 g3 <- ggplot(limnion_phy_boxplot, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
-   scale_fill_manual(name = "Lake Strata", breaks=c("Epilimnion", "Hypolimnion"),
+   scale_fill_manual(name = "Lake Layer", breaks=c("Epilimnion", "Hypolimnion"),
                      labels = c("Epilimnion (19)","Hypolimnion (18)"), 
                      values = c("limegreen", "darkgreen")) +
   theme_bw() + geom_text(aes(label = sig_lab, x = Phylum, y = 50, color = "red"), size =4) +
@@ -2366,7 +2376,7 @@ grid.draw(rbind(g1, g2, g3, size = "last"))
 ```{r Figure S4 - boxplot with mixed lake, fig.width=6.5, fig.height=3}
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_mixed_green.pdf",  width= 6.5, height=3)
 supplemental_g3_MIXED <- ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
-  ggtitle("Top 17 Most Abundant Phyla") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
+  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
   scale_fill_manual(name = "Lake Strata", breaks=c("Epilimnion", "Hypolimnion", "Mixed"),
                      labels = c("Epilimnion (19)","Hypolimnion (18)", "Mixed (4)"), 
                      values = c("limegreen", "darkgreen", "seagreen1")) +

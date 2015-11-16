@@ -10,75 +10,75 @@ set.dir(tempdefault=~/Desktop/FWDB_Analysis/)
 set.current(processors=6)
 
 # Set processors based on the number of samples you have and whether you're using flux or fluxm. 
-#make.contigs(file=SoMiLakes.files.txt,processors=8)
-#summary.seqs(fasta=current)
+make.contigs(file=SoMiLakes.files.txt,processors=8)
+summary.seqs(fasta=current)
 
 # Remove sequences with ambiguous bases and sequences that are not between 240-275 bp
-#screen.seqs(fasta=current, group=current, summary=current, maxambig=0, maxlength=275, minlength=240, maxhomop=8)
-#summary.seqs(fasta=current)
+screen.seqs(fasta=current, group=current, summary=current, maxambig=0, maxlength=275, minlength=240, maxhomop=8)
+summary.seqs(fasta=current)
 
 # It would take forever to align every sequence, so we find just the unique ones
-#unique.seqs()
-#summary.seqs(fasta=current)
-#count.seqs(name=current, group=current)
-#summary.seqs(fasta=current)
+unique.seqs()
+summary.seqs(fasta=current)
+count.seqs(name=current, group=current)
+summary.seqs(fasta=current)
 
 # Create the V4 aligned silva data base using pcr.seqs
-#pcr.seqs(fasta=silva.nr_v119.align, start=11894, end=25319, keepdots=F, processors=8)
+pcr.seqs(fasta=silva.nr_v119.align, start=11894, end=25319, keepdots=F, processors=8)
 # Rename the file to something more intuitive like "silva.v4.pcr.fasta"
-#system(mv silva.nr_v119.pcr.align silva.v4.pcr.fasta)
+system(mv silva.nr_v119.pcr.align silva.v4.pcr.fasta)
 
 # Align sequences to the v4 region of the silva database
-#align.seqs(fasta=SoMiLakes.files.trim.contigs.good.unique.fasta, reference=silva.v4.pcr.fasta, processors=8, flip=t)
-#screen.seqs(fasta=current, count=SoMiLakes.files.trim.contigs.good.count_table, start=1968, end=11550)
-#summary.seqs(count=current)
+align.seqs(fasta=SoMiLakes.files.trim.contigs.good.unique.fasta, reference=silva.v4.pcr.fasta, processors=8, flip=t)
+screen.seqs(fasta=current, count=SoMiLakes.files.trim.contigs.good.count_table, start=1968, end=11550)
+summary.seqs(count=current)
 
 # Filter sequences to remove overhangs at both ends and gaps
 # After this we rerun unique.seqs because we might have created
 # some new redundancies from the filtering
-#filter.seqs(fasta=current, vertical=T, trump=.)
-#unique.seqs(fasta=current, count=current)
+filter.seqs(fasta=current, vertical=T, trump=.)
+unique.seqs(fasta=current, count=current)
 
 # Precluster sequences allowing for up to 2 differences between sequences.
 # The goal of this step is to eliminate sequences with errors due to sequencing technology
 # by merging them with very similar sequences
-#pre.cluster(fasta=current, count=current, diffs=2)
+pre.cluster(fasta=current, count=current, diffs=2)
 
 # Search for chimeras and remove them
-#chimera.uchime(fasta=current, count=current, dereplicate=t)
-#remove.seqs(fasta=current, accnos=current)
-#summary.seqs(count=current)
+chimera.uchime(fasta=current, count=current, dereplicate=t)
+remove.seqs(fasta=current, accnos=current)
+summary.seqs(count=current)
 
 # Classify sequences with a bayesian classifier using the silva database
-#classify.seqs(fasta=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta, count=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.count_table, reference=FW_trainingset_MMBR_strict_12July12.fasta.txt, taxonomy=FW_trainingset_MMBR_strict_12July12.taxonomy.txt, cutoff=80)
+classify.seqs(fasta=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta, count=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.count_table, reference=FW_trainingset_MMBR_strict_12July12.fasta.txt, taxonomy=FW_trainingset_MMBR_strict_12July12.taxonomy.txt, cutoff=80)
 
-#remove.lineage(taxonomy=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy, taxon=k__Bacteria;p__Cyanobacteria;c__Chloroplast;)
+remove.lineage(taxonomy=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy, taxon=k__Bacteria;p__Cyanobacteria;c__Chloroplast;)
 
 # Correct GG names (remove *__ before taxonomy name) to "Silva" names and make new file name with .sed addition
-#system(sed -e 's/.__//g' SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.pick.taxonomy > SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed)
+system(sed -e 's/.__//g' SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.pick.taxonomy > SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed)
 
 # Select all that DO match FWDB
-#system(grep -v "^[^;]*;[^;]*;[^;]*;[^;]*;unclassified" SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed > matched_FW.80.taxonomy)
+system(grep -v "^[^;]*;[^;]*;[^;]*;[^;]*;unclassified" SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed > matched_FW.80.taxonomy)
 
 # Select all that do NOT match FWDB
-#system(grep "^[^;]*;[^;]*;[^;]*;[^;]*;unclassified" SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed > not_matched_toFWDB.taxonomy)
+system(grep "^[^;]*;[^;]*;[^;]*;[^;]*;unclassified" SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.taxonomy.wang.taxonomy.sed > not_matched_toFWDB.taxonomy)
 
 # Retain read names of reads that do NOT match FWDB
-#system(cut -f 1 not_matched_toFWDB.taxonomy > not_matched_toFWDB_readnames.taxonomy.list.txt)
+system(cut -f 1 not_matched_toFWDB.taxonomy > not_matched_toFWDB_readnames.taxonomy.list.txt)
 
 # Generate a fasta file based on the list of sequences that do NOT match FWDB
 # use the script called "screen_list.pl" that Vincent sent on Nov.4
-#system(perl screen_list.pl not_matched_toFWDB_readnames.taxonomy.list.txt SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta keep > unclassified_Silva.fasta)
+system(perl screen_list.pl not_matched_toFWDB_readnames.taxonomy.list.txt SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta keep > unclassified_Silva.fasta)
 
 # now classify the reads NOT classified by FWDB, using Silva_NR
-#classify.seqs(fasta=unclassified_Silva.fasta, reference=silva.nr_v119.align, taxonomy=silva.nr_v119.tax, cutoff=80)
+classify.seqs(fasta=unclassified_Silva.fasta, reference=silva.nr_v119.align, taxonomy=silva.nr_v119.tax, cutoff=80)
 
 ###  Insert file name from above command into the below commands
 # make a copy of "unclassified_Silva.nr_v119.wang.taxonomy" and name it "silva.assigned.80.taxonomy"
-#system(scp unclassified_Silva.nr_v119.wang.taxonomy silva.assigned.80.taxonomy)
+system(scp unclassified_Silva.nr_v119.wang.taxonomy silva.assigned.80.taxonomy)
 
 # Concatenate the FWDB matches to the SilvaDB matches into one file called "final.FWDB.Silva.taxonomy"
-#system(cat matched_FW.80.taxonomy silva.assigned.80.taxonomy > final.FWDB.Silva.taxonomy)
+system(cat matched_FW.80.taxonomy silva.assigned.80.taxonomy > final.FWDB.Silva.taxonomy)
 
 # Cluster sequences into OTUs. To save memory/time we first split sequences by taxlevel 4 (order) and then cluster from there. Read mothur wiki for more info. 
 cluster.split(fasta=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta, count=SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.count_table, taxonomy=final.FWDB.Silva.taxonomy, splitmethod=classify, taxlevel=3, cutoff=0.15)
