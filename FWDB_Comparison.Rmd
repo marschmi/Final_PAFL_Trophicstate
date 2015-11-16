@@ -1041,7 +1041,7 @@ print(otu_relative_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
 
 
 
-```{r Figure 3: NMDS Ordinations}
+```{r Figure 2: NMDS Ordinations}
 
 
 ####################################################  ORDINATIONS  ####################################################  Working up to Figure 3
@@ -2011,7 +2011,6 @@ print(soren_boxplot2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
 print(bray_boxplot2, vp=viewport(layout.pos.row=2,layout.pos.col=1))
 #dev.off()
 ```
-
 
 
 
@@ -3025,7 +3024,7 @@ summed <- ggplot(summed_16, aes(y=Count, x=Phylum, fill=Preference)) +
 
 
 
-```{r Fig 5 right panel - OTU summed relative to its abundance - alpha = 0.01, cutoff = 0 }
+```{r Fig 5 right panel}
 # Get the significant OTUs 
 # summed relative to its abundance 
 ### Free-living
@@ -4557,16 +4556,6 @@ dev.off()
 
 
 ```{r genus heat map }
-mf_labeller <- function(var, value){
-  value <- as.character(value)
-  if (var=="Comparison") { 
-    value[value=="PA vs. FL"] <- "Particle-Associated \n vs. \n Free-Living"
-    value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. \nEpilimnion"
-    value[value=="Prod vs. Unprod"]   <- "High-Nutrient \n vs. \nLow-Nutrient"
-  }
-  return(value)
-}
-
 #no_unclass_genus <- subset(otu_ratios, Genus != "unclassified")
 phy_otu <- otu_ratios 
 phy_otu$Phylum <- factor(phy_otu$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria",

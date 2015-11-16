@@ -339,3 +339,69 @@ scale_reads <- function(physeq, n = min(sample_sums(physeq)), round = "floor") {
 
 
 
+
+#################################################################################### 11
+#################################################################################### 11
+# Function for simple statistics 
+
+physeq_stats <- function(physeq){
+  out <- c(min(sample_sums(physeq)), 
+           mean(sample_sums(physeq)), 
+           median(sample_sums(physeq)), 
+           max(sample_sums(physeq)),
+           max(sample_sums(physeq)) -min(sample_sums(physeq)),
+           nrow(otu_table(physeq)))
+  print(out)
+}
+
+
+
+
+#####
+# Calulcate phylum abundance 
+
+phy_abund_in_group <- function(phy_melt_object, colname){
+  select(phy_melt_object, Sample, Abundance, Phylum) %>% # select only the important columns 
+    group_by(Phylum) %>% # Combine all the phyla
+    summarize(phylum_sum = sum(Abundance)) %>%
+    mutate(SampleType = colname)
+}
+
+
+
+
+mf_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="Comparison") { 
+    value[value=="PA vs. FL"] <- "Particle-Associated \n vs. \n Free-Living"
+    value[value=="Top vs. Bottom"]   <- "Hypolimnion \n vs. \nEpilimnion"
+    value[value=="Prod vs. Unprod"]   <- "High-Nutrient \n vs. \nLow-Nutrient"
+  }
+  return(value)
+}
+
+
+
+#set phylum plotting colors
+phylum.colors <- c(Acidobacteria = "grey26", Actinobacteria = "royalblue", Alphaproteobacteria = "plum2", Armatimonadetes = "red", Bacteroidetes = "darkorange",
+                   "BD1-5" = "chartreuse", Betaproteobacteria = "slateblue2", Caldiserica = "black","Candidate_division_BRC1" = "violetred4",
+                   "Candidate_division_JS1" = "aquamarine1",
+                   "Candidate_division_OD1" = "#6DDE88", "Candidate_division_OP3" = "hotpink", "Candidate_division_OP8" = "goldenrod1", "Candidate_division_OP11" = "chocolate4",
+                   "Candidate_division_SR1" = "tan3", "Candidate_division_TM7" = "skyblue1", "Candidate_division_WS3" = "magenta",
+                   Chlamydiae="violet", Chlorobi="cyan2", Chloroflexi="darkgreen", Cyanobacteria = "chartreuse3", 
+                   Deferribacteres = "slateblue3", "Deinococcus-Thermus" = "violetred", Dictyoglomi = "cornsilk4", Deltaproteobacteria = "deepskyblue", 
+                   Elusimicrobia = "yellow3", Epsilonproteobacteria = "lightskyblue", Fibrobacteres = "darkred", Firmicutes = "blue4", FGL7S = "palevioletred1",
+                   Fusobacteria = "slateblue1", Gammaproteobacteria = "steelblue4", Gemmatimonadetes="black", GOUTA4 = "plum1", "Hyd24-12" = "sienna2", JTB23 = "seashell2",
+                   Lentisphaerae = "yellow1", "NPL-UPA2"="#652926", OC31 = "mediumpurple4", Planctomycetes = "mediumorchid3", Proteobacteria = "deepskyblue",
+                   "SHA-109" = "lightsalmon3", SM2F11 = "lightskyblue2", SPOTSOCT00m83 = "orangered",
+                   Spirochaetae = "gold3", Tenericutes="pink", Thermotogae = "chocolate1", TA06 = "lightslateblue",TA18 = "rosybrown3", TM6 = "olivedrab",
+                   unclassified = "grey", Verrucomicrobia = "purple4", "WCHB1-60" = "palegreen")
+
+
+
+
+
+
+
+
+

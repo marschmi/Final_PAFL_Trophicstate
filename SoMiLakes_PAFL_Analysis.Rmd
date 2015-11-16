@@ -1,0 +1,2346 @@
+---
+title: Phylogenetic conservation of freshwater lake habitat preferences varies between
+  abundant bacterioplankton phyla
+author: "Marian L. Schmidt, Jeffrey D. White, Vincent J. Denef"
+date: "November 15, 2015"
+output: html_document
+---
+
+### Set the Global Knitr Options
+```{r knitr_global_options, eval = TRUE, echo = TRUE}
+# Set the global options
+knitr::opts_chunk$set(echo= TRUE, eval = TRUE, fig.width=6, fig.height=5, fig.align = 'center', warning=FALSE, message=FALSE)
+# Set the seed
+set.seed(15879966)
+```
+
+
+### Load in R-Packages and Set the Working Environment
+```{r load libraries and packages}
+# Load packages
+necessary_packages <-  c("phyloseq", "ggplot2", "ape", "vegan", "plyr", "scales", "grid", "reshape2", "data.table","DESeq2", "dplyr","tidyr", "sciplot","scales", "pgirmess","multcompView", "pander")
+# Install the packages that we need
+packages <- lapply(necessary_packages, library, character.only = TRUE)
+
+# Set the working Directory
+setwd("~/Final_PAFL_Trophicstate")
+
+### Source written functions in the file Functions_PAFL.R that is housed within the "Final_PAFL_Trophicstate"
+source("Functions_PAFL.R")
+```
+
+
+### Set the Plotting and Table Options
+```{r set colors and theme}
+### Set our theme for our plots down the road
+theme_set(theme_bw() + theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
+                                 strip.text.x = element_text(size=10, face="bold"),  #Set Y facet titles 
+                                 strip.text.y = element_text(size=10, face="bold"),  #Set X facet titles 
+                                 strip.background = element_blank(),  #Set the facet background to no background
+                                 axis.title.x = element_text(face="bold", size=12),  #Set the x-axis title
+                                 axis.title.y = element_text(face="bold", size=12),  #Set the y-axis title
+                                 axis.text.x = element_text(colour = "black", size=8),  #Set the x-axis labels
+                                 axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+                                 legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                                 legend.text = element_text(size = 8),  #Set the legend text
+                                 legend.position="right", #Default the legend position to the right
+                                 plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"))) #top, right, bottom, left
+  
+##  Do not show scientific notation 
+options(scipen = 999, digits = 7)
+
+## Set pander (table) output functions 
+panderOptions('table.split.table', Inf)
+panderOptions('table.style', 'rmarkdown')
+```
+
+
+
+### Import Data & Remove Non-Bacterial and Chloroplasts Sequences
+```{r data import of Freshwater DB data, fig.width=8}
+# Load in the shared file from the mothur FWDB analysis
+FWWDB_shared <- "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.shared"
+# Load in the taxonomy file from the mothur FWDB analysis
+FWDB_tax <- "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy"
+#Create FWDB phyloseq object
+FWDB_data <- import_mothur(mothur_shared_file = FWWDB_shared, mothur_constaxonomy_file = FWDB_tax )
+
+# Change the taxonomy names
+#length(colnames(tax_table(FWDB_data))) # 8 columns 
+colnames(tax_table(FWDB_data)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species", "Strain")
+#sum(row.names(otu_table(FWDB_data)) == row.names(tax_table(FWDB_data))) # OTU names are the same in the tax and otu tables.
+
+#Let's check out the taxonomy table 
+tax <- data.frame(tax_table(FWDB_data))
+tax$OTU <- row.names(tax)
+tax_table(FWDB_data) <- tax_table(as.matrix(tax))
+
+# Change some of the sample names to match our metadata sample names
+samplenames_FWDB <- sample_names(FWDB_data)
+names2_FWDB <- gsub("Gull", "GUL", samplenames_FWDB)
+names3_FWDB <- gsub("Long", "LON", names2_FWDB)
+sample_names(FWDB_data) <- names3_FWDB
+
+# Import metadata file and merge with FWDB_data object
+mapfile <- "~/Final_PAFL_Trophicstate/raw_data/metadata"
+map <- import_qiime_sample_data(mapfile)
+
+# Check the sequencing depth of each sample 
+sums_FWDB <- data.frame(colSums(otu_table(FWDB_data)))
+colnames(sums_FWDB) <- "Sample_TotalSeqs"
+sums_FWDB$sample <- row.names(sums_FWDB)
+sums_FWDB <- arrange(sums_FWDB, Sample_TotalSeqs)
+ggplot(sums_FWDB, aes(x=reorder(sample, Sample_TotalSeqs), y = Sample_TotalSeqs)) + 
+  ylab("Number of Sequences per Sample") +
+  geom_bar(stat = "identity", colour="black",fill="cornflowerblue")  + xlab("Sample Name") + ggtitle("Sample Sums") + 
+  theme(axis.text.x = element_text(colour = "black", size=6, angle=45, hjust = 1, vjust = 1))  #Set the x-axis labels
+
+pruned_FWDB <- prune_samples(sample_sums(FWDB_data) > 10000, FWDB_data)
+
+# Combine FWDB and mapfiles 
+FWDB_no_scale <- merge_phyloseq(pruned_FWDB,map)
+
+# lets look at only samples (removing blanks and mock and samples that didn't amplify)
+FW_pruned <- prune_taxa(taxa_sums(FWDB_no_scale) > 0, FWDB_no_scale)
+FW_samples <-subset_taxa(FW_pruned, Kingdom == "Bacteria")
+FW_samples <-subset_taxa(FW_samples, Class != "Chloroplast")
+```
+
+
+
+### Merge Replicate Sample and Scale the Sequencing Depth 
+```{r merge samples and scale sequencing depth}
+###  Time to (1) Sum between replicates and then (2) scale 
+# Step 1.  Sum the reads 
+FW_sum_reps <- merge_samples(x = FW_samples, group = "dups", fun = "sum") # Sum between replicate samples
+FW_sum_reps <- prune_taxa(taxa_sums(FW_sum_reps) > 0, FW_sum_reps) # Remove any OTUs that are 0
+## merge_samples messes up the sample_data so we will need to fix this below.  
+
+
+# Step 2:  Scale the reads 
+FWDB_sum_scale_matround <- scale_reads(physeq = FW_sum_reps, n = min(sample_sums(FW_sum_reps)), round = "matround")
+
+data_dup_FWDB_sum_scale_matround <- read.table("~/Final_PAFL_Trophicstate/raw_data/duplicate_metadata.txt", header = TRUE, sep = "\t")
+row.names(data_dup_FWDB_sum_scale_matround) <- data_dup_FWDB_sum_scale_matround$names
+data_dup_FWDB_sum_scale_matround$quadrant <- factor(data_dup_FWDB_sum_scale_matround$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+
+# Fix the sample data 
+# Add a column of Total Sequence sums to data_dup
+TotalSeqs_FWDB_sum_reps <- data.frame(rowSums(otu_table(FW_sum_reps)))
+TotalSeqs_FWDB_sum_reps$names <- as.factor(row.names(TotalSeqs_FWDB_sum_reps))
+colnames(TotalSeqs_FWDB_sum_reps)[1] <- "TotalSeqs_Summed"
+data_dup_FWDB_sum_scale_matround_join<- left_join(data_dup_FWDB_sum_scale_matround, TotalSeqs_FWDB_sum_reps, by = "names") 
+
+TotalSeqs_FWDB_sum_scale_matround <- data.frame(rowSums(otu_table(FWDB_sum_scale_matround)))
+TotalSeqs_FWDB_sum_scale_matround$names <- as.factor(row.names(TotalSeqs_FWDB_sum_scale_matround))
+colnames(TotalSeqs_FWDB_sum_scale_matround)[1] <- "TotalSeqs_Scaled"
+data_dup_FWDB_sum_scale_matround_join<- left_join(data_dup_FWDB_sum_scale_matround_join, TotalSeqs_FWDB_sum_scale_matround, by = "names") 
+#sample_names(FWDB_sum_scale_matround) <- as.character(data_dup_FWDB_sum_scale_matround_join$names)
+
+row.names(data_dup_FWDB_sum_scale_matround_join) <- sample_names(FWDB_sum_scale_matround)
+
+dup_data <- sample_data(data_dup_FWDB_sum_scale_matround_join)  # Metadata in our phyloseq object
+sum_scale_matround_otu <- otu_table(FWDB_sum_scale_matround)  # OTU table in our phyloseq object
+sum_scale_matround_tax <- tax_table(FWDB_sum_scale_matround)  # Taxonomy Table in our phyloseq object
+FWDB_sum_scale_matround <- merge_phyloseq(sum_scale_matround_otu, sum_scale_matround_tax, dup_data) 
+```
+
+
+###  Figure S2: Histogram of Sequencing Depth of Merged and Scaled Samples
+```{r Figure S2 and create working phyloseq object, fig.width= 6.5, fig.height=3.5}
+##  Our phyloseq object!
+nowin_FWDB_scaled <- subset_samples(FWDB_sum_scale_matround, names != "WINH" & names != "WINH3um") # Remove the two samples that are not a true hypolimnion
+nowin_FWDB_scaled <- prune_taxa(taxa_sums(nowin_FWDB_scaled) > 0, nowin_FWDB_scaled) # Remove any OTUs that are 0
+nowin_data <- data.frame(sample_data(nowin_FWDB_scaled))
+
+mean_scaled_dat <- ddply(nowin_data, "filter", summarise, scaled.mean=mean(TotalSeqs_Scaled))
+
+# First plot for figure S2
+scaled_historgram <- ggplot(nowin_data, aes(x = TotalSeqs_Scaled, fill = filter)) + ylab("Count") +
+  geom_histogram(alpha=.75, position="identity", binwidth = 20)  + 
+  xlab("Total Sequences per Sample") + 
+  ggtitle(expression(atop(bold("Scaled Samples"), atop("Bin-Width = 20"), ""))) +
+  scale_fill_manual(name="Filter Fraction", 
+                    breaks = c("Free", "Particle"),
+                    values = c("orangered", "orangered4")) +
+  scale_color_manual(breaks = c("Free", "Particle"),
+                    values = c("orangered", "orangered4")) +
+  scale_x_continuous(breaks = seq(14600, 15200, 100), limits = c(14600, 15200), expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 10, 1), limits = c(0, 4.5), expand = c(0,0)) +
+  geom_vline(data=mean_scaled_dat, aes(xintercept=scaled.mean,  colour=filter),
+               linetype="longdash", size=1) +
+  theme(legend.position = c(0.2, 0.83),
+        plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")) #top, right, bottom, left
+
+
+mean_summed_dat <- ddply(nowin_data, "filter", summarise, summed.mean=mean(TotalSeqs_Summed))
+
+# Second plot for Figure S2
+merged_histogram <- ggplot(nowin_data, aes(x = TotalSeqs_Summed, fill = filter)) + ylab("Count") + 
+  geom_histogram(position = "identity", alpha = 0.75, binwidth = 1500)  + 
+  xlab("Total Sequences per Sample") + 
+    scale_fill_manual(name="Filter Fraction", 
+                    breaks = c("Free", "Particle"),
+                    values = c("orangered", "orangered4")) +
+  ggtitle(expression(atop(bold("Summed Replicate Samples"), atop("Bin-Width = 1500"), ""))) +
+  scale_color_manual(breaks = c("Free", "Particle"),
+                    values = c("orangered", "orangered4")) +
+  geom_vline(data=mean_summed_dat, aes(xintercept=summed.mean,  colour=filter),
+               linetype="longdash", size=1) +
+  scale_x_continuous(breaks = seq(10000, 90000, 10000), limits = c(10000, 75000), expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 10, 1), limits = c(0, 3.5), expand = c(0,0)) +
+  theme(legend.position = c(0.2, 0.83),
+        plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")) #top, right, bottom, left
+
+
+
+#####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS2_histogram.pdf",  width= 6.5, height=3.5)
+multiplot(merged_histogram, scaled_historgram, cols = 2)
+#dev.off()
+```
+
+
+### Working phyloseq object: nowin_FWDB_scaled
+```{r Working Pyloseq Object}
+########## ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(nowin_FWDB_scaled))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
+
+phy$Phylum <- Phylum
+t <- tax_table(as.matrix(phy))
+
+tax_table(nowin_FWDB_scaled) <- t
+
+# Our phyloseq object!
+nowin_FWDB_scaled 
+```
+
+
+
+###  Rank Abundance curve of the 300 Most Abundant OTUs
+```{r FWDB + Silva rank abundance curve}
+####  Obtain the top 100 most abundant OTUs
+topN <- 300
+most_abundant_taxa = sort(taxa_sums(nowin_FWDB_scaled), TRUE)[1:topN]
+#print(most_abundant_taxa)
+FWDB_300_OTUs <- prune_taxa(names(most_abundant_taxa), nowin_FWDB_scaled)
+
+FWDB_sums <- data.frame(taxa_sums(FWDB_300_OTUs))
+
+ggplot(FWDB_sums,aes(x=row.names(FWDB_sums), y=taxa_sums.FWDB_300_OTUs.)) + ylab("Number of Sequences per OTU") + scale_x_discrete(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) + theme_classic() +
+  geom_bar(stat="identity",colour="black",fill="darkturquoise")  + xlab("OTU Rank") + 
+  ggtitle("Rank Abundance Curve of Top 300 OTUs") + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+```
+
+
+
+### Statistics on Merging Samples, Sub-Sampling, and Scaling Sequencing Reads
+```{r simple stats on physeq}
+#Create to subsampled dataset
+rare_FW <- rarefy_even_depth(FW_sum_reps, sample.size = (min(sample_sums(FW_sum_reps))-1), rngseed = 15879966)
+
+###
+fwdb_list <- c( "FW_samples", "FW_sum_reps", "FWDB_sum_scale_matround", "rare_FW")
+compare_fwdb <- data.frame(matrix(ncol = 6, nrow = 4))
+# Assign the row names
+row.names(compare_fwdb) <- c("FWDB+Silva Raw", "Merged FWDB+Silva", "FWDB+Silva Scaled", "Subsampled FWDB+Silva")
+# Assign the column names 
+colnames(compare_fwdb) <- c("MinSeqs", "MeanSeqs", "MedianSeqs", "MaxSeqs", "RangeSeqs", "NumOTUs")
+# Create the data frame
+compare_fwdb[1,] <- physeq_stats(FW_samples)
+compare_fwdb[2,] <- physeq_stats(FW_sum_reps)
+compare_fwdb[2,6] <- ncol(otu_table(FW_sum_reps))
+compare_fwdb[3,] <- physeq_stats(FWDB_sum_scale_matround)
+compare_fwdb[3,6] <- ncol(otu_table(FWDB_sum_scale_matround))
+compare_fwdb[4,] <- physeq_stats(rare_FW)
+compare_fwdb[4,6] <- ncol(otu_table(rare_FW))
+
+panderOptions("digits", 1) # This will set the values to numbers and then will round to the whole number
+set.alignment('center', row.names = 'right') # This will align all cells with "center" alignment and the row.names with "right" alignment
+pander(compare_fwdb, caption="Simple statistics of Inland Lake Sequencing Data")
+```
+
+
+```{r Figure S1, fig.width=6.5, fig.height = 6.5}
+profile <- read.csv(file = "~/Final_PAFL_Trophicstate/raw_data/AllLakes_depthprofile.csv", header = TRUE); 
+profile <- subset(profile, select = c('lakename',"trophicstate", "depth", "temp", "DO", "pH", "SpC"))
+profile$DO. = NULL
+
+profile$trophicstate <- as.character(profile$trophicstate)
+profile$trophicstate[profile$trophicstate == "Eutrophic"] <- "Productive"
+profile$trophicstate[profile$trophicstate == "Mesotrophic"] <- "Productive"
+profile$trophicstate[profile$trophicstate == "Oligotrophic"] <- "Unproductive"
+profile$trophicstate[profile$trophicstate == "Mixed"] <- "Mixed"
+
+# ALL LAKES 
+profile_all <- profile %>%  gather(Variable, Value, 4:7)
+profile_all$lakename <- as.character(profile_all$lakename)
+profile_all$lakename[profile_all$lakename == "WIN"] <- "Wintergreen"
+profile_all$lakename[profile_all$lakename == "SIX"] <- "Sixteen"
+profile_all$lakename[profile_all$lakename == "SHE"] <- "Sherman"
+profile_all$lakename[profile_all$lakename == "PAY"] <- "Payne"
+profile_all$lakename[profile_all$lakename == "LON"] <- "Little Long"
+profile_all$lakename[profile_all$lakename == "LEE"] <- "Lee"
+profile_all$lakename[profile_all$lakename == "GUL"] <- "Gull"
+profile_all$lakename[profile_all$lakename == "BRI"] <- "Bristol"
+profile_all$lakename[profile_all$lakename == "BAK"] <- "Baker"
+profile_all$lakename[profile_all$lakename == "BAS"] <- "Baseline"
+profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
+profile_all$lakename[profile_all$lakename == "BST"] <- "Bassett"
+profile_all$trophicstate[profile_all$trophicstate == "Productive"] <- "High-Nutrient"
+profile_all$trophicstate[profile_all$trophicstate == "Unproductive"] <- "Low-Nutrient"
+profile_all$trophicstate[profile_all$trophicstate == "Mixed"] <- "High-Nutrient"
+
+profile_all <- subset(profile_all, Variable != "SpC")
+
+profile_labeller <- function(var, value){
+  value <- as.character(value)
+  if (var=="Variable") { 
+    value[value=="temp"] <- "Temperature \n (Celsius)"
+    value[value=="DO"]   <- "Dissolved Oxygen \n (mg/L)"
+    value[value=="pH"]   <- "pH"
+    value[value=="SpC"]   <- "Specific Conductivity \n (uS/cm)"
+  }
+  return(value)
+}
+
+#####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1
+## All LAKES
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS1_depth_profile.pdf",  width= 6.5, height=6.5)
+ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
+  geom_path(size=1, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
+  theme_bw() +  geom_point(size=2, alpha = 0.8) + geom_hline(h=0) +
+  scale_y_reverse(breaks=seq(0, 32, 4), expand = c(0, 0)) + #breaks=seq(0, 30, 5), lim = c(30,0), expand = c(0, 0)
+  scale_color_manual(name = "Lake Name", 
+                     labels = c("Baker", "Baseline", "Bassett", "Bristol", "Gull", "Lee", "Little Long", "Payne", "Sherman", "Sixteen", "Wintergreen"), 
+                     values = c("blue", "red", "black", "forestgreen","violet","limegreen", "purple", "orange", "maroon1", "turquoise3", "thistle4")) +
+  facet_grid(trophicstate ~ Variable, scales = "free",labeller = profile_labeller, space = "free_y") +  
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        legend.position="right"); #c(0.225, 0.22));
+#dev.off()
+```
+
+
+### Calculate Phylum and OTU abundance for each Lake Habitat
+```{r Calculating OTU and phylum abundances with dplyr}
+# 1st:  Get the abundance of each phylum for ALL PA/FL/High-Nutrient/Low-Nutrient/Epilimnion/Hypolimnion
+phy_glom <- tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
+phy_melt <- psmelt(phy_glom) %>%
+  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "Phylum","Abundance"))
+
+#Subset out sherman
+phy_melt_sherman <- subset(phy_melt, Sample == "SHEE" | Sample == "SHEH" | Sample == "SHEE3um" | Sample == "SHEH3um")
+# No sherman samples 
+phy_melt_nosher <- subset(phy_melt, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
+
+
+## Free-Living - 21 samples
+phy_abund_free <- subset(phy_melt_nosher, filter == "Free") %>% # Subset out the Free-Living samples 
+  phy_abund_in_group("Free-Living")
+
+#Particle-Associated - 20 Samples
+phy_abund_particle <- subset(phy_melt_nosher, filter == "Particle") %>% # Subset out the particle-associated samples 
+  phy_abund_in_group("Particle-Associated")
+
+# Epilimnion - 19 samples 
+phy_abund_epi <- subset(phy_melt_nosher, limnion == "Epilimnion") %>% # Subset out the Epilimnion samples 
+  phy_abund_in_group("Epilimnion")
+
+# Hypolimnion - 18 Samples 
+phy_abund_hypo <- subset(phy_melt_nosher, limnion == "Hypolimnion") %>% # Subset out the Hypolimnion samples 
+  phy_abund_in_group("Hypolimnion")
+
+# High-Nutrient - 26 Samples 
+phy_abund_high <- subset(phy_melt_nosher, ProdLevel == "Productive") %>% # Subset out the Productive samples
+  phy_abund_in_group("Productive")
+
+# Low-Nutrient - 15 samples 
+phy_abund_low <- subset(phy_melt_nosher, ProdLevel == "Unproductive") %>% # Subset out the Unproductive samples 
+  phy_abund_in_group("Unproductive")
+
+
+##  Get the OTU abundance 
+#otu_glom <- tax_glom(nowin_FWDB_scaled, taxrank = "OTU") # This command takes a long time to run!  
+#otu_melt <- psmelt(otu_glom) %>%
+#  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "OTU","Abundance"))
+#write.table(otu_melt, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", row.names = FALSE)
+otu_melt <- read.table( "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", header = TRUE)
+otu_melt_nosherwin <- subset(otu_melt, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
+#length(unique(otu_melt_nosherwin$Sample)) # Sanity check
+
+# The below data frames do not include SHERMAN (Mixed lake) OR Wintergreen "hypolimnion" samples 
+## Free-Living - 21 samples
+# All OTUs and their abundance in the FREE LIVING 
+otu_abund_free <- subset(otu_melt_nosherwin, filter == "Free") %>% # Subset out the free-living samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_free$SampleType <- "Free-Living"
+
+# Particle-Associated - 20 Samples
+# All OTUs and their abundance in the PARTICLE-ASSOCIATED
+otu_abund_particle <- subset(otu_melt_nosherwin, filter == "Particle") %>% # Subset out the particle-associated samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_particle$SampleType <- "Particle-Associated"
+
+# Epilimnion - 19 samples 
+# All OTUs and their abundance in the EPILIMNION
+otu_abund_epi <- subset(otu_melt_nosherwin, limnion == "Epilimnion") %>% # Subset out the Epilimnion samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_epi$SampleType <- "Epilimnion"
+
+# Hypolimnion - 18 Samples 
+# All OTUs and their abundance in the HYPOLIMNION 
+otu_abund_hypo <- subset(otu_melt_nosherwin, limnion == "Hypolimnion") %>% # Subset out the Hypolimnion samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_hypo$SampleType <- "Hypolimnion"
+
+# High-Nutrient - 26 Samples 
+# All OTUs and their abundance in the HIGH-NUTRIENT 
+otu_abund_high <- subset(otu_melt_nosherwin, ProdLevel == "Productive") %>% # Subset out the Productive samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_high$SampleType <- "Productive"
+
+# Low-Nutrient - 15 samples 
+# All OTUs and their abundance in the LOW-NUTRIENT
+otu_abund_low <- subset(otu_melt_nosherwin, ProdLevel == "Unproductive") %>% # Subset out the Unproductive samples 
+  select(Sample, Abundance, OTU) %>% # select only the important columns 
+  group_by(OTU) %>% # Combine all the OTUs
+  summarize(OTU_sum = sum(Abundance)) # Sum each OTU abundance count
+otu_abund_low$SampleType <- "Unproductive"
+
+
+
+otu_abund_free_pruned <- filter(otu_abund_free, OTU_sum > 0)
+colnames(otu_abund_free_pruned)[2] <- "OTU_sum_Free"
+
+otu_abund_particle_pruned <- filter(otu_abund_particle, OTU_sum > 0)
+colnames(otu_abund_particle_pruned)[2] <- "OTU_sum_Particle"
+
+otu_abund_epi_pruned <- filter(otu_abund_epi, OTU_sum > 0)
+colnames(otu_abund_epi_pruned)[2] <- "OTU_sum_Epi"
+
+otu_abund_hypo_pruned <- filter(otu_abund_hypo, OTU_sum > 0)
+colnames(otu_abund_hypo_pruned)[2] <- "OTU_sum_Hypo"
+
+otu_abund_high_pruned <- filter(otu_abund_high, OTU_sum > 0)
+colnames(otu_abund_high_pruned)[2] <- "OTU_sum_High"
+
+otu_abund_low_pruned <- filter(otu_abund_low, OTU_sum > 0)
+colnames(otu_abund_low_pruned)[2] <- "OTU_sum_Low"
+
+
+### Combing get all of the 
+###  Need to add the taxonomy to the OTU information
+nosherwin_FWDB_scaled <- subset_samples(nowin_FWDB_scaled, names != "SHEE" & names != "SHEH" & names != "SHEE3um" & names != "SHEH3um")
+nosherwin_FWDB_scaled <- prune_taxa(taxa_sums(nosherwin_FWDB_scaled) > 0, nosherwin_FWDB_scaled)
+
+taxa <- data.frame(tax_table(nosherwin_FWDB_scaled)) %>%
+  select(Phylum, OTU)
+
+free_living_all_otus <- inner_join(otu_abund_free_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Free) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(free_living_all_otus)[2] <- "AllOTU_Total"
+
+particle_associated_all_otus <- inner_join(otu_abund_particle_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Particle) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(particle_associated_all_otus)[2] <- "AllOTU_Total"
+
+
+epilimnion_all_otus <- inner_join(otu_abund_epi_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Epi) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(epilimnion_all_otus)[2] <- "AllOTU_Total"
+
+hypolimnion_all_otus <- inner_join(otu_abund_hypo_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Hypo) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(hypolimnion_all_otus)[2] <- "AllOTU_Total"
+
+high_nutrient_all_otus <- inner_join(otu_abund_high_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_High) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(high_nutrient_all_otus)[2] <- "AllOTU_Total"
+
+low_nutrient_all_otus <- inner_join(otu_abund_low_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Low) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(low_nutrient_all_otus)[2] <- "AllOTU_Total"
+```
+
+
+
+### Figure 1:  Shared and Unique OTUs 
+```{r Fig1: OTU Overlap, fig.width= 12, fig.height=6, eval = FALSE}
+# Free-living and Particle-associated
+free_only <- anti_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") # Unique to free-living
+singletons_free <- subset(free_only, OTU_sum_Free < 2.1)
+nrow(singletons_free)
+
+part_only <- anti_join(otu_abund_particle_pruned, otu_abund_free_pruned, by = "OTU") # Unique to particle-associated
+singletons_part <- subset(part_only, OTU_sum_Particle < 2.1)
+nrow(singletons_part)
+
+pvf_both <- inner_join(otu_abund_free_pruned, otu_abund_particle_pruned, by = "OTU") %>% # Overlap between PA and FL 
+  mutate(Comparison = "PA vs. FL",
+         Overlap = "Both PA and FL",
+         TotalSum = OTU_sum_Free + OTU_sum_Particle) %>%
+  select(-SampleType.x, -SampleType.y) # Delete unnecessary Columns
+  
+
+#  Epilimnion and Hypolimnion 
+epi_only <- anti_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") # Unique to epilimnion
+singletons_epi <- subset(epi_only, OTU_sum_Epi < 2.1)
+nrow(singletons_epi)
+
+hypo_only <- anti_join(otu_abund_hypo_pruned, otu_abund_epi_pruned, by = "OTU") # Unique to hypolimnion 
+singletons_hypo <- subset(hypo_only, OTU_sum_Hypo < 2.1)
+nrow(singletons_hypo)
+
+tvb_both <- inner_join(otu_abund_epi_pruned, otu_abund_hypo_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
+  mutate(Comparison = "Top vs. Bottom",
+         Overlap = "Both Epi and Hypo",
+         TotalSum = OTU_sum_Epi + OTU_sum_Hypo) %>%
+  select(-SampleType.x, -SampleType.y) 
+
+#  High and Low-Nutrient 
+low_only <- anti_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") # Unique to epilimnion
+singletons_low <- subset(low_only, OTU_sum_Low < 2.1)
+nrow(singletons_low)
+
+high_only <- anti_join(otu_abund_high_pruned, otu_abund_low_pruned, by = "OTU") # Unique to hypolimnion 
+singletons_high <- subset(high_only, OTU_sum_High < 2.1)
+nrow(singletons_high)
+
+hvl_both <- inner_join(otu_abund_low_pruned, otu_abund_high_pruned, by = "OTU") %>%  # Overlap between hypolimnion and epilimnion 
+  mutate(Comparison = "Prod vs. Unprod",
+         Overlap = "Both Epi and Hypo",
+         TotalSum = OTU_sum_High + OTU_sum_Low) %>%
+  select(-SampleType.x, -SampleType.y) 
+
+
+otu_overlap <- data.frame(matrix(ncol = 1, nrow = 12))
+
+SampleType <- c("Particle-Associated", "Particle-Associated", "Free-Living", "Free-Living", 
+                "Epilimnion", "Epilimnion", "Hypolimnion", "Hypolimnion", 
+                "High-Nutrient", "High-Nutrient", "Low-Nutrient", "Low-Nutrient")
+
+Type <- c("Particle-Associated Only", "Shared", "Free-Living Only", "Shared", 
+          "Epilimnion Only", "Shared", "Hypolimnion Only", "Shared", 
+          "High-Nutrient Only", "Shared", "Low-Nutrient Only", "Shared")
+
+NumOTUs <- c(nrow(part_only), nrow(pvf_both), nrow(free_only), nrow(pvf_both), 
+             nrow(epi_only), nrow(tvb_both), nrow(hypo_only), nrow(tvb_both), 
+             nrow(high_only), nrow(hvl_both), nrow(low_only), nrow(hvl_both))
+
+Comparison <- c("PA vs. FL", "PA vs. FL", "PA vs. FL", "PA vs. FL", 
+                "Top vs. Bottom","Top vs. Bottom", "Top vs. Bottom", "Top vs. Bottom",
+                "Prod vs. Unprod","Prod vs. Unprod","Prod vs. Unprod","Prod vs. Unprod")
+
+Relative_OTU_Abund <- c(sum(part_only$OTU_sum_Particle), sum(pvf_both$OTU_sum_Particle), sum(free_only$OTU_sum_Free),  sum(pvf_both$OTU_sum_Free), 
+                        sum(epi_only$OTU_sum_Epi), sum(tvb_both$OTU_sum_Epi), sum(hypo_only$OTU_sum_Hypo), sum(tvb_both$OTU_sum_Hypo), 
+                        sum(high_only$OTU_sum_High), sum(hvl_both$OTU_sum_High), sum(low_only$OTU_sum_Low), sum(hvl_both$OTU_sum_Low))
+
+sum(sum(part_only$OTU_sum_Particle) + sum(pvf_both$OTU_sum_Particle))
+
+Total_reads <- c(sum(sum(part_only$OTU_sum_Particle) + sum(pvf_both$OTU_sum_Particle)), 
+                 sum(sum(part_only$OTU_sum_Particle) + sum(pvf_both$OTU_sum_Particle)), 
+                 sum(sum(free_only$OTU_sum_Free) + sum(pvf_both$OTU_sum_Free)), 
+                 sum(sum(free_only$OTU_sum_Free) + sum(pvf_both$OTU_sum_Free)),
+                 sum(sum(epi_only$OTU_sum_Epi) + sum(tvb_both$OTU_sum_Epi)), 
+                 sum(sum(epi_only$OTU_sum_Epi) + sum(tvb_both$OTU_sum_Epi)),
+                 sum(sum(hypo_only$OTU_sum_Hypo) + sum(tvb_both$OTU_sum_Hypo)),  
+                 sum(sum(hypo_only$OTU_sum_Hypo) + sum(tvb_both$OTU_sum_Hypo)),
+                 sum(sum(high_only$OTU_sum_High) + sum(hvl_both$OTU_sum_High)),  
+                 sum(sum(high_only$OTU_sum_High) + sum(hvl_both$OTU_sum_High)),
+                 sum(sum(low_only$OTU_sum_Low) + sum(hvl_both$OTU_sum_Low)),  
+                 sum(sum(low_only$OTU_sum_Low) + sum(hvl_both$OTU_sum_Low)))
+
+otu_overlap$SampleType<- SampleType
+otu_overlap$Type <- Type
+otu_overlap$NumOTUs <- NumOTUs
+otu_overlap$Comparison <- Comparison
+otu_overlap$Relative_OTU_Abund <- Relative_OTU_Abund
+otu_overlap$Total_reads <- Total_reads
+otu_overlap <- otu_overlap[,-1]
+
+otu_overlap$SampleType <- factor(otu_overlap$SampleType,levels = c("Free-Living", "Particle-Associated", "Low-Nutrient", "High-Nutrient", "Epilimnion", "Hypolimnion"))
+otu_overlap$Type <- factor(otu_overlap$Type, levels = c("Shared","Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only"))
+
+
+
+otu_overlap <- otu_overlap %>%
+  mutate(proportion = Relative_OTU_Abund/Total_reads)
+
+otu_proportions <- otu_overlap$proportion
+
+####  Test for Significance of OVERLAPPING OTUS 
+PAFL_chisq <-matrix(c(nrow(part_only), nrow(pvf_both), nrow(free_only), nrow(pvf_both)),nrow=2)
+PAFL_chisq_res <- chisq.test(PAFL_chisq, correct = FALSE); PAFL_chisq_res
+
+prod_chisq <-matrix(c(nrow(high_only), nrow(hvl_both), nrow(low_only), nrow(hvl_both)),nrow=2)
+prod_chisq_res <- chisq.test(prod_chisq, correct = FALSE); prod_chisq_res
+
+limnion_chisq <-matrix(c(nrow(epi_only), nrow(tvb_both), nrow(hypo_only), nrow(tvb_both)),nrow=2)
+limnion_chisq_res <- chisq.test(limnion_chisq, correct = FALSE); limnion_chisq_res
+
+shared_chisq <- matrix(c(nrow(pvf_both),nrow(hvl_both), nrow(tvb_both)),nrow=1)
+shared_chisq_res <- chisq.test(shared_chisq, correct = FALSE); shared_chisq_res
+
+
+otu_sum_plot <- ggplot(otu_overlap, aes(y=NumOTUs , x=SampleType, fill=Type, order=Type)) +
+  facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
+  xlab("Habitat") + ylab("Sum of Shared and Unique OTUs") + 
+  geom_bar(stat="identity") +   geom_bar(stat="identity", colour="black", show_guide=FALSE) +  
+  scale_y_continuous(expand = c(0,0), breaks=seq(0, 7000, 1000), lim = c(0, 6500)) + 
+  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
+  scale_x_discrete(breaks=c("Free-Living", "Particle-Associated", "Low-Nutrient", 
+                            "High-Nutrient", "Epilimnion", "Hypolimnion"),
+                      labels=c("Free-Living (21)", "Particle-Associated (20)", "Low-Nutrient (15)",
+                               "High-Nutrient (26)", "Epilimnion (19)", "Hypolimnion (18)")) + 
+  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", 
+                               "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", 
+                               "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", 
+                                "darkgreen", "gray39")) +
+  theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
+  annotate("text",x = 1.5, y = 6300, label = "***") +
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=10, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=10),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        legend.position="none"); 
+#dev.off()
+
+###  RELATIVIZE IT!!!!  
+otu_relative_plot <- ggplot(otu_overlap, aes(y=proportion , x=SampleType, fill=Type, order=Type)) +
+  facet_grid(. ~ Comparison,scales = "free", labeller = mf_labeller) + #geom_text(x = 2, y = 8750, label = "***") +
+  xlab("Habitat") + ylab("Relative Abundance of Shared and Unique OTUs") + 
+  geom_bar(stat="identity", position = "fill") +   geom_bar(stat="identity", position = "fill", colour="black", show_guide=FALSE) +  
+  scale_y_continuous(expand = c(0,0), breaks=seq(0, 1, 0.1)) + 
+  guides(fill = guide_legend(keywidth = 1.5, keyheight = 1.5)) + 
+  scale_x_discrete(breaks=c("Free-Living", "Particle-Associated", "Low-Nutrient", 
+                            "High-Nutrient", "Epilimnion", "Hypolimnion"),
+                      labels=c("Free-Living (21)", "Particle-Associated (20)", "Low-Nutrient (15)", 
+                               "High-Nutrient (26)", "Epilimnion (19)", "Hypolimnion (18)")) + 
+  scale_fill_manual(limits = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", 
+                               "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    breaks = c("Free-Living Only", "Particle-Associated Only", "Low-Nutrient Only", 
+                               "High-Nutrient Only", "Epilimnion Only", "Hypolimnion Only", "Shared"),
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", 
+                                "darkgreen", "gray39")) +
+  theme_classic() +  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=10, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=10),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        legend.position="right"); 
+
+# Store ggplot graphical parameters
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf", width= 12, height=6)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.43,0.57))))
+print(otu_sum_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(otu_relative_plot, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
+```
+
+
+
+### Figure 2:  NMDS Ordinations
+```{r Figure 2: NMDS Ordinations, fig.width= 10, fig.height=4, eval = FALSE}
+nowinOTU <- as.matrix(otu_table(nowin_FWDB_scaled))
+#weighted
+norm_bray <- vegdist(nowinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+nowinOTU_df <- data.frame(otu_table(nowinOTU))  
+norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
+
+set.seed(15879966) # To be safe
+nmds_bray <- metaMDS(nowinOTU, distance="bray")  #, autotransform = FALSE
+nmds_bray <- data.frame(nmds_bray$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
+nmds_bray$names<-row.names(nmds_bray) #new names column
+nmds_bray <- makeCategories_dups(nmds_bray) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
+nmds_bray$ProdLevel <- as.character(nmds_bray$trophicstate)
+nmds_bray$ProdLevel[nmds_bray$trophicstate == "Eutrophic"] <- "Productive"
+nmds_bray$ProdLevel[nmds_bray$trophicstate == "Mesotrophic"] <- "Productive"
+nmds_bray$ProdLevel[nmds_bray$trophicstate == "Oligotrophic"] <- "Unproductive"
+nmds_bray$quadrant <- factor(nmds_bray$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+nmds_bray$ProdLevel <- factor(nmds_bray$ProdLevel,levels = c("Productive", "Unproductive"))
+                             
+nmds_bc_quad <- ggplot(nmds_bray, aes(MDS1*-100, MDS2*-100, color = filter, shape = limnion, fill = ProdLevel)) +
+  annotate("text", label = "B", x = (min(nmds_bray$MDS1*100) + 0.7), y = (max(nmds_bray$MDS2*100) + 0.1), face = "bold",size = 6, colour = "black") +
+  annotate("text", label = "Stress = 0.17", x = (max(nmds_bray$MDS1*100)-0), y = (max(nmds_bray$MDS2*100) + 0.1), size = 4, colour = "black") +
+  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Bray-Curtis Dissimilarity") +
+  geom_point(size = 4, alpha=0.9) + theme_bw() + # Draw the points
+  geom_point(aes(size=6, shape = limnion), show_guide = FALSE )+ # Make the points have a thicker outline 
+  scale_color_manual(name = "Filter Fraction", breaks=c("Free", "Particle"),
+                     labels = c("Free-Living", "Particle-Associated"), 
+                     values = c("orangered", "orangered4")) +
+  scale_fill_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
+                     labels = c("High-Nutrient", "Low-Nutrient"),
+                     values = c("gray", "white")) +
+  scale_shape_manual(name = "Lake Layer", breaks = c("Epilimnion", "Hypolimnion", "Mixed"), 
+                     values = c(21, 22, 24)) +
+  guides(shape = guide_legend(order=1, override.aes=list(size=4)), # Manually set the legends 
+         fill = guide_legend(order=2, override.aes=list(size=4, fill = c("gray", "white"))),
+         color = guide_legend(order=3, override.aes=list(size=4))) +
+  theme(axis.text.x = element_blank(), # text(colour="black", vjust=0.5, size=10), 
+        axis.text.y = element_blank(), #text(colour="black", vjust=0.5, size=10),
+        axis.title.x = element_text(face="bold", size=10),
+        axis.title.y = element_text(face="bold", size=10),
+        legend.title = element_text(size=8, face="bold"),
+        legend.text = element_text(size = 8),
+        axis.ticks = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        plot.title = element_text(size = 12, face="bold"),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "right");
+
+
+# UNWEIGHTED
+set.seed(15879966)
+nmds_soren <- metaMDS(nowinOTU, distance="bray", binary = TRUE)
+nmds_soren <- data.frame(nmds_soren$points) #http://strata.uga.edu/software/pdf/mdsTutorial.pdf
+nmds_soren$names<-row.names(nmds_soren) #new names column
+nmds_soren <- makeCategories_dups(nmds_soren) #will add our categorical information:  lakenames, limnion, filter, quadrant and trophicstate
+nmds_soren$ProdLevel <- as.character(nmds_soren$trophicstate)
+nmds_soren$ProdLevel[nmds_soren$trophicstate == "Eutrophic"] <- "Productive"
+nmds_soren$ProdLevel[nmds_soren$trophicstate == "Mesotrophic"] <- "Productive"
+nmds_soren$ProdLevel[nmds_soren$trophicstate == "Oligotrophic"] <- "Unproductive"
+nmds_soren$quadrant <- factor(nmds_soren$quadrant,levels = c("Free Epilimnion", "Free Mixed",  "Free Hypolimnion", "Particle Epilimnion", "Particle Mixed", "Particle Hypolimnion"))
+
+nmds_soren_quad <- ggplot(nmds_soren, aes(MDS1, MDS2, color = filter, shape = limnion, fill = ProdLevel)) +
+  annotate("text", label = "A", x = (min(nmds_soren$MDS1) + 0.05), y = (max(nmds_soren$MDS2) -0.01), face = "bold",size = 6, colour = "black") +
+  annotate("text", label = "Stress = 0.15", x = (max(nmds_soren$MDS1) -0.2), y = (max(nmds_soren$MDS2) -0.01), size = 4, colour = "black") +
+  xlab("NMDS1") + ylab("NMDS2") + ggtitle("Sørensen Dissimilarity") +
+  geom_point(size = 4, alpha=0.9) + theme_bw() +   #geom_point(colour="white", size = 1) +
+  geom_point(aes(size=6), show_guide = FALSE )+
+  scale_color_manual(name = "Filter Fraction", breaks=c("Free", "Particle"),
+                     labels = c("Free-Living", "Particle-Associated"), 
+                     values = c("orangered", "orangered4")) +
+  scale_fill_manual(name = "Nutrient Level", breaks = c("Productive", "Unproductive"), 
+                     labels = c("High-Nutrient", "Low-Nutrient"),
+                     values = c("gray", "white")) +
+  scale_shape_manual(name = "Lake Strata", breaks = c("Epilimnion", "Hypolimnion", "Mixed"), 
+                     values = c(21, 22, 24)) +
+  guides(shape = guide_legend(order=1, override.aes=list(size=4)),
+         fill = guide_legend(order=2, override.aes=list(size=4)),
+         color = guide_legend(order=3, override.aes=list(size=4))) +
+  theme(axis.text.x = element_blank(), # text(colour="black", vjust=0.5, size=10), 
+        axis.text.y = element_blank(), #text(colour="black", vjust=0.5, size=10),
+        axis.title.x = element_text(face="bold", size=10),
+        axis.title.y = element_text(face="bold", size=10),
+        legend.title = element_text(size=8, face="bold"),
+        legend.text = element_text(size = 8),
+        axis.ticks = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        plot.title = element_text(size = 12, face="bold"),
+        ###LEGEND TOP RIGHT CORNER
+        legend.position = "none");  
+
+#####  Plotting FIGURE 2  #####  Plotting FIGURE 2  #####  Plotting FIGURE 2  
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig3_NMDS_binary_color2.pdf",  width= 10, height=4)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.41,0.59))))
+print(nmds_soren_quad, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(nmds_bc_quad, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
+```
+
+
+
+### PERMANOVA Results 
+```{r PERMANOVA results, eval = FALSE}
+#  First we need to organize our environmental data
+environ <- sample_data(nosherwin_FWDB_scaled)
+environ <- subset(environ, select = c("names", "lakenames", "limnion", "filter", "trophicstate","ProdLevel", "totaldepth", "DO", "SpC", "temp", "pH")) # , "nitrate", "chla", "ammonia", "SRP", "TP", "Ncoord", "Wcoord"))
+environ <- data.frame(environ)
+## TO MAKE QUADRANT
+for(i in 1:length(environ$limnion)){
+  environ$quadrant[i]<-paste(as.character(environ$filter[i]),as.character(environ$limnion[i]))}
+## TO MAKE HABITAT
+for(i in 1:length(environ$limnion)){
+  environ$habitat[i]<-paste(as.character(environ$ProdLevel[i]),as.character(environ$filter[i]),as.character(environ$limnion[i]))}
+
+
+##  Calculate the BC dissimilarity and the Sorensen Dissimilarity
+nosherwinOTU <- otu_table(nosherwin_FWDB_scaled)  # This is our OTU table that we will use for Adonis
+set.seed(15879966)
+bc_dist <- vegdist(nosherwinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+soren_dist <- vegdist(data.frame(nosherwinOTU), method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+# #Run an ADONIS test!
+adonis_PAFL_bc <- adonis(bc_dist ~ limnion+filter +ProdLevel+ DO+temp + pH, data=environ); adonis_PAFL_bc
+adonis_PAFL_soren <- adonis(soren_dist ~ limnion+filter +ProdLevel+ DO+temp + pH, data=environ); adonis_PAFL_soren 
+
+
+# Particle-Associated!
+part <- subset_samples(nosherwin_FWDB_scaled, filter == "Particle")
+partOTU <- otu_table(part)
+set.seed(15879966)
+part_BC <- vegdist(partOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+part_soren <- vegdist(data.frame(partOTU), method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+part_env <- subset(environ, filter == "Particle")  #Load Environmental Data
+part_adon_bc <- adonis(part_BC ~ limnion+ProdLevel+ DO + temp + pH, data=part_env); part_adon_bc
+part_adon_soren <- adonis(part_soren ~ limnion+ProdLevel+ DO + temp + pH, data=part_env); part_adon_soren
+
+
+# FREE-LIVING!!!
+free <- subset_samples(nosherwin_FWDB_scaled, filter == "Free")
+set.seed(3)
+freeOTU <- otu_table(free)
+free_BC <- vegdist(freeOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+free_soren <- vegdist(data.frame(freeOTU), method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+free_env <- subset(environ, filter == "Free")  #Load Environmental Data
+free_adon_bc <- adonis(free_BC ~ limnion+ProdLevel+ DO + temp + pH, data=free_env); free_adon_bc 
+free_adon_soren <- adonis(free_soren ~ limnion+ProdLevel+ DO + temp + pH, data=free_env); free_adon_soren
+
+
+# Epilimnion!
+epi <- subset_samples(nosherwin_FWDB_scaled, limnion == "Epilimnion")
+epiOTU <- otu_table(epi)
+set.seed(15879966)
+epi_BC <- vegdist(epiOTU, method = "bray", binary = FALSE)  # BRAY CURTIS!
+epi_soren <- vegdist(data.frame(epiOTU), method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+epi_env <- subset(environ, limnion == "Epilimnion")  #Load Environmental Data
+
+epi_adon_bc <- adonis(epi_BC ~ filter+ProdLevel+ DO + temp + pH, data=epi_env); epi_adon_bc
+epi_adon_soren <- adonis(epi_soren ~ filter+ProdLevel+ DO + temp + pH, data=epi_env); epi_adon_soren
+
+
+# hypolimnion!
+hypo <- subset_samples(nosherwin_FWDB_scaled, limnion == "Hypolimnion")
+hypoOTU <- otu_table(hypo)
+set.seed(15879966)
+hypo_BC <- vegdist(hypoOTU, method = "bray", binary = FALSE) # BRAY CURTIS!
+hypo_soren <- vegdist(data.frame(hypoOTU), method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+hypo_env <- subset(environ, limnion == "Hypolimnion") #Load Environmental Data
+hypo_adon_bc <- adonis(hypo_BC ~ filter+ProdLevel+DO + temp + pH, data=hypo_env); hypo_adon_bc
+hypo_adon_soren <- adonis(hypo_soren ~ filter+ProdLevel+DO + temp + pH, data=hypo_env); hypo_adon_soren 
+
+# Oligotrophic!!
+oligo <- subset_samples(nosherwin_FWDB_scaled, trophicstate == "Oligotrophic") 
+oligoOTU <- otu_table(oligo)
+set.seed(15879966)
+oligo_BC <- vegdist(oligoOTU, method = "bray", binary = FALSE) # BRAY CURTIS!
+oligo_soren <- vegdist(data.frame(oligoOTU), method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+oligo_env <- subset(environ, trophicstate == "Oligotrophic")
+oligo_adon_bc <- adonis(oligo_BC ~ limnion+filter+DO + temp + pH, data=oligo_env); oligo_adon_bc
+oligo_adon_soren <- adonis(oligo_soren ~ limnion+filter+DO + temp + pH, data=oligo_env); oligo_adon_soren 
+
+# MESO + EUTROPHIC!!
+prod <- subset_samples(nosherwin_FWDB_scaled, ProdLevel == "Productive")
+prodOTU <- otu_table(prod)
+set.seed(15879966) # To be sure!
+prod_BC <- vegdist(prodOTU, method = "bray", binary = FALSE) # BRAY CURTIS DISTANCE
+prod_soren <- vegdist(data.frame(prodOTU), method = "bray", binary = TRUE)  ##SORENSEN DISTANCE --> Test's the presence/absence and makes 
+prod_env <- subset(environ, ProdLevel == "Productive")
+prod_adon_bc <- adonis(prod_BC ~ limnion+filter+DO + temp + pH, data=prod_env); prod_adon_bc
+prod_adon_soren <- adonis(prod_soren ~ limnion+filter+DO + temp + pH, data=prod_env); prod_adon_soren 
+```
+
+
+### Prepping for Figure 3: Bray-Curtis
+```{r Fig 3 bottom: bray-curtis interlake variance, eval=FALSE}
+#BC Distance 
+nowinOTU <- as.matrix(otu_table(nowin_FWDB_scaled))
+norm_bray <- vegdist(nowinOTU, method = "bray", binary = FALSE)  # calculates the Bray-Curtis Distances
+
+#http://stackoverflow.com/questions/23474729/convert-object-of-class-dist-into-data-frame-in-r
+bray <- melt(as.matrix(norm_bray), varnames = c("samp1", "samp2"))
+bray <- subset(bray, value > 0)
+
+bray$lakenames1 <- substr(bray$samp1,1,3) # Create a new column called lakenames1 with first 3 letters of string
+bray$lakenames2 <- substr(bray$samp2,1,3) # Create a new column called lakenames2 with first 3 letters of string
+bray$limnion1 <- substr(bray$samp1, 4, 4) # Create a column called limnon1 with hypo or epi
+bray$limnion2 <- substr(bray$samp2, 4, 4) # Create a column called limnon2 with hypo or epi
+bray$filter1 <- substr(bray$samp1, 5, 7)  # Create a column called filter1 with PA or FL
+bray$filter2 <- substr(bray$samp2, 5, 7) # Create a column called filter2 with PA or FL
+
+
+bray$lakenames1 <- as.character(bray$lakenames1)
+bray$lakenames1[bray$lakenames1 == "WIN"] <- "Wintergreen"
+bray$lakenames1[bray$lakenames1 == "SIX"] <- "Sixteen"
+bray$lakenames1[bray$lakenames1 == "SHE"] <- "Sherman"
+bray$lakenames1[bray$lakenames1 == "PAY"] <- "Payne"
+bray$lakenames1[bray$lakenames1 == "LON"] <- "LittleLong"
+bray$lakenames1[bray$lakenames1 == "LEE"] <- "Lee"
+bray$lakenames1[bray$lakenames1 == "GUL"] <- "Gull"
+bray$lakenames1[bray$lakenames1 == "BRI"] <- "Bristol"
+bray$lakenames1[bray$lakenames1 == "BAK"] <- "Baker"
+bray$lakenames1[bray$lakenames1 == "BAS"] <- "Baseline"
+bray$lakenames1[bray$lakenames1 == "BST"] <- "Bassett"
+
+bray$lakenames2 <- as.character(bray$lakenames2)
+bray$lakenames2[bray$lakenames2 == "WIN"] <- "Wintergreen"
+bray$lakenames2[bray$lakenames2 == "SIX"] <- "Sixteen"
+bray$lakenames2[bray$lakenames2 == "SHE"] <- "Sherman"
+bray$lakenames2[bray$lakenames2 == "PAY"] <- "Payne"
+bray$lakenames2[bray$lakenames2 == "LON"] <- "LittleLong"
+bray$lakenames2[bray$lakenames2 == "LEE"] <- "Lee"
+bray$lakenames2[bray$lakenames2 == "GUL"] <- "Gull"
+bray$lakenames2[bray$lakenames2 == "BRI"] <- "Bristol"
+bray$lakenames2[bray$lakenames2 == "BAK"] <- "Baker"
+bray$lakenames2[bray$lakenames2 == "BAS"] <- "Baseline"
+bray$lakenames2[bray$lakenames2 == "BST"] <- "Bassett"
+
+
+
+#Add Trophic State column by using the name of the lake
+bray <- data.table(bray)
+library(data.table)
+bray[, trophicstate1 := ifelse(lakenames1 %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
+                               ifelse(lakenames1 %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                      ifelse(lakenames1 %in% c("Sherman"), "Mixed",
+                                             ifelse(lakenames1 %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+bray[, trophicstate2 := ifelse(lakenames2 %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
+                               ifelse(lakenames2 %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                      ifelse(lakenames2 %in% c("Sherman"), "Mixed",
+                                             ifelse(lakenames2 %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+
+
+
+bray$limnion1[bray$limnion1 == "E"] <- "Epilimnion"
+bray$limnion1[bray$limnion1 == "H"] <- "Hypolimnion"
+bray$limnion2[bray$limnion2 == "E"] <- "Epilimnion"
+bray$limnion2[bray$limnion2 == "H"] <- "Hypolimnion"
+
+
+###  Pull out the SHERMAN LAKE SAMPLES
+bray$limnion1[bray$lakenames1 == "Sherman" & bray$limnion1 == "Epilimnion"] <- "Mixed"
+bray$limnion1[bray$lakenames1 == "Sherman" & bray$limnion1 == "Hypolimnion"] <- "Mixed"
+bray$limnion2[bray$lakenames2 == "Sherman" & bray$limnion2 == "Epilimnion"] <- "Mixed"
+bray$limnion2[bray$lakenames2 == "Sherman" & bray$limnion2 == "Hypolimnion"] <- "Mixed"
+
+
+bray$filter1[bray$filter1 == "3um"] <- "Particle"
+bray$filter1[bray$filter1 == ""] <- "Free"
+bray$filter2[bray$filter2 == "3um"] <- "Particle"
+bray$filter2[bray$filter2 == ""] <- "Free"
+
+#Add the combined lake layer
+bray$combined<-rep(NA,length(bray$limnion1))
+bray$combined[bray$limnion1=="Epilimnion"&bray$limnion2=="Epilimnion"]<-"Epilimnion"
+bray$combined[bray$limnion1=="Hypolimnion"&bray$limnion2=="Hypolimnion"]<-"Hypolimnion"
+bray$combined[bray$limnion1=="Hypolimnion"&bray$limnion2=="Epilimnion"]<-"EH"
+bray$combined[bray$limnion1=="Epilimnion"&bray$limnion2=="Hypolimnion"]<-"EH"
+
+bray$combined[bray$limnion1=="Mixed"&bray$limnion2=="Mixed"]<-"Mixed"
+bray$combined[bray$limnion1=="Mixed"&bray$limnion2=="Hypolimnion"]<-"Mixed Hypolimnion"
+bray$combined[bray$limnion1=="Hypolimnion"&bray$limnion2=="Mixed"]<-"Mixed Hypolimnion"
+bray$combined[bray$limnion1=="Epilimnion"&bray$limnion2=="Mixed"]<-"Mixed Epilimnion"
+bray$combined[bray$limnion1=="Mixed"&bray$limnion2=="Epilimnion"]<-"Mixed Epilimnion"
+
+
+##  Add the commbined filter.
+bray$filt_comb<-rep(NA,length(bray$filter1))
+bray$filt_comb[bray$filter1=="Free"&bray$filter2=="Free"]<-"Free"
+bray$filt_comb[bray$filter1=="Particle"&bray$filter2=="Particle"]<-"Particle"
+bray$filt_comb[bray$filter1=="Particle"&bray$filter2=="Free"]<-"PF"
+bray$filt_comb[bray$filter1=="Free"&bray$filter2=="Particle"]<-"PF"
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(bray$limnion1)){
+  bray$cat[i]<-paste(as.character(bray$filt_comb[i]),as.character(bray$combined[i]))}
+
+
+#  Add for trophicstate combintions
+bray$troph_comb<-rep(NA,length(bray$lakenames2))
+bray$troph_comb[bray$trophicstate1=="Eutrophic" & bray$trophicstate2=="Eutrophic"]<-"Eutrophic"
+bray$troph_comb[bray$trophicstate1=="Eutrophic" & bray$trophicstate2=="Mesotrophic"]<-"Eutrophic-Mesotrophic"
+bray$troph_comb[bray$trophicstate1=="Mesotrophic" & bray$trophicstate2=="Eutrophic"]<-"Eutrophic-Mesotrophic"
+bray$troph_comb[bray$trophicstate1=="Eutrophic" & bray$trophicstate2=="Oligotrophic"]<-"Eutrophic-Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Oligotrophic" & bray$trophicstate2=="Eutrophic"]<-"Eutrophic-Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Eutrophic" & bray$trophicstate2=="Mixed"]<-"Eutrophic-Mixed"
+bray$troph_comb[bray$trophicstate1=="Mixed" & bray$trophicstate2=="Eutrophic"]<-"Eutrophic-Mixed"
+
+bray$troph_comb[bray$trophicstate1=="Mesotrophic" & bray$trophicstate2=="Mesotrophic"]<-"Mesotrophic"
+bray$troph_comb[bray$trophicstate1=="Mesotrophic" & bray$trophicstate2=="Oligotrophic"]<-"Mesotrophic-Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Oligotrophic" & bray$trophicstate2=="Mesotrophic"]<-"Mesotrophic-Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Mesotrophic" & bray$trophicstate2=="Mixed"]<-"Mesotrophic-Mixed"
+bray$troph_comb[bray$trophicstate1=="Mixed" & bray$trophicstate2=="Mesotrophic"]<-"Mesotrophic-Mixed"
+
+bray$troph_comb[bray$trophicstate1=="Oligotrophic" & bray$trophicstate2=="Oligotrophic"]<-"Oligotrophic"
+bray$troph_comb[bray$trophicstate1=="Mixed" & bray$trophicstate2=="Oligotrophic"]<-"Oligotrophic-Mixed"
+bray$troph_comb[bray$trophicstate1=="Oligotrophic" & bray$trophicstate2=="Mixed"]<-"Oligotrophic-Mixed"
+
+bray$troph_comb[bray$trophicstate1=="Mixed" & bray$trophicstate2=="Mixed"]<-"Mixed"
+
+##  Add combined trophicstate, filter, and limnion 
+for(i in 1:length(bray$limnion1)){
+  bray$troph_lim1[i]<-paste(as.character(bray$trophicstate1[i]),
+                            as.character(bray$limnion1[i]),
+                            as.character(bray$filter1[i]))}
+for(i in 1:length(bray$limnion2)){
+  bray$troph_lim2[i]<-paste(as.character(bray$trophicstate2[i]),
+                            as.character(bray$limnion2[i]),
+                            as.character(bray$filter2[i]))}
+
+bray$samp1 <- as.character(bray$samp1)
+bray$samp2 <- as.character(bray$samp2)
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(bray$limnion1)){
+  bray$cat[i]<-paste(as.character(bray$filt_comb[i]),as.character(bray$combined[i]))}
+
+###  Subsetting out the samples that are in the same categories as each other
+beta <- subset(bray, troph_lim1 == troph_lim2)
+
+### Put everything in the order we would like.
+beta$trophicstate1 <-factor(beta$trophicstate1,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+beta$trophicstate2 <-factor(beta$trophicstate2,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+beta$troph_lim2 <-factor(beta$troph_lim2,levels=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                                  "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                                  "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                                  "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+#### Subsetting out the mixed lake!
+nomix_beta <- subset(beta, trophicstate1 != "Mixed")
+nomix_beta2 <- subset(nomix_beta, trophicstate2 != "Mixed")
+
+prod_beta <- nomix_beta2
+
+prod_beta$troph_lim1 <- as.character(prod_beta$troph_lim1)
+prod_beta$troph_lim1[prod_beta$troph_lim1 == "Eutrophic Epilimnion Free" | prod_beta$troph_lim1 =="Mesotrophic Epilimnion Free"] <- "Productive Epilimnion Free"
+prod_beta$troph_lim1[prod_beta$troph_lim1 == "Eutrophic Epilimnion Particle" | prod_beta$troph_lim1 =="Mesotrophic Epilimnion Particle"] <- "Productive Epilimnion Particle"
+prod_beta$troph_lim1[prod_beta$troph_lim1 == "Eutrophic Hypolimnion Free" | prod_beta$troph_lim1 =="Mesotrophic Hypolimnion Free"] <- "Productive Hypolimnion Free"
+prod_beta$troph_lim1[prod_beta$troph_lim1 == "Eutrophic Hypolimnion Particle" | prod_beta$troph_lim1 =="Mesotrophic Hypolimnion Particle"] <- "Productive Hypolimnion Particle"
+prod_beta$troph_lim1[prod_beta$troph_lim1 == "Oligotrophic Epilimnion Free"] <- "Unproductive Epilimnion Free"
+prod_beta$troph_lim1[prod_beta$troph_lim1 == "Oligotrophic Epilimnion Particle"] <- "Unproductive Epilimnion Particle"
+prod_beta$troph_lim1[prod_beta$troph_lim1 == "Oligotrophic Hypolimnion Free"] <- "Unproductive Hypolimnion Free"
+prod_beta$troph_lim1[prod_beta$troph_lim1 == "Oligotrophic Hypolimnion Particle"] <- "Unproductive Hypolimnion Particle"
+prod_beta$trophicstate1 <- as.character(prod_beta$trophicstate1)
+prod_beta$trophicstate1[prod_beta$trophicstate1 == "Eutrophic"] <- "Productive"
+prod_beta$trophicstate1[prod_beta$trophicstate1 == "Mesotrophic"] <- "Productive"
+prod_beta$trophicstate1[prod_beta$trophicstate1 == "Oligotrophic"] <- "Unproductive"
+
+
+prod_beta <- prod_beta %>% 
+  group_by(troph_lim1) %>%
+  mutate(mean.bray = mean(value),
+         sd.bray = sd(value))
+
+
+############ Kruskal-Wallis Rank Sum Test: Bray-Curtis
+############ Kruskal-Wallis Rank Sum Test: Bray-Curtis
+####  Run the test on ALL the data that goes into the mean
+#hist(prod_beta$value, breaks = 30)  # Not normally distributed
+prod_beta$value <- as.numeric(prod_beta$value)
+prod_beta$troph_lim1 <- as.factor(prod_beta$troph_lim1)
+prod_bray_beta <- prod_beta
+## Do the KW test
+bray_prod_KW <- kruskal.test(prod_bray_beta$value ~ prod_bray_beta$troph_lim1) # Kruskal Wallis test 
+print(bray_prod_KW)  # show Kruskal Wallis result
+### Which samples are significantly different from each other?  
+bray_prod_KW_MC <- kruskalmc(prod_bray_beta$value ~ prod_bray_beta$troph_lim1)  ## Defaults to P < 0.05
+#print(bray_prod_KW_MC)
+### Time to figure out letters to represent significance in a plot
+bray_test <- bray_prod_KW_MC$dif.com$difference # select logical vector
+names(bray_test) <- row.names(bray_prod_KW_MC$dif.com) # add comparison names
+# create a list with "homogenous groups" coded by letter
+bray_letters <- multcompLetters(bray_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)
+###  Extract the values from the multcompLetters object
+bray_sigs_dataframe <-  data.frame(as.vector(names(bray_letters$Letters)), as.vector(bray_letters$Letters))
+colnames(bray_sigs_dataframe) <- c("troph_lim1", "siglabel")
+bray_try <- merge(prod_beta, bray_sigs_dataframe, by = "troph_lim1")
+
+
+bray_try$troph_lim1 <-factor(bray_try$troph_lim1,levels=c( "Productive Epilimnion Free", "Productive Epilimnion Particle", "Productive Hypolimnion Free","Productive Hypolimnion Particle",
+                                                             "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle"))
+
+
+bray_sigs <- bray_try %>%
+  select(trophicstate1, troph_lim1, siglabel) %>%
+  distinct()
+
+bray_boxplot <- ggplot(bray_try, aes(x = troph_lim1, y = value, fill = troph_lim1)) + geom_point(size = 2) +
+  geom_boxplot() +
+  geom_text(data = bray_sigs, aes(label = siglabel, x = troph_lim1, y = 0.92), size =3) +
+  scale_fill_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", 
+                                        "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", 
+                                        "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
+                     values = c("royalblue4", "royalblue4", "royalblue4", "royalblue4",
+                                "cornflowerblue","cornflowerblue","cornflowerblue","cornflowerblue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Free", "Productive Epilimnion Particle", 
+                            "Productive Hypolimnion Free","Productive Hypolimnion Particle",
+                            "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle",
+                            "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle"),
+                   labels=c("Epilimnion \nFree-Living (12)", "Epilimnion \nParticle-Associated (12)", 
+                            "Hypolimnion \nFree-Living (8)", "Hypolimnion \nParticle-Associated (8)",
+                            "Epilimnion \nFree-Living (12)", "Epilimnion \nParticle-Associated (6)", 
+                            "Hypolimnion \nFree-Living (12)", "Hypolimnion \nParticle-Associated (12)")) + 
+  xlab("Habitat") + ylab("Bray-Curtis \nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+  theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
+                                 strip.text.x = element_blank(),  #Set the facet titles on x-axis 
+                                 strip.text.y = element_blank(),  #Set the facet titles on x-axis 
+                                 strip.background = element_blank(),  #Set the facet background to no background
+                                 axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+                                 axis.title.y = element_text(face="bold", size=10),  #Set the y-axis title
+                                 axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=8),  #Set the x-axis labels
+                                 axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+                                 legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                                 legend.text = element_text(size = 8),  #Set the legend text
+                                 legend.position="none", #Default the legend position to the right
+                                 plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"));  #top, right, bottom, left
+
+```
+
+
+
+### Prepping for Figure 3: Sorensen
+```{r Fig 3 Top - sorensen interlake variance, eval=FALSE}
+##  Calculate the sorensen dissimiliarity matrix 
+nowinOTU_df <- data.frame(otu_table(nowin_FWDB_scaled))  
+norm_soren <- vegdist(nowinOTU_df, method = "bray", binary = TRUE)  # SORENSEN INDEX
+###  Melt all dissimilarities into one data frame
+soren <- melt(as.matrix(norm_soren), varnames = c("samp1", "samp2"))
+soren <- subset(soren, value > 0)
+
+soren$lakenames1 <- substr(soren$samp1,1,3) # Create a new row called "lakenames" with first 3 letters of string
+soren$lakenames2 <- substr(soren$samp2,1,3) # Create a new row called "lakenames" with first 3 letters of string
+soren$limnion1 <- substr(soren$samp1, 4, 4) # Create a column called limnon with hypo or epi
+soren$limnion2 <- substr(soren$samp2, 4, 4) # Create a column called limnon with hypo or epi
+soren$filter1 <- substr(soren$samp1, 5, 7) 
+soren$filter2 <- substr(soren$samp2, 5, 7) 
+
+
+soren$lakenames1 <- as.character(soren$lakenames1)
+soren$lakenames1[soren$lakenames1 == "WIN"] <- "Wintergreen"
+soren$lakenames1[soren$lakenames1 == "SIX"] <- "Sixteen"
+soren$lakenames1[soren$lakenames1 == "SHE"] <- "Sherman"
+soren$lakenames1[soren$lakenames1 == "PAY"] <- "Payne"
+soren$lakenames1[soren$lakenames1 == "LON"] <- "LittleLong"
+soren$lakenames1[soren$lakenames1 == "LEE"] <- "Lee"
+soren$lakenames1[soren$lakenames1 == "GUL"] <- "Gull"
+soren$lakenames1[soren$lakenames1 == "BRI"] <- "Bristol"
+soren$lakenames1[soren$lakenames1 == "BAK"] <- "Baker"
+soren$lakenames1[soren$lakenames1 == "BAS"] <- "Baseline"
+soren$lakenames1[soren$lakenames1 == "BST"] <- "Bassett"
+
+soren$lakenames2 <- as.character(soren$lakenames2)
+soren$lakenames2[soren$lakenames2 == "WIN"] <- "Wintergreen"
+soren$lakenames2[soren$lakenames2 == "SIX"] <- "Sixteen"
+soren$lakenames2[soren$lakenames2 == "SHE"] <- "Sherman"
+soren$lakenames2[soren$lakenames2 == "PAY"] <- "Payne"
+soren$lakenames2[soren$lakenames2 == "LON"] <- "LittleLong"
+soren$lakenames2[soren$lakenames2 == "LEE"] <- "Lee"
+soren$lakenames2[soren$lakenames2 == "GUL"] <- "Gull"
+soren$lakenames2[soren$lakenames2 == "BRI"] <- "Bristol"
+soren$lakenames2[soren$lakenames2 == "BAK"] <- "Baker"
+soren$lakenames2[soren$lakenames2 == "BAS"] <- "Baseline"
+soren$lakenames2[soren$lakenames2 == "BST"] <- "Bassett"
+
+
+
+#Add Trophic State column by using the name of the lake
+soren <- data.table(soren)
+library(data.table)
+soren[, trophicstate1 := ifelse(lakenames1 %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
+                                ifelse(lakenames1 %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                       ifelse(lakenames1 %in% c("Sherman"), "Mixed",
+                                              ifelse(lakenames1 %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+soren[, trophicstate2 := ifelse(lakenames2 %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
+                                ifelse(lakenames2 %in% c("Bassett", "Bristol", "Payne"), "Mesotrophic",
+                                       ifelse(lakenames2 %in% c("Sherman"), "Mixed",
+                                              ifelse(lakenames2 %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA))))]
+
+soren$limnion1[soren$limnion1 == "E"] <- "Epilimnion"
+soren$limnion1[soren$limnion1 == "H"] <- "Hypolimnion"
+soren$limnion2[soren$limnion2 == "E"] <- "Epilimnion"
+soren$limnion2[soren$limnion2 == "H"] <- "Hypolimnion"
+
+
+###  Pull out the SHERMAN LAKE SAMPLES
+soren$limnion1[soren$lakenames1 == "Sherman" & soren$limnion1 == "Epilimnion"] <- "Mixed"
+soren$limnion1[soren$lakenames1 == "Sherman" & soren$limnion1 == "Hypolimnion"] <- "Mixed"
+soren$limnion2[soren$lakenames2 == "Sherman" & soren$limnion2 == "Epilimnion"] <- "Mixed"
+soren$limnion2[soren$lakenames2 == "Sherman" & soren$limnion2 == "Hypolimnion"] <- "Mixed"
+
+
+soren$filter1[soren$filter1 == "3um"] <- "Particle"
+soren$filter1[soren$filter1 == ""] <- "Free"
+soren$filter2[soren$filter2 == "3um"] <- "Particle"
+soren$filter2[soren$filter2 == ""] <- "Free"
+
+#Add the combined lake layer
+soren$combined<-rep(NA,length(soren$limnion1))
+soren$combined[soren$limnion1=="Epilimnion"&soren$limnion2=="Epilimnion"]<-"Epilimnion"
+soren$combined[soren$limnion1=="Hypolimnion"&soren$limnion2=="Hypolimnion"]<-"Hypolimnion"
+soren$combined[soren$limnion1=="Hypolimnion"&soren$limnion2=="Epilimnion"]<-"EH"
+soren$combined[soren$limnion1=="Epilimnion"&soren$limnion2=="Hypolimnion"]<-"EH"
+
+soren$combined[soren$limnion1=="Mixed"&soren$limnion2=="Mixed"]<-"Mixed"
+soren$combined[soren$limnion1=="Mixed"&soren$limnion2=="Hypolimnion"]<-"Mixed Hypolimnion"
+soren$combined[soren$limnion1=="Hypolimnion"&soren$limnion2=="Mixed"]<-"Mixed Hypolimnion"
+soren$combined[soren$limnion1=="Epilimnion"&soren$limnion2=="Mixed"]<-"Mixed Epilimnion"
+soren$combined[soren$limnion1=="Mixed"&soren$limnion2=="Epilimnion"]<-"Mixed Epilimnion"
+
+
+##  Add the commbined filter.
+soren$filt_comb<-rep(NA,length(soren$filter1))
+soren$filt_comb[soren$filter1=="Free"&soren$filter2=="Free"]<-"Free"
+soren$filt_comb[soren$filter1=="Particle"&soren$filter2=="Particle"]<-"Particle"
+soren$filt_comb[soren$filter1=="Particle"&soren$filter2=="Free"]<-"PF"
+soren$filt_comb[soren$filter1=="Free"&soren$filter2=="Particle"]<-"PF"
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(soren$limnion1)){
+  soren$cat[i]<-paste(as.character(soren$filt_comb[i]),as.character(soren$combined[i]))}
+
+
+#  Add for trophicstate combintions
+soren$troph_comb<-rep(NA,length(soren$lakenames2))
+soren$troph_comb[soren$trophicstate1=="Eutrophic" & soren$trophicstate2=="Eutrophic"]<-"Eutrophic"
+soren$troph_comb[soren$trophicstate1=="Eutrophic" & soren$trophicstate2=="Mesotrophic"]<-"Eutrophic-Mesotrophic"
+soren$troph_comb[soren$trophicstate1=="Mesotrophic" & soren$trophicstate2=="Eutrophic"]<-"Eutrophic-Mesotrophic"
+soren$troph_comb[soren$trophicstate1=="Eutrophic" & soren$trophicstate2=="Oligotrophic"]<-"Eutrophic-Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Oligotrophic" & soren$trophicstate2=="Eutrophic"]<-"Eutrophic-Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Eutrophic" & soren$trophicstate2=="Mixed"]<-"Eutrophic-Mixed"
+soren$troph_comb[soren$trophicstate1=="Mixed" & soren$trophicstate2=="Eutrophic"]<-"Eutrophic-Mixed"
+
+soren$troph_comb[soren$trophicstate1=="Mesotrophic" & soren$trophicstate2=="Mesotrophic"]<-"Mesotrophic"
+soren$troph_comb[soren$trophicstate1=="Mesotrophic" & soren$trophicstate2=="Oligotrophic"]<-"Mesotrophic-Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Oligotrophic" & soren$trophicstate2=="Mesotrophic"]<-"Mesotrophic-Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Mesotrophic" & soren$trophicstate2=="Mixed"]<-"Mesotrophic-Mixed"
+soren$troph_comb[soren$trophicstate1=="Mixed" & soren$trophicstate2=="Mesotrophic"]<-"Mesotrophic-Mixed"
+
+soren$troph_comb[soren$trophicstate1=="Oligotrophic" & soren$trophicstate2=="Oligotrophic"]<-"Oligotrophic"
+soren$troph_comb[soren$trophicstate1=="Mixed" & soren$trophicstate2=="Oligotrophic"]<-"Oligotrophic-Mixed"
+soren$troph_comb[soren$trophicstate1=="Oligotrophic" & soren$trophicstate2=="Mixed"]<-"Oligotrophic-Mixed"
+
+soren$troph_comb[soren$trophicstate1=="Mixed" & soren$trophicstate2=="Mixed"]<-"Mixed"
+
+##  Add combined trophicstate, filter, and limnion 
+for(i in 1:length(soren$limnion1)){
+  soren$troph_lim1[i]<-paste(as.character(soren$trophicstate1[i]),
+                             as.character(soren$limnion1[i]),
+                             as.character(soren$filter1[i]))}
+for(i in 1:length(soren$limnion2)){
+  soren$troph_lim2[i]<-paste(as.character(soren$trophicstate2[i]),
+                             as.character(soren$limnion2[i]),
+                             as.character(soren$filter2[i]))}
+
+soren$samp1 <- as.character(soren$samp1)
+soren$samp2 <- as.character(soren$samp2)
+
+#creating a column for each combination of top bottom particle free
+for(i in 1:length(soren$limnion1)){
+  soren$cat[i]<-paste(as.character(soren$filt_comb[i]),as.character(soren$combined[i]))}
+
+###  Subsetting out the samples that are in the same categories as each other
+soren_beta <- subset(soren, troph_lim1 == troph_lim2)
+
+### Put everything in the order we would like.
+soren_beta$trophicstate1 <-factor(soren_beta$trophicstate1,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+soren_beta$trophicstate2 <-factor(soren_beta$trophicstate2,levels=c("Eutrophic", "Mesotrophic", "Oligotrophic", "Mixed"))
+soren_beta$troph_lim2 <-factor(soren_beta$troph_lim2,levels=c("Eutrophic Epilimnion Particle", "Eutrophic Epilimnion Free", "Eutrophic Hypolimnion Particle", "Eutrophic Hypolimnion Free",
+                                                              "Mesotrophic Epilimnion Particle", "Mesotrophic Epilimnion Free", "Mesotrophic Hypolimnion Particle", "Mesotrophic Hypolimnion Free",
+                                                              "Oligotrophic Epilimnion Particle", "Oligotrophic Epilimnion Free", "Oligotrophic Hypolimnion Particle", "Oligotrophic Hypolimnion Free",
+                                                              "Mixed Mixed Particle", "Mixed Mixed Free"))
+
+#### Subsetting out the mixed lake!
+nomix_soren_beta <- subset(soren_beta, trophicstate1 != "Mixed")
+nomix_soren_beta2 <- subset(nomix_soren_beta, trophicstate2 != "Mixed")
+
+
+prod_soren <- nomix_soren_beta2
+
+unique(prod_soren$troph_lim1)
+prod_soren$troph_lim1 <- as.character(prod_soren$troph_lim1)
+prod_soren$troph_lim1[prod_soren$troph_lim1 == "Eutrophic Epilimnion Free" | prod_soren$troph_lim1 =="Mesotrophic Epilimnion Free"] <- "Productive Epilimnion Free"
+prod_soren$troph_lim1[prod_soren$troph_lim1 == "Eutrophic Epilimnion Particle" | prod_soren$troph_lim1 =="Mesotrophic Epilimnion Particle"] <- "Productive Epilimnion Particle"
+prod_soren$troph_lim1[prod_soren$troph_lim1 == "Eutrophic Hypolimnion Free" | prod_soren$troph_lim1 =="Mesotrophic Hypolimnion Free"] <- "Productive Hypolimnion Free"
+prod_soren$troph_lim1[prod_soren$troph_lim1 == "Eutrophic Hypolimnion Particle" | prod_soren$troph_lim1 =="Mesotrophic Hypolimnion Particle"] <- "Productive Hypolimnion Particle"
+prod_soren$troph_lim1[prod_soren$troph_lim1 == "Oligotrophic Epilimnion Free"] <- "Unproductive Epilimnion Free"
+prod_soren$troph_lim1[prod_soren$troph_lim1 == "Oligotrophic Epilimnion Particle"] <- "Unproductive Epilimnion Particle"
+prod_soren$troph_lim1[prod_soren$troph_lim1 == "Oligotrophic Hypolimnion Free"] <- "Unproductive Hypolimnion Free"
+prod_soren$troph_lim1[prod_soren$troph_lim1 == "Oligotrophic Hypolimnion Particle"] <- "Unproductive Hypolimnion Particle"
+prod_soren$trophicstate1 <- as.character(prod_soren$trophicstate1)
+prod_soren$trophicstate1[prod_soren$trophicstate1 == "Eutrophic"] <- "High-Nutrient"
+prod_soren$trophicstate1[prod_soren$trophicstate1 == "Mesotrophic"] <- "High-Nutrient"
+prod_soren$trophicstate1[prod_soren$trophicstate1 == "Oligotrophic"] <- "Low-Nutrient"
+
+prod_soren <- prod_soren %>% 
+  group_by(troph_lim1) %>%
+  mutate(mean.soren = mean(value),
+         sd.soren = sd(value))
+
+############ Kruskal-Wallis Rank Sum Test: Sorensen
+############ Kruskal-Wallis Rank Sum Test: Sorensen
+####  Run the test on ALL the data that goes into the mean  
+#### Check it out here:  https://aquaticr.wordpress.com/2012/12/18/multiple-comparison-test-for-non-parametric-data/
+#hist(prod_soren$value, breaks = 30)  # Not normally distributed
+prod_soren$value <- as.numeric(prod_soren$value)
+prod_soren$troph_lim1 <- as.factor(prod_soren$troph_lim1)
+## Do the KW test
+soren_prod_KW <- kruskal.test(prod_soren$value ~ prod_soren$troph_lim1) # Kruskal Wallis test on sorensen
+print(soren_prod_KW)  # show Kruskal Wallis result
+### Which samples are significantly different from each other?  
+soren_prod_KW_MC <- kruskalmc(prod_soren$value ~ prod_soren$troph_lim1)  ## Defaults to P < 0.05
+#print(soren_prod_KW_MC)
+### Time to figure out letters to represent significance in a plot
+soren_test <- soren_prod_KW_MC$dif.com$difference # select logical vector
+names(soren_test) <- row.names(soren_prod_KW_MC$dif.com) # add comparison names
+# create a list with "homogenous groups" coded by letter
+soren_letters <- multcompLetters(soren_test, compare="<", threshold=0.05, Letters=c(letters, LETTERS, "."), reversed = FALSE)#['Letters']
+###  Extract the values from the multcompLetters object
+soren_sigs_dataframe <-  data.frame(as.vector(names(soren_letters$Letters)), as.vector(soren_letters$Letters))
+colnames(soren_sigs_dataframe) <- c("troph_lim1", "siglabel")
+soren_try <- merge(prod_soren, soren_sigs_dataframe, by = "troph_lim1")
+
+soren_try$troph_lim1 <-factor(soren_try$troph_lim1,levels=c( "Productive Epilimnion Free", "Productive Epilimnion Particle", "Productive Hypolimnion Free","Productive Hypolimnion Particle",
+                                                             "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle"))
+
+soren_sigs <- soren_try %>%
+  select(trophicstate1, troph_lim1, siglabel) %>%
+  distinct()
+
+soren_boxplot <- ggplot(soren_try, aes(x = troph_lim1, y = value, fill = troph_lim1)) + geom_point(size = 2) +
+  geom_boxplot() +
+  geom_text(data = soren_sigs, aes(label = siglabel, x = troph_lim1, y = 0.74), size =3) +
+  scale_fill_manual(name = "", limits=c("Productive Epilimnion Particle", "Productive Epilimnion Free", 
+                                        "Productive Hypolimnion Particle", "Productive Hypolimnion Free",
+                                         "Unproductive Epilimnion Particle", "Unproductive Epilimnion Free", 
+                                        "Unproductive Hypolimnion Particle", "Unproductive Hypolimnion Free"), 
+                     values = c("royalblue4", "royalblue4", "royalblue4", "royalblue4",
+                                "cornflowerblue","cornflowerblue","cornflowerblue","cornflowerblue"))+
+  scale_x_discrete(breaks=c("Productive Epilimnion Free", "Productive Epilimnion Particle", 
+                            "Productive Hypolimnion Free","Productive Hypolimnion Particle",
+                            "Unproductive Epilimnion Free", "Unproductive Epilimnion Particle", 
+                            "Unproductive Hypolimnion Free", "Unproductive Hypolimnion Particle"),
+                   labels=c("Epilimnion \nFree-Living", "Epilimnion \nParticle-Associated", 
+                            "Hypolimnion \nFree-Living", "Hypolimnion \nParticle-Associated",
+                            "Epilimnion \nFree-Living", "Epilimnion \nParticle-Associated", 
+                            "Hypolimnion \nFree-Living", "Hypolimnion \nParticle-Associated")) + 
+  xlab("Habitat") + ylab("Sørensen \nDissimilarity") + theme_bw() + #scale_fill_brewer(palette="Paired") + 
+  facet_grid(. ~ trophicstate1, scale = "free", space = "free") +
+  theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
+                                 strip.text.x = element_text(face="bold", size=10),  #Set the facet titles on x-axis 
+                                 strip.text.y = element_blank(),  #Set the facet titles on x-axis 
+                                 strip.background = element_blank(),  #Set the facet background to no background
+                                 axis.title.x = element_text(face="bold", size=10),  #Set the x-axis title
+                                 axis.title.y = element_text(face="bold", size=10),  #Set the y-axis title
+                                 axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=8),  #Set the x-axis labels
+                                 axis.text.y = element_text(colour = "black", size=8),  #Set the y-axis labels
+                                 legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                                 legend.text = element_text(size = 8),  #Set the legend text
+                                 legend.position="none", #Default the legend position to the right
+                                 plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"));   #top, right, bottom, left
+```
+
+
+### Figure 3: Sorensen and Bray-Curtis Inter-Lake Variation
+```{r Fig 3 drawing plot, fig.width= 5, fig.height=4.5, eval=FALSE}
+soren_boxplot2 <- soren_boxplot + theme(axis.title.x = element_blank(),
+                                        axis.text.x = element_blank(),
+                                        axis.ticks.x = element_blank(),
+                                        plot.margin = unit(c(0.1, 0.1, 0.35, 0.1), "cm")) #top, right, bottom, left
+
+
+bray_boxplot2 <- bray_boxplot + theme(plot.margin = unit(c(-1, 0.1, 0.1, 0.26), "cm")) #top, right, bottom, left
+
+
+pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig3_beta_variance.pdf", width= 5, height=4.5)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(2,1,height=c(0.46,0.54))))
+print(soren_boxplot2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(bray_boxplot2, vp=viewport(layout.pos.row=2,layout.pos.col=1))
+dev.off()
+```
+
+
+### Overall Abundances of Phyla throughout the Dataset
+```{r overall phylum abundance, fig.height=8}
+### Calculate the mean relative abundance based on ProdLevel + Quadrant for each PHYLUM 
+nosherwin_FWDB_scaled <- subset_samples(nowin_FWDB_scaled, names != "SHEE" & names != "SHEE3um" & names !="SHEH" & names != "SHEH3um") 
+# Remove any OTUs that are 0
+nosherwin_FWDB_scaled <- prune_taxa(taxa_sums(nosherwin_FWDB_scaled) > 0, nosherwin_FWDB_scaled) 
+
+
+#################################################################################  OVERALL ABUNDANCE PLOT
+###############  NO ISOTHERMAL LAKE (SHERMAN) SAMPLES AND NO WINTERGREEN HYPOLIMNION SAMPLES 
+good_phylum <-tax_glom(nosherwin_FWDB_scaled,taxrank = "Phylum")
+goodsamps_phylum <- tax_glom(good_phylum,taxrank = "Phylum")
+##  Melt it into a dataframe 
+goodsamps_phy_melt <- psmelt(goodsamps_phylum)  
+sub_goodsamps_phy_melt <- subset(goodsamps_phy_melt, select = c("Sample", "ProdLevel", "quadrant", "Phylum","Abundance"))
+TOTALS <- ddply(sub_goodsamps_phy_melt, c("Sample"), summarise, total = sum(Abundance))   
+
+### Merge phylum sums and the total numbers -> so we can calculate the Relative Abundance
+sub_phy_melt_totals <- merge(sub_goodsamps_phy_melt, TOTALS, by = "Sample")  
+## Calculate the relative abundance
+sub_phy_melt_totals$RelAbundance <- sub_phy_melt_totals$Abundance/sub_phy_melt_totals$total  
+##  Calculate the Percent Abundance
+sub_phy_melt_totals$PercentAbund <- sub_phy_melt_totals$RelAbundance * 100  
+
+####  Make a new dataframe with the percent abudance within the entire dataset!
+phy_stats <- ddply(sub_phy_melt_totals, c("Phylum"), summarise, 
+                   N = length(PercentAbund),
+                   PercentPhy = mean(PercentAbund),
+                   sd   = sd(PercentAbund),
+                   se   = sd / sqrt(N))
+
+abund <- subset(phy_stats,PercentPhy > 0.001)  # Only take the phyla that are more than 0.01% abundant
+
+abund$Phylum <- factor(abund$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes",  "Alphaproteobacteria", "Deltaproteobacteria",
+                                               "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Firmicutes", "Chlorobi", "Armatimonadetes", "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                               "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3", "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae",   "Fibrobacteres", "Candidate_division_SR1", 
+                                               "Candidate_division_BRC1", "BD1-5", "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "Gemmatimonadetes", "WCHB1-60", "Deferribacteres", "Fusobacteria",  
+                                               "Candidate_division_TM7",  "SPOTSOCT00m83", "Candidate_division_OP8", "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "SM2F11", "unclassified"))   
+
+abund$Phylum = with(abund, factor(Phylum, levels = rev(levels(Phylum)))) 
+
+
+#Relative abundance plot 
+ggplot(abund, aes(y=PercentPhy , x=Phylum))  +
+  geom_bar(stat="identity", position=position_dodge(),  fill = "cornflowerblue", colour = "black") +
+  theme_bw() + ggtitle("Phyla Above 0.1% in All Samples") +
+  xlab("Phylum") + ylab("Mean Relative Abundance (%)") +
+  geom_errorbar(aes(ymin = PercentPhy -se, ymax = PercentPhy +se), width = 0.25) + 
+  coord_flip() 
+```
+
+
+
+### Figure 4: Abundance of Phyla within each Lake Habitat
+```{r Fig 4 boxplot abundance plots, fig.width= 6.5, fig.height=6.5, eval=FALSE}
+##  Calculate the Phylum abundance based on the ProdLevel and the filter fraction.  
+prod_phylum_FWDB_stats <- ddply(sub_phy_melt_totals, c("ProdLevel","quadrant", "Phylum"), summarise, 
+                                N = length(PercentAbund),
+                                mean_abundance = mean(PercentAbund),
+                                sd   = sd(PercentAbund),
+                                se   = sd / sqrt(N))
+###  Only the phylum 
+abund_only_by_phylum <- ddply(prod_phylum_FWDB_stats, c("Phylum"), summarise, 
+                              N = length(mean_abundance),
+                              phylum_mean = mean(mean_abundance))
+
+abund_only_by_phylum <-arrange(abund_only_by_phylum, desc(phylum_mean)) 
+phy_order <- as.character(abund_only_by_phylum$Phylum)  # THIS IS A VECTOR OF THE PHYLUM IN THE ORDER THAT WE WANT
+
+### TOP 25 PHYLA!
+top15phy <- prod_phylum_FWDB_stats[prod_phylum_FWDB_stats$Phylum %in% phy_order[1:17], ]
+
+phy15_order <- as.character(abund_only_by_phylum$Phylum)[1:17]
+
+
+######################################################## DESeq on the six habitats 
+########################################################
+########################################################
+good_phylum_nosherwin <- subset_samples(good_phylum, lakenames != "Sherman")
+
+###########################################################  HIGH vs LOWnutrient lakes
+DESeq_prodLevel <- deSEQ(good_phylum_nosherwin, ~ ProdLevel)
+
+###########################################################  Epilimnion vs Hypolimnion
+DESeq_limnion <- deSEQ(good_phylum_nosherwin, ~ limnion)
+
+###########################################################  Particle vs Free
+DESeq_filter <- deSEQ(good_phylum_nosherwin, ~ filter)
+
+DESeq_hab1 <- subset(DESeq_filter, select = c(Phylum, log2FoldChange, padj)) %>%
+  mutate(Habitat = "PA vs. FL",
+         sig_lab = "*")
+DESeq_hab2 <- subset(DESeq_limnion, select = c(Phylum, log2FoldChange, padj)) %>%
+  mutate(Habitat = "Top vs. Bottom", 
+         sig_lab = "*")
+DESeq_hab3 <- subset(DESeq_prodLevel, select = c(Phylum, log2FoldChange, padj)) %>%
+  mutate(Habitat = "Prod vs. UnProd", 
+         log2FoldChange = log2FoldChange *-1,
+         sig_lab = "*")#
+
+
+#  Prep the data frame 
+bicompare_phy <- subset(goodsamps_phy_melt, select = c("Sample", "filter", "ProdLevel", "limnion","quadrant", "Phylum","Abundance"))
+
+bi_TOTALS <- ddply(bicompare_phy, c("Sample"), summarise, ##  Let's get the McMurdie and Holmes Scaled  Total for each sample 
+                total   = sum(Abundance))   
+bicompare_totals <- merge(bicompare_phy, bi_TOTALS, by = "Sample")  ### Merge phylum sums and the total numbers -> so we can calculate the Relative Abundance
+bicompare_phy$RelAbundance <- bicompare_phy$Abundance/bicompare_totals$total  ## Calculate the relative abundance
+bicompare_phy$PercentAbund <- bicompare_phy$RelAbundance * 100  ##  Calculate the Percent Abundance
+
+##  Only provide top 17 phyla 
+bicompare_phy <- bicompare_phy[bicompare_phy$Phylum %in% phy_order[1:17], ]
+
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+bicompare_phy$Phylum <- factor(bicompare_phy$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
+
+## PROD LEVEL
+bicompare_phy$ProdLevel <- as.character(bicompare_phy$ProdLevel)
+bicompare_phy$ProdLevel[bicompare_phy$ProdLevel == "Productive"] <- "High-Nutrient" 
+bicompare_phy$ProdLevel[bicompare_phy$ProdLevel == "Unproductive"] <- "Low-Nutrient" 
+# FILTER 
+bicompare_phy$filter <- as.character(bicompare_phy$filter)
+bicompare_phy$filter[bicompare_phy$filter == "Free"] <- "Free-Living"
+bicompare_phy$filter[bicompare_phy$filter == "Particle"] <- "Particle-Associated"
+
+bicompare_phy$ProdLevel<- factor(bicompare_phy$ProdLevel,levels = c("Low-Nutrient", "High-Nutrient"))
+
+bicompare_phy_nowin <- subset(bicompare_phy, Sample != "WINH" & Sample != "WINH3um")
+
+bicompare_phy_nosherwin <- subset(bicompare_phy_nowin, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
+
+#geom_text(data = DESeq_hab1, aes(label = sig_lab, x = Phylum, y = 50), size =3) +
+
+
+filter_phy_boxplot <- full_join(bicompare_phy_nosherwin, DESeq_hab1, by = "Phylum")
+
+filter_phy_boxplot <- filter_phy_boxplot[filter_phy_boxplot$Phylum %in% phy_order[1:17], ]
+
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+filter_phy_boxplot$Phylum <- factor(filter_phy_boxplot$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
+
+g1 <- ggplot(filter_phy_boxplot, aes(y=PercentAbund , x=Phylum, fill=filter)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + 
+  scale_fill_manual(name = "Filter Fraction", breaks=c("Free-Living", "Particle-Associated"),
+                     labels = c("Free-Living (21)","Particle-Associated (20)"), 
+                      values = c("orangered", "orangered4")) +
+  theme_bw() + geom_text(aes(label = sig_lab, x = Phylum, y = 50, color = "red"), size =4) +
+  scale_colour_hue(guide = "none") +
+  theme(axis.text.x = element_blank(),
+                     plot.title = element_text(face="bold", size = 12),
+                     axis.title.y = element_text(face="bold", size=10),
+                     axis.ticks.x = element_blank(), 
+                     legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                     legend.text = element_text(size = 8),
+                     plot.margin = unit(c(0.1, 0.1, -1, 0.1), "cm"), #top, right, bottom, left
+                     legend.position = c(0.85, 0.67)) 
+
+prodlevel_phy_boxplot <- full_join(bicompare_phy_nosherwin, DESeq_hab3, by = "Phylum")
+prodlevel_phy_boxplot <- prodlevel_phy_boxplot[prodlevel_phy_boxplot$Phylum %in% phy_order[1:17], ]
+
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+prodlevel_phy_boxplot$Phylum <- factor(prodlevel_phy_boxplot$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",          
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
+g2 <- ggplot(prodlevel_phy_boxplot, aes(y=PercentAbund , x=Phylum, fill=ProdLevel)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("")  + xlab("") + geom_boxplot() +  
+  ylab("Mean Percent \nRelative Abundance") +
+  scale_fill_manual(name = "Productivity Level", breaks=c("Low-Nutrient", "High-Nutrient"),
+                     labels = c("Low-Nutrient (15)","High-Nutrient (26)"), 
+                     values = c("cornflowerblue", "royalblue4")) +
+  theme_bw() + geom_text(aes(label = sig_lab, x = Phylum, y = 50, color = "red"), size =4) +
+  scale_colour_hue(guide = "none") +
+  theme(axis.text.x = element_blank(),
+                     axis.title.y = element_text(face="bold", size=10),
+                     axis.ticks.x = element_blank(), 
+                     legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                     legend.text = element_text(size = 8),
+                     plot.margin = unit(c(-0.25, 0.1, -0.5, 0.1), "cm"), #top, right, bottom, left
+                     legend.position = c(0.88, 0.67)) 
+
+limnion_phy_boxplot <- full_join(bicompare_phy_nosherwin, DESeq_hab2, by = "Phylum")
+limnion_phy_boxplot <- limnion_phy_boxplot[limnion_phy_boxplot$Phylum %in% phy_order[1:17], ]
+
+# ********  NOTE!!!   Be sure to check that the following factor order is the same order as phy15_order
+limnion_phy_boxplot$Phylum <- factor(limnion_phy_boxplot$Phylum,levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",
+                                                     "Deltaproteobacteria", "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes",  "Firmicutes",  "Chlorobi", "Acidobacteria", "Spirochaetae"))
+
+
+g3 <- ggplot(limnion_phy_boxplot, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
+  ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
+   scale_fill_manual(name = "Lake Layer", breaks=c("Epilimnion", "Hypolimnion"),
+                     labels = c("Epilimnion (19)","Hypolimnion (18)"), 
+                     values = c("limegreen", "darkgreen")) +
+  theme_bw() + geom_text(aes(label = sig_lab, x = Phylum, y = 50, color = "red"), size =4) +
+  scale_colour_hue(guide = "none") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, size = 8),
+                     axis.title.x = element_text(face="bold", size=10),
+                     axis.title.y = element_text(face="bold", size=10),
+                     legend.title = element_text(size = 8, face="bold"),  #Set the legend title 
+                     legend.text = element_text(size = 8),  #Set the legend text
+                     plot.margin = unit(c(-0.75, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+                     legend.position = c(0.88, 0.67)); 
+
+# Store ggplot graphical parameters
+g1 <- ggplotGrob(g1)
+g2 <- ggplotGrob(g2)
+g3 <- ggplotGrob(g3)
+
+# Add columns to plots without legends
+#ncol(g1); ncol(g2); ncol(g3)
+#g1 <- gtable_add_cols(g1, g2$widths[6])
+
+
+####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_sigs.pdf",  width= 6.5, height=6.5)
+grid.draw(rbind(g1, g2, g3, size = "last"))
+#dev.off()
+```
+
+
+
+### Working up data for Figure 5 - run DESeq
+```{r OTU-level analysis cutoff-0-alpha-0.01}
+sherm <- subset_samples(nowin_FWDB_scaled, lakenames == "Sherman")  
+shemeister <- deSEQ(sherm, ~ filter, cutoff = 0, alpha = 0.01)
+
+########## SUBSET OUT SHERMAN (mixed) Lake
+good_samps_nosherwin <- subset_samples(nowin_FWDB_scaled, lakenames != "Sherman")
+
+
+############################
+###########################################################PA VS FL
+#1. Top prod --> Model fit not typical
+topProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & limnion == "Epilimnion")
+de_topProd <- deSEQ(topProd, ~ filter, cutoff = 0, alpha = 0.01) # fitType = "local"
+
+#2 Top Oligo 
+topUNProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & limnion == "Epilimnion")
+#de_topUNProd <- deSEQ(topUNProd, ~ filter, cutoff = 0, alpha = 0.01) # NOTHING SIGNIFICANT?!
+
+#3 Bottom Productive 
+botProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & limnion == "Hypolimnion") 
+de_botProd <- deSEQ(botProd, ~ filter, cutoff = 0, alpha = 0.01)
+
+#4 Bottom Unproductive 
+botUNProd <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & limnion == "Hypolimnion") 
+de_botUNProd <- deSEQ(botUNProd, ~ filter, cutoff = 0, alpha = 0.01)
+
+############################
+###########################################################TOP VS BOTTOM
+#1. Top prod 
+prodPA <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & filter == "Particle") 
+de_prodPA <- deSEQ(prodPA, ~ limnion, cutoff = 0, alpha = 0.01)
+
+#2 Top Oligo 
+unprodPA <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & filter == "Particle") 
+de_unprodPA <- deSEQ(unprodPA, ~ limnion, cutoff = 0, alpha = 0.01)
+
+#3 Bottom Productive 
+prodFL <- subset_samples(good_samps_nosherwin, ProdLevel == "Productive" & filter == "Free") 
+de_prodFL <- deSEQ(prodFL, ~ limnion, cutoff = 0, alpha = 0.01)
+
+#4 Bottom Unproductive 
+unprodFL <- subset_samples(good_samps_nosherwin, ProdLevel == "Unproductive" & filter == "Free") 
+de_unprodFL <- deSEQ(unprodFL, ~ limnion, cutoff = 0, alpha = 0.01)
+
+############################
+###########################################################PROD VS OLIGO
+#1. Top prod 
+topPA <- subset_samples(good_samps_nosherwin, limnion == "Epilimnion" & filter == "Particle") 
+de_topPA <- deSEQ(topPA, ~ ProdLevel, cutoff = 0, alpha = 0.01)
+
+#2 Top Oligo 
+botPA <- subset_samples(good_samps_nosherwin, limnion == "Hypolimnion" & filter == "Particle") 
+de_botPA <- deSEQ(botPA, ~ ProdLevel, cutoff = 0, alpha = 0.01)
+
+#3 Bottom Productive 
+topFL <- subset_samples(good_samps_nosherwin, limnion == "Epilimnion" & filter == "Free") 
+de_topFL <- deSEQ(topFL, ~ ProdLevel, cutoff = 0, alpha = 0.01)
+
+#4 Bottom Unproductive 
+botFL <- subset_samples(good_samps_nosherwin, limnion == "Hypolimnion" & filter == "Free") 
+de_botFL <- deSEQ(botFL, ~ ProdLevel, cutoff = 0, alpha = 0.01)
+
+
+#PA VS FL:  
+#Surface Productive
+pafl1 <- subset(de_topProd, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+pafl1$Habitat <- "PA vs. FL: Epilimnion \nHigh-Nutrient"
+#Bottom High-Nutrient 
+pafl2 <- subset(de_botProd, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+pafl2$Habitat <- "PA vs. FL: Epilimnion \nLow-Nutrient"
+#Surface Low-Nutrient --> nothing significant!!!
+#pafl3 <- subset(de_topUNProd, select = c(Phylum, Genus, Species,OTU, log2FoldChange, padj))
+#pafl3$Habitat <- "PA vs. FL: Hypolimnion \nHigh-Nutrient"
+#Bottom Low-Nutrient
+pafl4 <- subset(de_botUNProd, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+pafl4$Habitat <- "PA vs. FL: Hypolimnion \nLow-Nutrient"
+
+
+
+###Top vs Bottom:  
+otu_topbot1 <- subset(de_prodPA, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_topbot1$Habitat <- "Top vs. Bottom: High-Nutrient \n Particle-Associated"
+# Particle-Associated Low-Nutrient
+otu_topbot2 <- subset(de_unprodPA, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_topbot2$Habitat <- "Top vs. Bottom: Low-Nutrient \n Particle-Associated"
+# Free-Living High-Nutrient 
+otu_topbot3 <- subset(de_prodFL, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_topbot3$Habitat <- "Top vs. Bottom: High-Nutrient \n Free-Living"
+# Free-Living Low-Nutrient
+otu_topbot4 <- subset(de_unprodFL, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_topbot4$Habitat <- "Top vs. Bottom: Low-Nutrient \n Free-Living"
+
+
+
+#Prod vs Oligo:  
+otu_troph1 <- subset(de_topPA, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj)) 
+otu_troph1$Habitat <- "Prod vs. Unprod: Particle-Associated \n Epilimnion"
+# Particle-Associated BOTTOM
+otu_troph2 <- subset(de_botPA, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_troph2$Habitat <- "Prod vs. Unprod: Particle-Associated \n Hypolimnion"
+# Free-Living TOP 
+otu_troph3 <- subset(de_topFL, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_troph3$Habitat <- "Prod vs. Unprod: Free-Living \nEpilimnion"
+# Free-Living BOTTOM
+otu_troph4 <- subset(de_botFL, select = c(Phylum, Genus, Species, OTU, log2FoldChange, padj))
+otu_troph4$Habitat <- "Prod vs. Unprod: Free-Living \nHypolimnion"
+
+
+######  Combing all into one dataframe named out_ratio
+otu_trophs <- rbind(otu_troph1, otu_troph2, otu_troph3, otu_troph4)
+newlog2foldchange <- as.numeric(otu_trophs$log2FoldChange * -1) # To correlate with Top vs bottom
+otu_trophs$log2FoldChange <- newlog2foldchange
+
+otu_ratio <-rbind(pafl1, pafl2, pafl4,
+                  otu_topbot1, otu_topbot2, otu_topbot3, otu_topbot4,
+                  otu_trophs) #otu_troph1, otu_troph2, otu_troph3, otu_troph4)
+
+#What's the min and max ratios?
+paste(c("The range of the log2foldChange is", min(otu_ratio$log2FoldChange), "to",  max(otu_ratio$log2FoldChange)))
+
+
+#Split of the habitat column to 2 columns named comparison and habitat
+otu_cols <- colsplit(otu_ratio$Habitat, ":", c("Comparison", "Habitat"))
+otu_ratio$Habitat = NULL
+otu_ratios <- cbind(otu_ratio, otu_cols)
+```
+
+### Figure S8:  Summed Significant OTUs
+```{r Fig S8, width= 7.5, height=6}
+
+########   Summed-OTU Plot 
+### PA (positive) vs FL (negative)
+### Top (negative) vs Bottom (positive)
+### Prod (positive) vs Unprod (negative)
+
+#head(otu_ratios)
+#subset out prod vs unprod
+sig_oturats <- otu_ratios
+pvu <- subset(sig_oturats, Comparison == "Prod vs. Unprod")
+tvb <- subset(sig_oturats, Comparison == "Top vs. Bottom")
+pvf <- subset(sig_oturats, Comparison == "PA vs. FL")
+#multiplot(plot_deSEQ(pvu, "Prod vs. Unprod"), plot_deSEQ(tvb, "Top vs Bottom"), plot_deSEQ(pvf, "PA vs FL"), cols = 3)
+
+####  High vs Low nutrient
+pvu$Preference <- "NA"
+pvu_high <- filter(pvu, log2FoldChange > 0)
+pvu_high$Preference <- "High-Nutrient" # High-Nutrient is POSITIVE  
+pvu_low <- filter(pvu, log2FoldChange < 0)
+pvu_low$Preference <- "Low-Nutrient" # Low-Nutrient is NEGATIVE 
+pvu_pref <- rbind(pvu_low, pvu_high) %>% # Combine the PA and FL data frames
+  group_by(Phylum, Preference) %>%  # group by preference and phylum
+  tally() # count how many in each 
+pvu_pref$Comparison <- "Prod vs. Unprod"
+# Add a new column where the Low nutrient values are negative  
+pvu_pref$Count <-  ifelse(pvu_pref$Preference == "Low-Nutrient", pvu_pref$n*-1, pvu_pref$n)
+
+  
+#### Top (Epilimnion) vs Bottom (Hypolimnion) 
+tvb$Preference <- "NA"
+tvb_bottom <- filter(tvb, log2FoldChange > 0)
+tvb_bottom$Preference <- "Hypolimnion" # Hypolimnion is POSITIVE  
+tvb_top <- filter(tvb, log2FoldChange < 0)
+tvb_top$Preference <- "Epilimnion" # Epilimnion is NEGATIVE 
+tvb_pref <- rbind(tvb_top, tvb_bottom) %>% # Combine the PA and FL data frames
+  group_by(Phylum, Preference) %>%  # group by preference and phylum
+  tally() # count how many in each 
+tvb_pref$Comparison <- "Top vs. Bottom"
+#  Add a column where the Epilimnion values are negative in a new column name count
+tvb_pref$Count <-  ifelse(tvb_pref$Preference == "Epilimnion", tvb_pref$n*-1, tvb_pref$n)
+
+# Add a new column called count
+  
+###  Particle vs Free living 
+pvf$Preference <- "NA"
+pvf_particle <- filter(pvf, log2FoldChange > 0)
+pvf_particle$Preference <- "Particle-Associated"
+pvf_free <- filter(pvf, log2FoldChange < 0)
+pvf_free$Preference <- "Free-Living"
+pvf_pref <- rbind(pvf_free, pvf_particle) %>% # Combine the PA and FL data frames
+  group_by(Phylum, Preference) %>%  # group by preference and phylum
+  tally() # count how many in each 
+pvf_pref$Comparison <- "PA vs. FL"
+#  Add a new column called "count" where if the count is free-living we make it negative 
+pvf_pref$Count <-  ifelse(pvf_pref$Preference == "Free-Living", pvf_pref$n*-1, pvf_pref$n)
+
+
+#  Combine into one data frame 
+otu_preference <- data.frame(rbind(pvf_pref, pvu_pref, tvb_pref))
+
+# Determine factor order  
+otu_preference$Preference <- factor(otu_preference$Preference, levels=c("Particle-Associated","Free-Living",
+                                                                        "Low-Nutrient","High-Nutrient",
+                                                                        "Epilimnion", "Hypolimnion")) 
+
+otu_preference$Phylum <- factor(otu_preference$Phylum,
+                                levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia",
+                                           "Betaproteobacteria","Actinobacteria", "Planctomycetes",
+                                           "Alphaproteobacteria","Deltaproteobacteria",
+                                           "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae",
+                                           "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria",
+                                           "Spirochaetae","Candidate_division_OD1","NPL-UPA2",
+                                           "Deinococcus-Thermus","Candidate_division_OP3",
+                                           "Epsilonproteobacteria", "TM6", "TA18","Chlamydiae",
+                                           "Fibrobacteres", "Candidate_division_SR1",
+                                           "Candidate_division_BRC1", "BD1-5", "Candidate_division_WS3",
+                                           "Tenericutes", "Elusimicrobia","Gemmatimonadetes",
+                                           "WCHB1-60","Fusobacteria", "Deferribacteres",
+                                           "Candidate_division_TM7","Candidate_division_OP8", 
+                                           "SPOTSOCT00m83", "Thermotogae","Candidate_division_OP11",
+                                           "Dictyoglomi", "SM2F11", "Hyd24-12", "Nitrospirae","SHA-109",
+                                           "TA06", "OC31", "GOUTA4", "Caldiserica",
+                                           "Candidate_division_JS1","FGL7S", "unclassified"))
+
+
+otu_preference$Comparison <- factor(otu_preference$Comparison,
+                                    levels = c("PA vs. FL", "Prod vs. Unprod","Top vs. Bottom")) 
+
+OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria",
+              "Planctomycetes", "Alphaproteobacteria", "Deltaproteobacteria","Gammaproteobacteria", 
+              "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", 
+              "Spirochaetae", "unclassified")
+
+
+summed_16 <- otu_preference[otu_preference$Phylum %in% OTUtop16, ]
+
+summed_16$Phylum = with(summed_16, factor(Phylum, levels = rev(levels(Phylum))))
+
+
+#####  Plotting FIGURE S8  #####  Plotting FIGURE S8  #####  Plotting FIGURE S8
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS8_summed_ALL_otus.pdf",  width= 7.5, height=6)
+summed <- ggplot(summed_16, aes(y=Count, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() +  scale_y_continuous(breaks=seq(-30, 200, 30)) +
+  ggtitle("All OTUs in the Data") +
+  facet_grid(. ~ Comparison, scales = "free_x", labeller = mf_labeller) + theme_bw() +
+  ylab("Total Number of Significant OTUs") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
+  guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        legend.position="right"); summed
+#dev.off()
+```
+
+
+### Working up right panel of Figure 5:  Proportion of significant OTUs
+```{r Fig 5 right panel, width= 7.5, height=8}
+# Get the significant OTUs 
+# summed relative to its abundance 
+### Free-living
+sigotu_free_unique <- left_join(pvf_free, otu_abund_free, by = "OTU") %>%
+  left_join(phy_abund_free, by = "Phylum") %>%
+  select(Preference, Phylum, Genus, Species, OTU, Comparison, OTU_sum, phylum_sum) %>% # Select only important columns
+  mutate(OTU_rel_abund_byphy = OTU_sum/phylum_sum) %>% # Calculate OTU relative abundance by phylum 
+  distinct() %>% # Take only the rows that are unique (no repeat of OTUs)
+  group_by(Phylum) %>%
+  summarize(sig_phylum_relabund = sum(OTU_rel_abund_byphy) *-1) %>%
+  mutate(Comparison = "PA vs. FL",
+         Preference = "Free-Living")
+
+# Particle-Associated 
+sigotu_particle_unique <- left_join(pvf_particle, otu_abund_particle, by = "OTU") %>%
+  left_join(phy_abund_particle, by = "Phylum") %>%
+  select(Preference, Phylum, Genus, Species, OTU, Comparison, OTU_sum, phylum_sum) %>% # Select only important columns
+  mutate(OTU_rel_abund_byphy = OTU_sum/phylum_sum) %>% # Calculate OTU relative abundance by phylum 
+  distinct() %>% # Take only the rows that are unique (no repeat of OTUs)
+  group_by(Phylum) %>%
+  summarize(sig_phylum_relabund = sum(OTU_rel_abund_byphy))%>%
+  mutate(Comparison = "PA vs. FL",
+         Preference = "Particle-Associated")
+
+# Epilimnion 
+sigotu_epilimnion_unique <- left_join(tvb_top, otu_abund_epi, by = "OTU") %>%
+  left_join(phy_abund_epi, by = "Phylum") %>%
+  select(Preference, Phylum, Genus, Species, OTU, Comparison, OTU_sum, phylum_sum) %>% # Select only important columns
+  mutate(OTU_rel_abund_byphy = OTU_sum/phylum_sum) %>% # Calculate OTU relative abundance by phylum 
+  distinct() %>% # Take only the rows that are unique (no repeat of OTUs)
+  group_by(Phylum) %>%
+  summarize(sig_phylum_relabund = sum(OTU_rel_abund_byphy) * -1) %>%
+  mutate(Comparison = "Top vs. Bottom",
+         Preference = "Epilimnion")
+
+# Hypolimnion 
+sigotu_hypolimnion_unique <- left_join(tvb_bottom, otu_abund_hypo, by = "OTU") %>%
+  left_join(phy_abund_hypo, by = "Phylum") %>%
+  select(Preference, Phylum, Genus, Species, OTU, Comparison, OTU_sum, phylum_sum) %>% # Select only important columns
+  mutate(OTU_rel_abund_byphy = OTU_sum/phylum_sum) %>% # Calculate OTU relative abundance by phylum 
+  distinct() %>% # Take only the rows that are unique (no repeat of OTUs)
+  group_by(Phylum) %>%
+  summarize(sig_phylum_relabund = sum(OTU_rel_abund_byphy)) %>%
+  mutate(Comparison = "Top vs. Bottom",
+         Preference = "Hypolimnion")
+
+# High-Nutrient 
+sigotu_high_nutrient_unique <- left_join(pvu_high, otu_abund_high, by = "OTU") %>%
+  left_join(phy_abund_high, by = "Phylum") %>%
+  select(Preference, Phylum, Genus, Species, OTU, Comparison, OTU_sum, phylum_sum) %>% # Select only important columns
+  mutate(OTU_rel_abund_byphy = OTU_sum/phylum_sum) %>% # Calculate OTU relative abundance by phylum 
+  distinct() %>% # Take only the rows that are unique (no repeat of OTUs)
+  group_by(Phylum) %>%
+  summarize(sig_phylum_relabund = sum(OTU_rel_abund_byphy)) %>%
+  mutate(Comparison = "Prod vs. Unprod",
+         Preference = "High-Nutrient")
+
+# Low-Nutrient 
+sigotu_low_nutrient_unique <- left_join(pvu_low, otu_abund_low, by = "OTU") %>%
+  left_join(phy_abund_low, by = "Phylum") %>%
+  select(Preference, Phylum, Genus, Species, OTU, Comparison, OTU_sum, phylum_sum) %>% # Select only important columns
+  mutate(OTU_rel_abund_byphy = OTU_sum/phylum_sum) %>% # Calculate OTU relative abundance by phylum 
+  distinct() %>% # Take only the rows that are unique (no repeat of OTUs)
+  group_by(Phylum) %>%
+  summarize(sig_phylum_relabund = sum(OTU_rel_abund_byphy) *-1) %>%
+  mutate(Comparison = "Prod vs. Unprod",
+         Preference = "Low-Nutrient")
+
+
+
+sig_otus_relabund_0 <- rbind(sigotu_free_unique, sigotu_particle_unique, sigotu_epilimnion_unique,
+                             sigotu_hypolimnion_unique, sigotu_low_nutrient_unique, sigotu_high_nutrient_unique)
+
+
+# Determine factor order  
+sig_otus_relabund_0$Preference <- factor(sig_otus_relabund_0$Preference,
+                                    levels = c("Particle-Associated","Free-Living",
+                                               "Low-Nutrient","High-Nutrient",
+                                               "Epilimnion", "Hypolimnion")) 
+
+sig_otus_relabund_0$Phylum <- factor(sig_otus_relabund_0$Phylum,
+                                     levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria",
+                                                "Actinobacteria", "Planctomycetes", "Alphaproteobacteria","unclassified", 
+                                                "Deltaproteobacteria","Gammaproteobacteria", "Chloroflexi",
+                                                "Lentisphaerae", "Armatimonadetes", "Firmicutes", "Chlorobi",
+                                                "Acidobacteria", "Spirochaetae", "Candidate_division_OD1",
+                                                "NPL-UPA2", "Deinococcus-Thermus", "Candidate_division_OP3",
+                                                "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae", "Fibrobacteres",
+                                                "Candidate_division_SR1", "Candidate_division_BRC1", "BD1-5",
+                                                "Candidate_division_WS3", "Tenericutes", "Elusimicrobia",
+                                                "Gemmatimonadetes", "WCHB1-60","Fusobacteria", "Deferribacteres",
+                                                "Candidate_division_TM7", "Candidate_division_OP8", "SPOTSOCT00m83",
+                                                "Thermotogae", "Candidate_division_OP11", "Dictyoglomi", "SM2F11",
+                                                "Hyd24-12", "Nitrospirae","SHA-109", "TA06", "OC31", "GOUTA4",
+                                                "Caldiserica", "Candidate_division_JS1", "FGL7S"))
+
+
+sig_otus_relabund_0$Comparison <- factor(sig_otus_relabund_0$Comparison,
+                                    levels = c("PA vs. FL", "Prod vs. Unprod","Top vs. Bottom")) 
+
+# Reverse the order of the phyla so it plots logically 
+sig_otus_relabund_0$Phylum = with(sig_otus_relabund_0, factor(Phylum, levels = rev(levels(Phylum)))) 
+
+
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/SigOTUs_ALL_Relabund.pdf",  width= 7.5, height=8)
+sig_phy_relabund_plot <- ggplot(sig_otus_relabund_0, aes(y=sig_phylum_relabund, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() +  #scale_y_continuous(breaks=seq(-30, 200, 30)) +
+  ggtitle("All OTUs in the Data") +
+  facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
+  ylab("Within Phylum Relative Abundance of Significant OTUs") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient",
+                                        "High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4","limegreen", "darkgreen")) +
+  guides(fill = guide_legend(keywidth = 0.75, keyheight = 0.75)) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        legend.position="right"); sig_phy_relabund_plot
+#dev.off()
+
+
+OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria",
+              "Planctomycetes", "Alphaproteobacteria", "unclassified","Deltaproteobacteria",
+              "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", 
+              "Chlorobi", "Acidobacteria", "Spirochaetae")
+
+
+sigotu_relabund_16 <- sig_otus_relabund_0[sig_otus_relabund_0$Phylum %in% OTUtop16, ]
+sig_otus_relabund_0$Phylum = with(sig_otus_relabund_0, factor(Phylum, levels = rev(levels(Phylum)))) # Reverse the order of the phyla so it plots logically 
+
+
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/SigOTUs_Top16_Relabund.pdf",  width= 7.5, height=6)
+sigotu_phy_relabund_plot <- ggplot(sigotu_relabund_16, aes(y=sig_phylum_relabund, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() +  #scale_y_continuous(breaks=seq(-30, 200, 30)) +
+  #ggtitle("All OTUs in the Top 16 Phyla in the Data") +
+  facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
+  ylab("Within Phylum Relative Abundance of Significant OTUs") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient",
+                                        "High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    labels = c("Free-Living (21)","Particle-Associated (20)","Low-Nutrient (15)",
+                               "High-Nutrient (26)","Epilimnion (19)", "Hypolimnion (18)"), 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4",
+                                "limegreen", "darkgreen")) +
+  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        legend.position="right"); 
+#dev.off()
+```
+
+
+
+
+```{r Fig 5 left panel}
+# Left Panel
+#### NUMBER OF SIG OTUs VERSUS TOTAL OTUS IN THAT HABITAT
+#  Let's make data frames of a tally of the significant OTUs by habitat and by phylum 
+
+free_living_sig_otus <- pvf %>% # Make a data frame with significant OTUs unique to free living 
+  filter(log2FoldChange < 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Free-Living", Comparison =  "PA vs. FL")
+colnames(free_living_sig_otus)[2] <- "SigOTU_Total"
+
+particle_associated_sig_otus <- pvf %>% # Make a data frame with significant OTUs unique to free living 
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Particle-Associated", Comparison =  "PA vs. FL")
+colnames(particle_associated_sig_otus)[2] <- "SigOTU_Total"
+
+epilimnion_sig_otus <- tvb %>% # Make a data frame with significant OTUs unique to Epilimnion
+  filter(log2FoldChange < 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Epilimnion", Comparison =  "Top vs. Bottom")
+colnames(epilimnion_sig_otus)[2] <- "SigOTU_Total"
+
+
+hypolimnion_sig_otus <- tvb %>% # Make a data frame with significant OTUs unique to Hypolimnion
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Hypolimnion", Comparison =  "Top vs. Bottom")
+colnames(hypolimnion_sig_otus)[2] <- "SigOTU_Total"
+
+
+high_nutrient_sig_otus <- pvu %>% # Make a data frame with significant OTUs unique to high-nutrient
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "High-Nutrient", Comparison =  "Prod vs. Unprod")
+colnames(high_nutrient_sig_otus)[2] <- "SigOTU_Total"
+
+
+low_nutrient_sig_otus <- pvu %>% # Make a data frame with significant OTUs unique to low-nutrient
+  filter(log2FoldChange < 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() %>%
+  mutate(Preference = "Low-Nutrient", Comparison =  "Prod vs. Unprod")
+colnames(low_nutrient_sig_otus)[2] <- "SigOTU_Total"
+
+###  Need to add the taxonomy to the OTU information
+nosherwin_FWDB_scaled <- subset_samples(nowin_FWDB_scaled, names != "SHEE" & names != "SHEH" & names != "SHEE3um" & names != "SHEH3um")
+nosherwin_FWDB_scaled <- prune_taxa(taxa_sums(nosherwin_FWDB_scaled) > 0, nosherwin_FWDB_scaled)
+
+taxa <- data.frame(tax_table(nosherwin_FWDB_scaled)) %>%
+  select(Phylum, OTU)
+
+free_living_all_otus <- inner_join(otu_abund_free_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Free) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(free_living_all_otus)[2] <- "AllOTU_Total"
+
+particle_associated_all_otus <- inner_join(otu_abund_particle_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Particle) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(particle_associated_all_otus)[2] <- "AllOTU_Total"
+
+
+epilimnion_all_otus <- inner_join(otu_abund_epi_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Epi) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(epilimnion_all_otus)[2] <- "AllOTU_Total"
+
+hypolimnion_all_otus <- inner_join(otu_abund_hypo_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Hypo) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(hypolimnion_all_otus)[2] <- "AllOTU_Total"
+
+high_nutrient_all_otus <- inner_join(otu_abund_high_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_High) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(high_nutrient_all_otus)[2] <- "AllOTU_Total"
+
+low_nutrient_all_otus <- inner_join(otu_abund_low_pruned, taxa, by = "OTU") %>%
+  select(-OTU_sum_Low) %>% 
+  distinct() %>%
+  group_by(Phylum) %>%
+  tally() 
+colnames(low_nutrient_all_otus)[2] <- "AllOTU_Total"
+
+otu_join_free <- inner_join(free_living_sig_otus, free_living_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_particle <- inner_join(particle_associated_sig_otus, particle_associated_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_epi <- inner_join(epilimnion_sig_otus, epilimnion_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_hypo <- inner_join(hypolimnion_sig_otus, hypolimnion_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_high <- inner_join(high_nutrient_sig_otus, high_nutrient_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = 1* (SigOTU_Total/AllOTU_Total))
+
+otu_join_low <- inner_join(low_nutrient_sig_otus, low_nutrient_all_otus, by = "Phylum") %>%
+  mutate(Proportion_sig2total = -1* (SigOTU_Total/AllOTU_Total))
+
+otu_joined <- rbind(otu_join_free, otu_join_particle, otu_join_epi, otu_join_hypo, otu_join_high, otu_join_low)
+
+otu_joined$Preference <- factor(otu_joined$Preference,
+                                    levels = c("Particle-Associated","Free-Living","Low-Nutrient","High-Nutrient","Epilimnion", "Hypolimnion")) 
+
+otu_joined$Phylum <- factor(otu_joined$Phylum,
+                            levels = c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria",
+                                       "Actinobacteria", "Planctomycetes", "Alphaproteobacteria", "unclassified",
+                                       "Deltaproteobacteria","Gammaproteobacteria", "Chloroflexi", "Lentisphaerae",
+                                       "Armatimonadetes", "Firmicutes", "Chlorobi", "Acidobacteria", "Spirochaetae",
+                                       "Candidate_division_OD1","NPL-UPA2", "Deinococcus-Thermus",
+                                       "Candidate_division_OP3", "Epsilonproteobacteria", "TM6", "TA18", "Chlamydiae",
+                                       "Fibrobacteres", "Candidate_division_SR1", "Candidate_division_BRC1", "BD1-5",
+                                       "Candidate_division_WS3", "Tenericutes", "Elusimicrobia", "Gemmatimonadetes",
+                                       "WCHB1-60","Fusobacteria", "Deferribacteres", "Candidate_division_TM7",
+                                       "Candidate_division_OP8", "SPOTSOCT00m83", "Thermotogae", 
+                                       "Candidate_division_OP11", "Dictyoglomi", "SM2F11", "Hyd24-12",
+                                       "Nitrospirae","SHA-109", "TA06", "OC31", "GOUTA4", "Caldiserica",
+                                       "Candidate_division_JS1", "FGL7S"))
+
+
+otu_joined$Comparison <- factor(otu_joined$Comparison, levels = c("PA vs. FL", "Prod vs. Unprod","Top vs. Bottom")) 
+
+
+OTUtop16 <- c("Bacteroidetes", "Cyanobacteria", "Verrucomicrobia", "Betaproteobacteria", "Actinobacteria",
+              "Planctomycetes", "Alphaproteobacteria","unclassified", "Deltaproteobacteria",
+              "Gammaproteobacteria", "Chloroflexi", "Lentisphaerae", "Armatimonadetes", "Firmicutes", 
+              "Chlorobi", "Acidobacteria", "Spirochaetae")
+
+
+otu_joined_16 <- otu_joined[otu_joined$Phylum %in% OTUtop16, ]
+otu_joined_16$Phylum = with(otu_joined_16, factor(Phylum, levels = rev(levels(Phylum)))) # Reverse the order of the phyla so it plots logically 
+
+
+
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/PROPORTION_Top16_Relabund.pdf",  width= 7.5, height=6)
+sigotu_proportion_plot <- ggplot(otu_joined_16, aes(y=Proportion_sig2total, x=Phylum, fill=Preference)) + 
+  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
+  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
+  theme_gray() +  scale_y_continuous(breaks=seq(-0.5, 1, 0.1), lim = c(-0.1, 0.3)) + 
+  #ggtitle("All OTUs in the Top 16 Phyla in the Data") +
+  facet_grid(. ~ Comparison, labeller = mf_labeller) + theme_bw() +
+  #scale_y_continuous(breaks=seq(-0.3, 1, 0.1)) +
+  ylab("Proportion of Significant to Total OTUs by Phylum") +  xlab("Phylum") + 
+  scale_fill_manual(name = "", limits=c("Free-Living","Particle-Associated","Low-Nutrient",
+                                        "High-Nutrient","Epilimnion", "Hypolimnion"), 
+                    labels = c("Free-Living (21)","Particle-Associated (20)","Low-Nutrient (15)",
+                               "High-Nutrient (26)","Epilimnion (19)", "Hypolimnion (18)"), 
+                    values = c( "orangered", "orangered4", "cornflowerblue", "royalblue4",
+                                "limegreen", "darkgreen")) +
+  guides(fill = guide_legend(keywidth = 1, keyheight = 1)) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, face = "bold", colour = "black"),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"), #top, right, bottom, left
+        legend.position="right"); 
+#dev.off()
+
+
+####  OVERLAP BETWEEN HYPO AND HIGH NUTRIENT 
+hypo_otus <- tvb %>% # Make a data frame with significant OTUs unique to Hypolimnion
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct()
+
+high_otus <- pvu %>% # Make a data frame with significant OTUs unique to high-nutrient
+  filter(log2FoldChange > 0) %>%
+  select(Phylum, Genus, Species, OTU, Comparison) %>%
+  distinct() 
+
+# The row represents the number of significant OTUs in that habitat
+dim(hypo_otus); dim(high_otus)
+shared_hypo_high <- inner_join(hypo_otus, high_otus, by = "OTU")
+# The row # below represents the number of overlapping OTUs
+dim(shared_hypo_high)
+
+#  Which OTUs are significant in productive lakes that are also NOT significant in the hypolimnion?
+anti_join(high_otus, hypo_otus, by = "OTU")
+```
+
+
+
+### Figure 5:  Significant OTUs 
+```{r Final Figure 5 Sig OTU plots, fig.width= 12, fig.height=6}
+# COMBINE THE TWO PLOTS 
+
+b1 <- sigotu_proportion_plot + theme(legend.position="none", plot.margin = unit(c(0.1, 0.05, 0.1, 0.1), "cm")) #top, right, bottom, left
+b2 <- sigotu_phy_relabund_plot + xlab("") +theme(axis.text.y = element_blank(), plot.margin = unit(c(0.1, 0.1, 0.1, 0.05), "cm")) #top, right, bottom, left
+
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig6_proportion_relabund_Top16.pdf",  width= 12, height=6)
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2,width=c(0.46,0.54))))
+print(b1, vp=viewport(layout.pos.row=1,layout.pos.col=1))
+print(b2, vp=viewport(layout.pos.row=1,layout.pos.col=2))
+#dev.off()
+```
+
+
+
+
+
+
+### Figure S7: Summed Significant OTUs
+```{r Fig S7, fig.width= 7.5, fig.height=11}
+########  GENUS LEVEL PLOT ORGANIZED BY PHYLUM
+## GENUS LEVEL HEAT PLOT
+sub_abund <- subset(abund, select = c("Phylum", "PercentPhy"))
+oturats_abund <- merge(otu_ratios, sub_abund, by = "Phylum")
+ordered_otu_ratios <- arrange(oturats_abund, desc(PercentPhy)) 
+
+#unique(ordered_otu_ratios$Genus) # manually place order in the next line to make sure the Genera are in the right order
+ordered_otu_ratios$Genus <- factor(ordered_otu_ratios$Genus,
+                                   levels = c("unclassified", "bacIV-B", "vadinBC27_wastewater-sludge_group", "bacII-A","Paludibacter","bacIV-A","bacIII-A", "bacI-A", "Emticicia", "bacVI-B","Solitalea", "bacIII-B", "Synechococcus", "Anabaena","Snowella","Planktothrix","Pseudanabaena","Luteolibacter","CandidatusXiphinematobacter", "Pnec","betIV-A", "betI-A", "Dechloromonas","Iodobacter", "betVII-B", "Sterolibacterium", "Sideroxydans","Sulfuritalea","PRD01a011B", "Candidatus_Branchiomonas", "betIII-A", "Nitrosospira","acIV-A", "acIV-D", "acTH1-A", "acI-A", "acI-B", "Myco", "acI-C", "Luna1-A", "acSTL-A", "Pirellula", "Candidatus_Nostocoida", "CL500-3","Planctomyces", "Candidatus_Anammoximicrobium", "Pir4_lineage","Phenylobacterium", "Rickettsia", "Azospirillum", "alfI-B", "alfII-A","Haematobacter", "Magnetospirillum", "Rubellimicrobium", "Roseomonas","Rhizomicrobium", "alfIV-A", "Roseospirillum","OM27_clade", "Desulfomonile","Peredibacter", "Desulfatirhabdium","Syntrophus", "Desulfocapsa", "Sorangium", "Desulfobulbus", "Smithella", "Desulfobacula", "Phaselicystis","Desulfovibrio", "Methylobacter", "Thiocystis", "Coxiella", "Crenothrix","Thiodictyon", "Lamprocystis", "Candidatus_Competibacter", "Oscillochloris","Chloronema", "Anaerolinea", "Leptolinea", "Victivallis","Chlorobium", "Armatimonas", "Incertae_Sedis", "Fastidiosipila","Fonticella", "Clostridium_sensu_stricto_9", "Anaerofustis", "Geothrix","Treponema", "Spirochaeta", "Leptospira", "Brevinema", "Sulfurospirillum","Sulfurimonas", "possible_genus_03", "Gemmatimonas", "SC103"))
+
+
+ordered_otu_ratios$Genus = with(ordered_otu_ratios, factor(Genus, levels = rev(levels(Genus)))) 
+
+sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
+
+
+#####  Plotting FIGURE S7  #####  Plotting FIGURE S7  #####  Plotting FIGURE S7 
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig.S7_genus_heat.pdf",  width= 7.5, height=11)
+ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
+  scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  na.value = "white", guide = guide_colorbar(barwidth = 1, barheight = 4.5)) +
+  theme_bw(base_size = 12) + scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) + ylab(NULL) + 
+  xlab("Habitat") + ylab("Genus or Freshwater Tribe") + 
+  facet_grid(. ~ Comparison, scales = "free", space = "free", labeller=mf_labeller) + 
+  theme(axis.title.x = element_text(face="bold", size=12),
+        axis.text.x = element_text(colour = "black", size=8, hjust = 1, vjust=1, angle = 30),
+        axis.text.y = element_text(colour = "black", size=8),
+        axis.title.y = element_text(face="bold", size=12),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(size = 9, face = "bold", colour = "black"),
+        strip.background = element_blank(),
+        legend.position = c(0.94, 0.07), #c(0.1, 0.93),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"));  
+#dev.off()
+```
+
+
+```{r session info, eval = TRUE, echo = FALSE}
+# Provide the Session Information for reproducibility
+devtools::session_info()
+```
