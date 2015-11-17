@@ -369,7 +369,7 @@ phy_abund_in_group <- function(phy_melt_object, colname){
 
 
 
-
+######  Label the facet labels on the plots
 mf_labeller <- function(var, value){
   value <- as.character(value)
   if (var=="Comparison") { 

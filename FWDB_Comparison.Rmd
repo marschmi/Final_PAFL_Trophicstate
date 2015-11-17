@@ -2190,11 +2190,11 @@ z <- gtable_add_cols(z, unit(1/8, "line"), 7)
 z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
 #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3
-pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_phyabund_quadrants.pdf", width= 10, height=6)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_phyabund_quadrants.pdf", width= 10, height=6)
 # draw it
 grid.newpage()
 grid.draw(z)
-dev.off()
+#dev.off()
 ```
 
 
