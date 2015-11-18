@@ -203,6 +203,7 @@ merged_histogram <- ggplot(nowin_data, aes(x = TotalSeqs_Summed, fill = filter))
 
 #####  Plotting FIGURE S2  #####  Plotting FIGURE S2  #####  Plotting FIGURE S2  
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS2_histogram.pdf",  width= 6.5, height=3.5)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS2_histogram.tiff", width= 6.5, height=3.5, units = "in", res = 175)
 multiplot(merged_histogram, scaled_historgram, cols = 2);  #dev.off()
 ```
 **Figure S2:  Histogram of the total number of sequencing reads per sample. (Left)** Sequencing reads per sample after summing the raw number of sequencing reads between replicate samples. **(Right)** Sequencing reads per sample after transforming the sequence depth of each of the summed replicate samples by taking the proportion of each OTU in samples and scaling it to the minimum sequence depth in the data set (14,925 sequences), and then rounding to the nearest integer.  Dotted vertical lines represent the mean sequencing read depth of the free-living (orange) and particle-associated (brown) samples.  The bin-width represents the number of sequencing reads that are binned within each bar within the histogram
@@ -333,6 +334,7 @@ profile_labeller <- function(var, value){
 
 #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  #####  Plotting FIGURE S1  
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS1_depth_profile.pdf",  width= 6.5, height=6.5)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS1_depth_profile.tiff", width= 6.5, height=6.5, units = "in", res = 175)
 ggplot(profile_all, aes(x=Value, y = depth, color = lakename)) +   
   geom_path(size=1, alpha = 0.8) + ylab("Depth (m)") + xlab("") + 
   theme_bw() +  geom_point(size=2, alpha = 0.8) + geom_hline(h=0) +
@@ -726,7 +728,8 @@ otu_relative_plot <- ggplot(otu_overlap, aes(y=proportion , x=SampleType, fill=T
         legend.position="right"); 
 
 # Store ggplot graphical parameters
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig2_OTUoverlap_relative.pdf", width= 12, height=6)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig1_OTUoverlap_relative.pdf", width= 12, height=6)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig1_OTUoverlap_relative.tiff", width= 12, height=6, units = "in", res = 175)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.43,0.57))))
 print(otu_sum_plot, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1468,6 +1471,7 @@ bray_boxplot2 <- bray_boxplot + theme(plot.margin = unit(c(-1, 0.1, 0.1, 0.26), 
 
 
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig3_beta_variance.pdf", width= 5, height=4.5)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig3_beta_variance.tiff", width= 5, height=4.5, units = "in", res = 175)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1,height=c(0.46,0.54))))
 print(soren_boxplot2, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -1475,7 +1479,7 @@ print(bray_boxplot2, vp=viewport(layout.pos.row=2,layout.pos.col=1)); #dev.off()
 ```
 **Figure 3: Box and whisker plots of the variance in the Sørensen and Bray-Curtis dissimilarity metrics between lakes. (Top)** Sørensen dissimilarity (OTU presence or absence; KW: p =  2.4 x 10-7) and **(Bottom)** Bray-Curtis dissimilarity (OTU relative abundance; KW: p = 3.5 x 10-5) between samples within the same habitat in different lakes. Letter(s) next to data points indicate groups of samples that are significantly different in their degree of lake-to-lake dissimilarity.  Numbers in parentheses along the x-axis represent sample sizes of each lake habitat.
 
-### Overall Abundances of Phyla throughout the Dataset
+### Overall Abundances of Phyla throughout the Dataset (without mixed lake)
 ```{r overall phylum abundance, fig.height=8}
 ### Calculate the mean relative abundance based on ProdLevel + Quadrant for each PHYLUM 
 nosherwin_FWDB_scaled <- subset_samples(nowin_FWDB_scaled, names != "SHEE" & names != "SHEE3um" & names !="SHEH" & names != "SHEH3um") 
@@ -1486,7 +1490,6 @@ nosherwin_FWDB_scaled <- prune_taxa(taxa_sums(nosherwin_FWDB_scaled) > 0, nosher
 #################################################################################  OVERALL ABUNDANCE PLOT
 ###############  NO ISOTHERMAL LAKE (SHERMAN) SAMPLES AND NO WINTERGREEN HYPOLIMNION SAMPLES 
 good_phylum <-tax_glom(nosherwin_FWDB_scaled,taxrank = "Phylum")
-goodsamps_phylum <- tax_glom(good_phylum,taxrank = "Phylum")
 ##  Melt it into a dataframe 
 goodsamps_phy_melt <- psmelt(goodsamps_phylum)  
 sub_goodsamps_phy_melt <- subset(goodsamps_phy_melt, select = c("Sample", "ProdLevel", "quadrant", "Phylum","Abundance"))
@@ -1527,6 +1530,7 @@ ggplot(abund, aes(y=PercentPhy , x=Phylum))  +
 
 ### Figure 4: Abundance of Phyla within each Lake Habitat
 ```{r Fig 4 boxplot abundance plots, fig.width= 6.5, fig.height=6.5}
+# sub_phy_melt_totals #  This data frame has no Wintergreen hypo or Mixed lake samples!
 ##  Calculate the Phylum abundance based on the ProdLevel and the filter fraction.  
 prod_phylum_FWDB_stats <- ddply(sub_phy_melt_totals, c("ProdLevel","quadrant", "Phylum"), summarise, 
                                 N = length(PercentAbund),
@@ -1547,18 +1551,20 @@ top15phy <- prod_phylum_FWDB_stats[prod_phylum_FWDB_stats$Phylum %in% phy_order[
 
 phy15_order <- as.character(abund_only_by_phylum$Phylum)[1:17]
 
+#### Make sure there's no sherman lake in this part of the analysis
+good_phylum_with_sher <-tax_glom(nowin_FWDB_scaled,taxrank = "Phylum")
+phy_melt_with_sher <- psmelt(good_phylum_with_sher)  
+good_phylum_no_sher <-tax_glom(nosherwin_FWDB_scaled,taxrank = "Phylum")
 
 ######################################################## DESeq on the six habitats 
-good_phylum_nosherwin <- subset_samples(good_phylum, lakenames != "Sherman")
-
 ###########################################################  HIGH vs LOWnutrient lakes
-DESeq_prodLevel <- deSEQ(good_phylum_nosherwin, ~ ProdLevel)
+DESeq_prodLevel <- deSEQ(good_phylum_no_sher, ~ ProdLevel)
 
 ###########################################################  Epilimnion vs Hypolimnion
-DESeq_limnion <- deSEQ(good_phylum_nosherwin, ~ limnion)
+DESeq_limnion <- deSEQ(good_phylum_no_sher, ~ limnion)
 
 ###########################################################  Particle vs Free
-DESeq_filter <- deSEQ(good_phylum_nosherwin, ~ filter)
+DESeq_filter <- deSEQ(good_phylum_no_sher, ~ filter)
 
 DESeq_hab1 <- subset(DESeq_filter, select = c(Phylum, log2FoldChange, padj)) %>%
   mutate(Habitat = "PA vs. FL",
@@ -1573,7 +1579,7 @@ DESeq_hab3 <- subset(DESeq_prodLevel, select = c(Phylum, log2FoldChange, padj)) 
 
 
 #  Prep the data frame 
-bicompare_phy <- subset(goodsamps_phy_melt, select = c("Sample", "filter", "ProdLevel", "limnion","quadrant", "Phylum","Abundance"))
+bicompare_phy <- subset(phy_melt_with_sher, select = c("Sample", "filter", "ProdLevel", "limnion","quadrant", "Phylum","Abundance"))
 
 ##  Phylum Total for each sample
 bi_TOTALS <- ddply(bicompare_phy, c("Sample"), summarise,  
@@ -1683,7 +1689,8 @@ g3 <- ggplotGrob(g3)
 #g1 <- gtable_add_cols(g1, g2$widths[6])
 
 ####  DRAW FIGURE 5 ### DRAW FIGURE 5  ####  DRAW FIGURE 5 ### DRAW FIGURE 5  #### 
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_phy17_comparison_sigs.pdf",  width= 6.5, height=6.5)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig4_phy17_comparison_sigs.pdf",  width= 6.5, height=6.5)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig4_phy17_comparison_sigs.tiff", width= 6.5, height=6.5, units = "in", res = 175)
 grid.draw(rbind(g1, g2, g3, size = "last")); #dev.off()
 ```
 **Figure 4: Phylum abundance of the six lake habitats of the 17 most abundant phyla and classes of Proteobacteria.**  Box and whisker plots of the phylum abundance across all samples grouped based on **(top)** filter fraction, **(middle)** nutrient level, or **(bottom)** lake layer. Numbers in parentheses within the legend represent sample sizes of each lake habitat.  Red stars represent significant differentially abundant phyla between filter fraction, productivity level, or lake layers as calculated by DESeq.
@@ -1691,7 +1698,8 @@ grid.draw(rbind(g1, g2, g3, size = "last")); #dev.off()
 
 ### Figure S4: Including the Mixed Lake 
 ```{r Figure S4 - boxplot with mixed lake, fig.width=6.5, fig.height=3}
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_mixed_green.pdf",  width= 6.5, height=3)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS4_mixed_green.pdf",  width= 6.5, height=3)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS4_mixed_green.tiff", width= 6.5, height=3, units = "in", res = 175)
 ggplot(bicompare_phy_nowin, aes(y=PercentAbund , x=Phylum, fill=limnion)) + #coord_cartesian(xlim = c(0, 30)) + 
   ggtitle("") + xlab("") + geom_boxplot() +  ylab("Mean Percent \nRelative Abundance") + xlab("Phylum") +
   scale_fill_manual(name = "Lake Strata", breaks=c("Epilimnion", "Hypolimnion", "Mixed"),
@@ -1826,6 +1834,7 @@ z <- gtable_add_rows(z, unit(1/8, "line"), 3)
 
 #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  #####  Plotting FIGURE S3  
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_phyabund_quadrants.pdf", width= 10, height=6)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS5_phyabund_quadrants.tiff", width= 10, height=6, units = "in", res = 175)
 # draw it
 grid.newpage()
 grid.draw(z); #dev.off()
@@ -2081,6 +2090,7 @@ relabun_plot <- ggplot(subset_abundPhylum, aes(y=PercentPhy , x=Phylum)) + #coor
 
 #####  Plotting FIGURE 5  #####  Plotting FIGURE 5  #####  Plotting FIGURE 5  
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS6_phyheat.pdf",  width= 7.5, height=6)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS6_phyheat.tiff", width= 7.5, height=6, units = "in", res = 175)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.83,0.17))))
 print(heat, vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -2307,6 +2317,7 @@ summed_16$Phylum = with(summed_16, factor(Phylum, levels = rev(levels(Phylum))))
 
 #####  Plotting FIGURE S8  #####  Plotting FIGURE S8  #####  Plotting FIGURE S8
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS8_summed_ALL_otus.pdf",  width= 7.5, height=6)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS8_summed_ALL_otus.tiff", width= 7.5, height=6, units = "in", res = 175)
 ggplot(summed_16, aes(y=Count, x=Phylum, fill=Preference)) + 
   geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
   geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
@@ -2725,11 +2736,12 @@ b1 <- sigotu_proportion_plot + theme(legend.position="none",
 b2 <- sigotu_phy_relabund_plot + xlab("") +theme(axis.text.y = element_blank(), 
                                                  plot.margin = unit(c(0.1, 0.1, 0.1, 0.05), "cm")) 
 
-#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig6_proportion_relabund_Top16.pdf",  width= 12, height=6)
+#pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_proportion_relabund_Top16.pdf",  width= 12, height=6)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig5_proportion_relabund_Top16.tiff", width= 12, height=6, units = "in", res = 175)
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,2,width=c(0.46,0.54))))
 print(b1, vp=viewport(layout.pos.row=1,layout.pos.col=1))
-print(b2, vp=viewport(layout.pos.row=1,layout.pos.col=2))  #dev.off()
+print(b2, vp=viewport(layout.pos.row=1,layout.pos.col=2));  #dev.off()
 ```
 **Figure 5:  Significant differentially abundant OTUs in the 17 most abundant phyla and classes of Proteobacteria.** (Left) Proportion of the total number of OTUs that were significantly differentially abundant divided by the total number of OTUs present within each phylum and habitat. (Right) Within-phylum relative abundance of the significant OTUs within each phylum and habitat.  Numbers in parentheses within the legend represent sample sizes of each lake habitat.
 
@@ -2755,6 +2767,7 @@ sub_ordered_oturats <- subset(ordered_otu_ratios, Genus != "unclassified")
 
 #####  Plotting FIGURE S7  #####  Plotting FIGURE S7  #####  Plotting FIGURE S7 
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig.S7_genus_heat.pdf",  width= 7.5, height=11)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/Fig.S7_genus_heat.tiff", width= 7.5, height=11, units = "in", res = 175)
 ggplot(sub_ordered_oturats, aes(Habitat, Genus)) + geom_tile(aes(fill = log2FoldChange)) + 
   scale_fill_gradient2(name = "Odds-\nRatio", mid = "gray", low = "darkorange", high = "blue4",  
                        na.value = "white", guide = guide_colorbar(barwidth = 1, barheight = 4.5)) +
@@ -3047,6 +3060,7 @@ sum_scaled_matround_prod_alpha_plot <-
         legend.position="none")
 
 #pdf(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS3_alpha_diversity.pdf",  width= 10.5, height=6)
+#tiff(file="~/Final_PAFL_Trophicstate/FWDB_Figures/FigS3_alpha_diversity.tiff", width= 10.5, height=6, units = "in", res = 175)
 multiplot(final_summed_alpha_stats_plot, sum_scaled_matround_prod_alpha_plot, cols = 2); #dev.off()
 ```
 **Figure S3: Within-sample OTU richness and evenness impacted by (Left panel)** sub-sampling (rarefy-ing) the data 100 times without replacement at 14,924 sequencing reads and **(right panel)** by scaling the reads to 14,925 sequencing reads as describe within the methods and Figure S2, right panel legend (sequencing depth range is 521 sequences).  As the scaling method (right panel) is not the standard method for alpha diversity metrics, caution must be taken when interpreting the plot. Raw (gray points), mean (black tilde) and median (black horizontal bar) values and standard deviation (error bars) for (Top panel) the Inverse Simpson (Middle panel) Simpson’s measure of evenness and (Bottom panel) OTU richness within each lake habitat sampled. 
