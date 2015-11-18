@@ -1491,7 +1491,7 @@ nosherwin_FWDB_scaled <- prune_taxa(taxa_sums(nosherwin_FWDB_scaled) > 0, nosher
 ###############  NO ISOTHERMAL LAKE (SHERMAN) SAMPLES AND NO WINTERGREEN HYPOLIMNION SAMPLES 
 good_phylum <-tax_glom(nosherwin_FWDB_scaled,taxrank = "Phylum")
 ##  Melt it into a dataframe 
-goodsamps_phy_melt <- psmelt(goodsamps_phylum)  
+goodsamps_phy_melt <- psmelt(good_phylum)  
 sub_goodsamps_phy_melt <- subset(goodsamps_phy_melt, select = c("Sample", "ProdLevel", "quadrant", "Phylum","Abundance"))
 TOTALS <- ddply(sub_goodsamps_phy_melt, c("Sample"), summarise, total = sum(Abundance))   
 
