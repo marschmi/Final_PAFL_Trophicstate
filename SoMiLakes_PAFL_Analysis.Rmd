@@ -397,15 +397,15 @@ phy_abund_low <- subset(phy_melt_nosher, ProdLevel == "Unproductive") %>% # Subs
   phy_abund_in_group("Unproductive")
 
 
-##  Get the OTU abundance 
-# This command takes a long time to run! 
-#otu_glom <- tax_glom(nowin_FWDB_scaled, taxrank = "OTU")   
-#otu_melt <- psmelt(otu_glom) %>%
-#  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "OTU","Abundance"))
-#write.table(otu_melt, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", row.names = FALSE)
 
+## WARNING: This command takes a long time to run! 
+# it calculates the abundance of each otu within each samples
+otu_glom <- tax_glom(nowin_FWDB_scaled, taxrank = "OTU")   
+otu_melt <- psmelt(otu_glom) %>%
+  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "OTU","Abundance"))
+#write.table(otu_melt, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", row.names = FALSE)
 # Let's load in a previously run version to make this process faster.
-otu_melt <- read.table( "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", header = TRUE)
+#otu_melt <- read.table( "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", header = TRUE)
 otu_melt_nosherwin <- subset(otu_melt, Sample != "SHEE" & Sample != "SHEH" & 
                                Sample != "SHEE3um" & Sample != "SHEH3um")
 
