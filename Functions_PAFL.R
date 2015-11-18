@@ -120,7 +120,6 @@ makeCategories <- function(dataframe){
   library(data.table)
   dataframe[, trophicstate := ifelse(lakenames %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
                                      ifelse(lakenames %in% c("Bassett", "Bristol", "Payne", "Sherman"), "Mesotrophic",
-                                            #ifelse(lakenames %in% c("Sherman"), "Mixed",
                                                    ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA)))]
   dataframe$ProdLevel <- dataframe$trophicstate
   dataframe$ProdLevel <- as.character(dataframe$ProdLevel)
@@ -177,11 +176,9 @@ makeCategories_dups <- function(dataframe){ # IMPORTANT!!!  dataframe MUST have 
   library(data.table)
   dataframe[, trophicstate := ifelse(lakenames %in% c("Wintergreen", "Baker", "Baseline"), "Eutrophic",
                                      ifelse(lakenames %in% c("Bassett", "Bristol", "Payne", "Sherman"), "Mesotrophic",
-                                            #ifelse(lakenames %in% c("Sherman"), "Mixed",
                                                    ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Oligotrophic", NA)))]
   dataframe[, ProdLevel := ifelse(lakenames %in% c("Wintergreen", "Baker", "Baseline"), "Productive",
                                      ifelse(lakenames %in% c("Bassett", "Bristol", "Payne", "Sherman"), "Productive",
-                                            #ifelse(lakenames %in% c("Sherman"), "Mixed",
                                             ifelse(lakenames %in% c("Gull", "Sixteen", "LittleLong", "Lee"), "Unproductive", NA)))]
 }
 #################################################################################### 3
