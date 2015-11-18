@@ -707,15 +707,13 @@ phy_abund_low$SampleType <- "Unproductive"
 
 
 
-
-##  Get the OTU abundance 
-#otu_glom <- tax_glom(nowin_FWDB_scaled, taxrank = "OTU") # This command takes a long time to run!  
-#otu_melt <- psmelt(otu_glom) %>%
-#  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "OTU","Abundance"))
+## WARNING THIS FUNCTION TAKES A LONG TIME TO RUN 
+# it calculates the abundance of each otu within each sample
+otu_glom <- tax_glom(nowin_FWDB_scaled, taxrank = "OTU") # This command takes a long time to run!  
+otu_melt <- psmelt(otu_glom) %>%
+  subset(select = c("Sample", "ProdLevel", "limnion", "filter", "OTU","Abundance"))
 #write.table(otu_melt, "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", row.names = FALSE)
-
-
-otu_melt <- read.table( "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", header = TRUE)
+#otu_melt <- read.table( "~/Final_PAFL_Trophicstate/Nov6_FWDB_Silva/Nov_alpha_data/otu_melt", header = TRUE)
 otu_melt_nosherwin <- subset(otu_melt, Sample != "SHEE" & Sample != "SHEH" & Sample != "SHEE3um" & Sample != "SHEH3um")
 #length(unique(otu_melt_nosherwin$Sample)) # Sanity check
 
