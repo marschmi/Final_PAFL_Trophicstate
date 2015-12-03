@@ -4,20 +4,24 @@
 
 
 
-#### Re-submitted to _Environmental Microbiology_ on November 18th, 2015  
+#### Accepted by _Environmental Microbiology_ on November 19th, 2015  
 
 **********
 
 
 ####Information about this repository:  
 
-#####Code Files:
+##### **Original fastq files:**
+The original Fastq files were submitted to the NCBI sequence read archive under BioProject PRJNA304344, SRA accession number SRP066777.
+
+
+##### **Code Files:**
 1. `SoMiLakes_PAFL_Analysis.Rmd` includes all of the data analysis!  
       - `SoMiLakes_PAFL_Analysis.html` is the rendered html of the above file.
 2. `Functions_PAFL.R` has all of the functions written or sourced for the data analysis in the `SoMiLakes_PAFL_Analysis.Rmd` code file.  
 
 
-#####Directories/Directory Set up:
+##### **Directories/Directory Set up:**
 1. **Nov6_FWDB_Silva:**  Includes the raw output files from the mothur pipline and the raw environmental data collected for the project.  Including: 
     -  **Mothur cons.taxonomy file:**  *SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy*  
     -  **Mothur shared file:**  *SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.shared*  
