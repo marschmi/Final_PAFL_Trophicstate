@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Phylogenetic conservation of freshwater lake habitat preferences varies between abundant bacterioplankton phyla by marschmi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Phylogenetic conservation of freshwater lake habitat preferences varies between abundant bacterioplankton phyla</h1>
+      <h2 class="project-tagline"></h2>
+      <a href="https://github.com/marschmi/Final_PAFL_Trophicstate" class="btn">View on GitHub</a>
+      <a href="https://github.com/marschmi/Final_PAFL_Trophicstate/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/marschmi/Final_PAFL_Trophicstate/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h2>
+<a id="phylogenetic-conservation-of-freshwater-lake-habitat-preferences-varies-between-abundant-bacterioplankton-phyla" class="anchor" href="#phylogenetic-conservation-of-freshwater-lake-habitat-preferences-varies-between-abundant-bacterioplankton-phyla" aria-hidden="true"><span class="octicon octicon-link"></span></a>Phylogenetic conservation of freshwater lake habitat preferences varies between abundant bacterioplankton phyla.</h2>
+
+<h3>
+<a id="authors-marian-l-schmidt-jeffrey-d-white-and-vincent-j-denef" class="anchor" href="#authors-marian-l-schmidt-jeffrey-d-white-and-vincent-j-denef" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Authors:</strong> Marian L. Schmidt, Jeffrey D. White, and Vincent J. Denef</h3>
+
+<h4>
+<a id="accepted-by-environmental-microbiology-on-november-19th-2015" class="anchor" href="#accepted-by-environmental-microbiology-on-november-19th-2015" aria-hidden="true"><span class="octicon octicon-link"></span></a>Accepted by <em>Environmental Microbiology</em> on November 19th, 2015</h4>
+
+<h4>
+<a id="link-to-the-article-httponlinelibrarywileycomdoi1011111462-292013143abstract" class="anchor" href="#link-to-the-article-httponlinelibrarywileycomdoi1011111462-292013143abstract" aria-hidden="true"><span class="octicon octicon-link"></span></a>Link to the article: <a href="http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract" target="_blank"></a><a href="http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract">http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract</a>
+</h4>
+
+<hr>
+
+<h4>
+<a id="information-about-this-repository" class="anchor" href="#information-about-this-repository" aria-hidden="true"><span class="octicon octicon-link"></span></a>Information about this repository:</h4>
+
+<h5>
+<a id="original-fastq-files" class="anchor" href="#original-fastq-files" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Original fastq files:</strong>
+</h5>
+
+<p>The original Fastq files were submitted to the NCBI sequence read archive under BioProject PRJNA304344, SRA accession number SRP066777.</p>
+
+<h5>
+<a id="code-files" class="anchor" href="#code-files" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Code Files:</strong>
+</h5>
+
+<ol>
+<li>
+<code>SoMiLakes_PAFL_Analysis.Rmd</code> includes all of the data analysis!<br>
+
+<ul>
+<li>
+<code>SoMiLakes_PAFL_Analysis.html</code> is the rendered html of the above file.</li>
+</ul>
+</li>
+<li>
+<code>Functions_PAFL.R</code> has all of the functions written or sourced for the data analysis in the <code>SoMiLakes_PAFL_Analysis.Rmd</code> code file.<br>
+</li>
+</ol>
+
+<h5>
+<a id="directoriesdirectory-set-up" class="anchor" href="#directoriesdirectory-set-up" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Directories/Directory Set up:</strong>
+</h5>
+
+<ol>
+<li>
+<strong>Nov6_FWDB_Silva:</strong>  Includes the raw output files from the mothur pipline and the raw environmental data collected for the project.  Including: 
+
+<ul>
+<li> <strong>Mothur cons.taxonomy file:</strong>  <em>SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy</em><br>
+</li>
+<li> <strong>Mothur shared file:</strong>  <em>SoMiLakes_copy_FWDB.files.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.shared</em><br>
+</li>
+<li> <strong>mothur batch file:</strong>  <em>Nov4_FWDB_batch</em><br>
+</li>
+</ul>
+</li>
+<li>
+<strong>Nov6_FWDB_Silva/Nov_alpha_data:</strong>  Includes the 100X sub-sampled (rarefied) data for within-sample (alpha) diversity calculations.  Also includes otu_melt, which is a large file containing the otu abundance counts for each sample in long-format.<br>
+
+<ul>
+<li> <strong>100X Sub-sampled Inverse Simpson:</strong> <em>InvSimpson100_summed</em><br>
+</li>
+<li> <strong>100X Sub-sampled Observed Richness:</strong> <em>ObservedRichness100_summed</em><br>
+</li>
+<li> <strong>Each OTU abundance per sample:</strong> <em>otu_melt</em>
+</li>
+</ul>
+</li>
+<li>
+<strong>FWDB_Figures:</strong>  A home for all the figures created in the <code>SoMiLakes_PAFL_Analysis.Rmd</code> file.<br>
+
+<ul>
+<li>This is where all the figures will be outputted.</li>
+</ul>
+</li>
+</ol>
+
+<p><strong>Note:</strong>  This project is under the general MIT License.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/marschmi/Final_PAFL_Trophicstate">Phylogenetic conservation of freshwater lake habitat preferences varies between abundant bacterioplankton phyla</a> is maintained by <a href="https://github.com/marschmi">marschmi</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
