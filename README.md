@@ -5,7 +5,10 @@
 
 
 #### Accepted by _Environmental Microbiology_ on November 19th, 2015  
-#### Link to the article: <a href="http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract" target="_blank">http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract</a>
+
+#### - Link to the article: <a href="http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract" target="_blank">http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract</a>  
+
+#### - Link to the rendered code file for production of all figures and statistical analyses: <a href="http://rpubs.com/marschmi/133626" target="_blank">http://rpubs.com/marschmi/133626</a> _(Created with the `SoMiLakes_PAFL_Analysis.Rmd` file)_
 
 **********
 

@@ -1,10 +1,14 @@
 ---
-title: Phylogenetic conservation of freshwater lake habitat preferences varies between
+title: Phylogenetic conservation of freshwater lake habitat preference varies between
   abundant bacterioplankton phyla
 author: "Marian L. Schmidt, Jeffrey D. White, Vincent J. Denef"
 date: "November 15, 2015"
 output: html_document
 ---
+
+#### Accepted by _Environmental Microbiology_ on November 19th, 2015  
+#### Link to the article: <a href="http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract" target="_blank">http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract</a>
+
 
 ### Set the Global Knitr Options
 ```{r knitr_global_options, eval = TRUE, echo = TRUE}
@@ -22,7 +26,8 @@ set.seed(15879966)
 necessary_packages <-  c("phyloseq", "ggplot2", "ape", "vegan", "plyr", "scales", "grid", "reshape2", 
                          "data.table","DESeq2", "dplyr","tidyr", "sciplot","scales", "gtable","pgirmess",
                          "multcompView", "pander")
-# Install the packages that we need
+
+# Install the necessary packages
 packages <- lapply(necessary_packages, library, character.only = TRUE)
 
 # Set the working Directory
@@ -39,7 +44,7 @@ source("Functions_PAFL.R")
 theme_set(theme_bw() + theme(plot.title = element_text(face="bold", size = 12),  #Set the plot title
                                  strip.text.x = element_text(size=10, face="bold"),  #Set Y facet titles 
                                  strip.text.y = element_text(size=10, face="bold"),  #Set X facet titles 
-                                 strip.background = element_blank(),  #Set the facet background to no background
+                                 strip.background = element_blank(),  #No facet background
                                  axis.title.x = element_text(face="bold", size=12),  #Set the x-axis title
                                  axis.title.y = element_text(face="bold", size=12),  #Set the y-axis title
                                  axis.text.x = element_text(colour = "black", size=8),  #Set the x-axis labels
