@@ -1,4 +1,4 @@
-## Phylogenetic conservation of freshwater lake habitat preferences varies between abundant bacterioplankton phyla.
+## Phylogenetic conservation of freshwater lake habitat preference varies between abundant bacterioplankton phyla.
 
 ###  **Authors:** Marian L. Schmidt, Jeffrey D. White, and Vincent J. Denef  
 
