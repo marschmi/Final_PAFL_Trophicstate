@@ -12,6 +12,10 @@
 
 **********
 
+This is the repository for the manuscript "Phylogenetic conservation of freshwater lake habitat preference varies between abundant bacterioplankton phyla" written by Marian L. Schmidt, Jeffrey D. White, and Vincent J. Denef.  The raw data can be obtained from the Sequence Read Archive at NCBI under accession SRP066777, which are associated with BioProject PRJNA304344.
+
+**********
+
 
 ####Information about this repository:  
 
