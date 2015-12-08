@@ -5,7 +5,7 @@
 
 
 #### Accepted by _Environmental Microbiology_ on November 19th, 2015  
-#### Link to the article: [http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract](http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract)
+#### Link to the article: <a href="http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract" target="_blank">http://onlinelibrary.wiley.com/doi/10.1111/1462-2920.13143/abstract</a>
 
 **********
 
